@@ -263,6 +263,20 @@ function ensureScene() {
     THREE_OK = false; console.error('Three.js init failed', e);
   }
 }
+// 全局错误捕获：把任何未处理的运行错误显示到屏幕上，便于直接定位（无需开发者工具）
+window.addEventListener('error', function (e) {
+  try {
+    let box = document.getElementById('err-box');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'err-box';
+      box.style.cssText = 'position:absolute;top:8px;left:8px;right:8px;z-index:9999;background:rgba(170,0,0,0.92);color:#fff;font:12px/1.5 monospace;padding:8px 10px;border-radius:6px;white-space:pre-wrap;max-height:42%;overflow:auto;';
+      const wrap = document.getElementById('game-wrap') || document.body;
+      if (wrap) wrap.appendChild(box);
+    }
+    box.textContent = '运行错误：' + (e.message || e.error) + '\n' + (e.error && e.error.stack ? e.error.stack.split('\n').slice(0, 5).join('\n') : '');
+  } catch (_) {}
+});
 ensureScene();
 let game = null;
 
@@ -1387,7 +1401,10 @@ function render() {
   renderer.render(scene, camera);
 }
 function updateTowerMesh(t) {
-  if (!t.__mesh) { t.__mesh = makeTowerMesh(t); towerGroup.add(t.__mesh); }
+  if (!t.__mesh) {
+    try { t.__mesh = makeTowerMesh(t); towerGroup.add(t.__mesh); }
+    catch (err) { if (!t._meshErr) { t._meshErr = true; console.error('塔建模失败:', err); } return; }
+  }
   const m = t.__mesh;
   if (t.hp <= 0) { m.visible = false; return; }
   m.visible = true;
@@ -1454,15 +1471,21 @@ function makeTowerMesh(t) {
 function updateUnitMeshes() {
   for (const [u, m] of unitMeshMap) {
     if (!game.units.includes(u) || u.dead || u.hp <= 0) {
-      unitGroup.remove(m); disposeGroup(m); unitMeshMap.delete(u);
+      if (m) { unitGroup.remove(m); disposeGroup(m); }
+      unitMeshMap.delete(u);
     }
   }
   for (const u of game.units) {
     if (u.dead || u.hp <= 0) continue;
     let m = unitMeshMap.get(u);
-    if (!m) { m = makeUnitMesh(u); unitGroup.add(m); unitMeshMap.set(u, m); }
-    updateUnitMesh(m, u);
-    if (u.healAura && u.healRadius && m.userData.healFill) {
+    if (!m) {
+      // 防御：单个单位建模失败绝不许拖垮整个渲染循环（否则后续所有卡牌都不再显示）
+      try { m = makeUnitMesh(u); unitGroup.add(m); unitMeshMap.set(u, m); }
+      catch (err) { if (!u._meshErr) { u._meshErr = true; console.error('单位建模失败 [' + (u.model || '?') + ']:', err); } continue; }
+    }
+    try { updateUnitMesh(m, u); }
+    catch (err) { if (!u._animErr) { u._animErr = true; console.error('单位动画失败 [' + (u.model || '?') + ']:', err); } }
+    if (m && u.healAura && u.healRadius && m.userData.healFill) {
       const uwx = u.x - CENTER_X, uwz = u.y - 340;
       const hover = hoverWorld && Math.hypot(hoverWorld.x - uwx, hoverWorld.y - uwz) <= u.healRadius;
       m.userData.healFill.material.opacity = hover ? 0.24 : 0.10;
