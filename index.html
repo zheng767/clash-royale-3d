@@ -144,6 +144,11 @@ const BRIDGE_L = { x: 100, y: 340 };       // 左桥：左路中心
 const BRIDGE_R = { x: 300, y: 340 };       // 右桥：右路中心
 const BRIDGE_TOL = 44;   // 过桥容差(≈桥半宽 4格/2)
 const BRIDGE_HALF = 44;  // 视觉桥半宽(CR 桥 4 格宽)
+// 公主塔距河约 3.5 格(≈77px)，国王塔距公主塔约 9 格(≈198px)——CR 标准比例
+const PRINCESS_Y_AI = 242;     // AI 公主塔 Y（河上沿 319 - 77）
+const PRINCESS_Y_P = 438;      // 玩家公主塔 Y（河下沿 361 + 77）
+const KING_Y_AI = 44;          // AI 国王塔 Y
+const KING_Y_P = 636;          // 玩家国王塔 Y
 const TOWER_DEFS = {
   king: { hp: 2568, damage: 116, range: 154, atkSpeed: 1.0, w: 70, h: 55 },
   princess: { hp: 2512, damage: 161, range: 165, atkSpeed: 0.8, w: 50, h: 45 }
@@ -307,13 +312,13 @@ function createGame(difficulty, playerDeckCards) {
 
 function createTowers() {
   return [
-    // 皇室战争布局：公主塔距侧边 2 格(x≈56/344)、贴河边(距河中心 2 格)；国王塔居中靠后(距底边 2 格)
-    { id:'aKing', type:'king', owner:'ai', x:200, y:42, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 },
-    { id:'aLP', type:'princess', owner:'ai', x:56, y:298, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'aRP', type:'princess', owner:'ai', x:344, y:298, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'pLP', type:'princess', owner:'player', x:56, y:382, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'pRP', type:'princess', owner:'player', x:344, y:382, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'pKing', type:'king', owner:'player', x:200, y:638, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 }
+    // CR 布局：公主塔距河约 3.5 格(77px)，国王塔居中靠后
+    { id:'aKing', type:'king', owner:'ai', x:200, y:KING_Y_AI, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 },
+    { id:'aLP', type:'princess', owner:'ai', x:56, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'aRP', type:'princess', owner:'ai', x:344, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pLP', type:'princess', owner:'player', x:56, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pRP', type:'princess', owner:'player', x:344, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pKing', type:'king', owner:'player', x:200, y:KING_Y_P, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 }
   ];
 }
 
@@ -361,15 +366,15 @@ function canDeploy(owner, x, y, cardKey) {
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
     // 摧毁公主塔后只能延伸到公主塔位置，不能直接下到国王塔底
-    if (x < 200 && aLP && aLP.hp <= 0 && y >= 298 && y <= RIVER_TOP) return true;
-    if (x >= 200 && aRP && aRP.hp <= 0 && y >= 298 && y <= RIVER_TOP) return true;
+    if (x < 200 && aLP && aLP.hp <= 0 && y >= PRINCESS_Y_AI && y <= RIVER_TOP) return true;
+    if (x >= 200 && aRP && aRP.hp <= 0 && y >= PRINCESS_Y_AI && y <= RIVER_TOP) return true;
     return false;
   } else {
     if (y >= 5 && y <= RIVER_TOP) return true;
     const pLP = game.towers.find(t => t.id === 'pLP');
     const pRP = game.towers.find(t => t.id === 'pRP');
-    if (x < 200 && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= 382) return true;
-    if (x >= 200 && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= 382) return true;
+    if (x < 200 && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= PRINCESS_Y_P) return true;
+    if (x >= 200 && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= PRINCESS_Y_P) return true;
     return false;
   }
 }
@@ -493,16 +498,13 @@ function clampToRiverBank(unit, newX, newY) {
   const onBridgeL = Math.abs(newX - BRIDGE_L.x) <= BRIDGE_HALF;
   const onBridgeR = Math.abs(newX - BRIDGE_R.x) <= BRIDGE_HALF;
   if (onBridgeL || onBridgeR) {
-    // 在桥面上：允许自由移动，X 不再锁定中心，使桥上挤在一起的单位能被分离力正常推开
+    // 在桥面上：允许自由移动
     return { x: newX, y: newY };
   }
-  // 在河道深水（不在桥上）：推回最近的桥道 X 边缘，并把 Y 夹在桥面高度内，防止漂进河里
-  const dL = Math.abs(newX - BRIDGE_L.x);
-  const dR = Math.abs(newX - BRIDGE_R.x);
-  const bridge = dL < dR ? BRIDGE_L : BRIDGE_R;
-  const edgeX = bridge.x + (newX < bridge.x ? -BRIDGE_HALF : BRIDGE_HALF);
-  const clampedY = Math.max(RIVER_TOP, Math.min(RIVER_BOT, newY));
-  return { x: edgeX, y: clampedY };
+  // 在河道深水（不在桥上）：夹到最近的河岸（不弹到桥边，避免瞬移），
+  // 单位会通过寻路(getMoveTarget)自然沿河岸走向最近的桥
+  const bankY = unit.y < (RIVER_TOP + RIVER_BOT) / 2 ? RIVER_TOP : RIVER_BOT;
+  return { x: newX, y: bankY };
 }
 
 // ==================== 单位更新 ====================
@@ -935,7 +937,7 @@ function updateAI(dt) {
   // ===== 1.5 国王塔紧急防守 =====
   const aiKing = game.towers.find(t => t.id === 'aKing' && t.hp > 0);
   if (aiKing) {
-    const kingAttackers = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < 298);
+    const kingAttackers = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < PRINCESS_Y_AI);
     if (kingAttackers.length > 0) {
       const playable = ai.hand.filter(c => {
         const def = CARD_DEFS[c];
@@ -1446,7 +1448,7 @@ function updateDeployZone() {
     let zMin = 20, zMax = 340;
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
-    if ((aLP && aLP.hp <= 0) || (aRP && aRP.hp <= 0)) zMin = 298 - 340;
+    if ((aLP && aLP.hp <= 0) || (aRP && aRP.hp <= 0)) zMin = PRINCESS_Y_AI - 340;
     const cz = (zMin + zMax)/2, depth = zMax - zMin;
     deployZoneMesh.scale.set(1, depth/320, 1);
     deployZoneMesh.position.set(0, 1.5, cz);
