@@ -1400,9 +1400,19 @@ function render() {
   }
   renderer.render(scene, camera);
   // 诊断：每帧刷新单位/网格计数（左下角蓝底绿字面板）
-  const uc = game ? game.units.filter(u => !u.dead && u.hp > 0).length : 0;
-  const mc = unitGroup ? unitGroup.children.length : 0;
-  _showDbg('=== v13.2 ===' + '\n单位:' + uc + ' 网格:' + mc + ' | 塔Mesh:' + (towerGroup?towerGroup.children.length:0) + ' | ' + (game?'state:'+game.state:'no-game'));
+  var uc = game ? game.units.filter(function(u){return !u.dead && u.hp > 0;}).length : 0;
+  var mc = unitGroup ? unitGroup.children.length : 0;
+  // 列出所有存活单位名+模型
+  var ulist = '';
+  if (game) {
+    game.units.forEach(function(u) {
+      if (!u.dead && u.hp > 0) {
+        var hasMesh = !!unitMeshMap.get(u);
+        ulist += (hasMesh ? '✓' : '✗') + u.name + '(' + (u.model||'?') + ') ';
+      }
+    });
+  }
+  _showDbg('=== v13.2 ===' + '\n单位:' + uc + ' 网格:' + mc + ' | 塔Mesh:' + (towerGroup?towerGroup.children.length:0) + '\n' + ulist);
   // 版本水印（右上角，确认缓存是否刷新）
   (function() {
     let b = document.getElementById('ver-badge');
@@ -1413,7 +1423,7 @@ function render() {
       const w = document.getElementById('game-wrap');
       if (w) w.appendChild(b);
     }
-    b.textContent = 'v13.2 | units:' + uc + ' meshes:' + mc;
+    b.textContent = 'v13.2 | units:' + uc + ' meshes:' + mc + ' | check bottom-left panel';
   })();
 }
 function updateTowerMesh(t) {
@@ -1514,20 +1524,25 @@ function updateUnitMeshes() {
     }
   }
 }
-// 诊断面板：把建模/动画错误和关键状态显示到屏幕上（无需 DevTools）
-let _dbgLines = [];
+// 诊断面板：错误持久显示 + 每帧状态（错误不会被状态行刷掉）
+let _dbgErrs = [];  // 持久错误（不自动清除）
+let _dbgStatus = ''; // 当前状态行
 function _showDbg(msg) {
-  _dbgLines.push(msg);
-  if (_dbgLines.length > 8) _dbgLines.shift();
+  // 错误消息（含"失败/ERR"）进持久区
+  if (/失败|ERR|error/i.test(msg) && _dbgErrs.indexOf(msg) < 0) {
+    _dbgErrs.push(msg);
+  }
+  _dbgStatus = msg;
   let box = document.getElementById('dbg-panel');
   if (!box) {
     box = document.createElement('div');
     box.id = 'dbg-panel';
-    box.style.cssText = 'position:absolute;bottom:8px;left:8px;z-index:9999;background:rgba(0,0,180,0.88);color:#0f0;font:bold 11px/1.5 monospace;padding:6px 10px;border-radius:6px;white-space:pre;pointer-events:none;';
+    box.style.cssText = 'position:absolute;bottom:8px;left:8px;z-index:9999;background:rgba(0,0,180,0.92);color:#0f0;font:bold 11px/1.5 monospace;padding:6px 10px;border-radius:6px;white-space:pre;pointer-events:none;max-width:380px;';
     const wrap = document.getElementById('game-wrap');
     if (wrap) wrap.appendChild(box);
   }
-  box.textContent = _dbgLines.join('\n');
+  var lines = _dbgErrs.length ? _dbgErrs.concat(['---', _dbgStatus]) : [_dbgStatus];
+  box.textContent = lines.join('\n');
 }
 function makeNumberSprite(color) {
   const cv = document.createElement('canvas');
