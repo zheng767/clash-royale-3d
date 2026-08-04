@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clash Royale - 皇室战争 v9</title>
+<title>Clash Royale - 皇室战争 v10</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -182,10 +182,10 @@ const CARD_DEFS = {
   pekka:      { name:'皮卡超人', cost:7, hp:3760, dmg:842, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:15, deployTime:1.0 },
   skarmy:     { name:'骷髅军团', cost:3, hp:67, dmg:67, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:6, deployTime:1.0 },
   rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1484, radius:43, color:'#FF1744', icon:'炸', delay:2.0 },
-  royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:128, spd:15.9, atkSpd:1.8, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:15, deployTime:1.0 },
+  royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:106, spd:15.9, atkSpd:1.7, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:15, deployTime:1.0 },
   lightning:  { name:'雷电法术', cost:2, type:'spell', dmg:1057, radius:74, color:'#FFEB3B', icon:'雷', delay:1.2, stun:0.5 },
   darkprince: { name:'黑暗王子', cost:4, hp:1240, dmg:248, range:26, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:13, splash:22, deployTime:1.0, canCharge:true, chargeMaxSpd:44.4, chargeAccel:150, chargeBonus:2.0 },
-  princess:   { name:'公主', cost:3, hp:216, dmg:139, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:10, splash:22, deployTime:1.0 },
+  princess:   { name:'公主', cost:3, hp:216, dmg:140, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:10, splash:22, deployTime:1.0 },
   cannon:     { name:'加农炮', cost:3, hp:824, dmg:212, range:117, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#607D8B', icon:'炮', radius:14, deployTime:1.0, isBuilding:true, decay:30 },
   tesla:      { name:'电磁塔', cost:4, hp:1152, dmg:220, range:117, spd:0, atkSpd:1.1, tgt:'any', count:1, color:'#03A9F4', icon:'磁', radius:14, deployTime:1.0, isBuilding:true, decay:25 },
   minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:34, spd:42.5, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'灵', radius:7, flying:true, deployTime:1.0 },
@@ -725,7 +725,42 @@ function computeAvoidance(unit, dirX, dirY) {
     ax += (rx * 0.5 + tx * 1.3) * strength;
     ay += (ry * 0.5 + ty * 1.3) * strength;
   }
+  // 塔作为绕行障碍：贴边绕过（正在攻击的那座塔除外，否则会卡在塔前打不到）
+  for (const t of game.towers) {
+    if (t.hp <= 0 || t === unit.target) continue;
+    const ox = t.x - unit.x, oy = t.y - unit.y;
+    const d = Math.hypot(ox, oy);
+    const rsum = unit.radius + Math.max(t.w, t.h) / 2;
+    if (d > rsum + 34 || d < 0.01) continue;
+    const fwd = (ox * dirX + oy * dirY) / d;   // 塔是否挡在前方
+    if (fwd < 0.1) continue;
+    const rx = -ox / d, ry = -oy / d;           // 远离塔
+    let tx = -ry, ty = rx;                       // 切向绕行
+    if (tx * dirX + ty * dirY < 0) { tx = -tx; ty = -ty; }
+    const strength = 1 - Math.max(0, d - rsum) / 34;
+    ax += (rx * 0.35 + tx * 1.5) * strength;
+    ay += (ry * 0.35 + ty * 1.5) * strength;
+  }
   return { x: ax, y: ay };
+}
+
+// 塔体硬分离：地面单位被塔模型挡住时，沿最近边“贴边滑过”，而不是直接嵌进塔/卡模型里
+function separateFromTowers() {
+  for (const u of game.units) {
+    if (u.dead || u.hp <= 0 || u.flying) continue;
+    if (u.target && (u.target.type === 'king' || u.target.type === 'princess')) continue; // 正在攻击该塔：已在射程外停下，无需推
+    for (const t of game.towers) {
+      if (t.hp <= 0) continue;
+      const hw = t.w / 2 + u.radius, hh = t.h / 2 + u.radius;
+      const dx = u.x - t.x, dy = u.y - t.y;
+      if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
+        const px = hw - Math.abs(dx), py = hh - Math.abs(dy);
+        if (px <= py) u.x += (dx >= 0 ? px : -px);
+        else u.y += (dy >= 0 ? py : -py);
+        const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y;
+      }
+    }
+  }
 }
 
 function dealDamage(attacker, target, dmg) {
@@ -830,7 +865,7 @@ function updateAI(dt) {
   // 加时赛AI思考加速
   const otSpeedup = game.overtime ? 1.5 : 1.0;
   // 训练等级越高，思考间隔越短（最高减半），反应更及时
-  ai.thinkTimer = (2.5 / diffMult / otSpeedup) * (1 - skill * 0.45) + Math.random() * 0.5;
+  ai.thinkTimer = (1.6 / diffMult / otSpeedup) * (1 - skill * 0.5) + Math.random() * 0.4;
 
   // ===== 1. 法术决策 =====
   const fireballInHand = ai.hand.find(c => c === 'fireball');
@@ -991,6 +1026,18 @@ function updateAI(dt) {
 
   // ===== 2. 防守决策 =====
   const enemyUnits = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < 360);
+  // ===== 2.0 引诱/拉扯：敌方坦克(巨人/野猪/皇家巨人/皮卡)过河后，用加农炮/电磁塔在侧位拉扯，保护皇家塔 =====
+  const enemyTanks = enemyUnits.filter(u => ['giant','hogrider','royalgiant','pekka'].includes(u.card));
+  if (enemyTanks.length > 0) {
+    const pullCard = ai.hand.find(c => (c === 'cannon' || c === 'tesla') && ai.elixir >= CARD_DEFS[c].cost);
+    if (pullCard) {
+      const tank = enemyTanks[0];
+      const side = tank.x < CENTER_X ? 'left' : 'right';
+      // C位：己方半场靠河、偏向该侧，把坦克从公主塔引开（皇室战争“引诱”核心技巧）
+      const bx = (side === 'left' ? PRINCESS_X_L : PRINCESS_X_R) + (side === 'left' ? 42 : -42);
+      if (playCard('ai', pullCard, bx, 270 + Math.random()*20)) return;
+    }
+  }
   if (enemyUnits.length > 0) {
     // 加时赛或公主塔全毁时降低防守阈值
     const aiTowersAlive = game.towers.filter(t => t.owner === 'ai' && t.hp > 0 && t.type === 'princess').length;
@@ -1043,13 +1090,27 @@ function updateAI(dt) {
 
       if (defendCard) {
         const avgY = enemyUnits.reduce((s,u) => s+u.y, 0) / enemyUnits.length;
-        playCard('ai', defendCard, defendX + (Math.random()-0.5)*30, Math.min(avgY + 40, 200));
+        playCard('ai', defendCard, defendX + (Math.random()-0.5)*30, Math.min(avgY + 30, 300));
         return;
       }
     }
   }
 
   // ===== 3. 进攻决策 =====
+  // ===== 3.0 防守反击(counter-push)：若己方存活单位已压过河道进到玩家半场，说明防守成功，
+  //        顺势在后排补一张输出/坦克，把防守转为进攻（皇室战争核心：立足防守、趁势反击）
+  const aiBoard = game.units.filter(u => u.owner === 'ai' && u.hp > 0 && u.y > RIVER_BOT - 20 && u.y < PRINCESS_Y_P + 40);
+  const aiPushPower = aiBoard.reduce((s,u) => s + u.hp, 0);
+  if (aiPushPower > 250) {
+    const cp = ai.hand.filter(c => { const d = CARD_DEFS[c]; return d && d.type !== 'spell' && ai.elixir >= d.cost; });
+    if (cp.length > 0) {
+      const pushLane = aiBoard.reduce((s,u) => s + u.x, 0) / aiBoard.length < CENTER_X ? 'left' : 'right';
+      const px = pushLane === 'left' ? PRINCESS_X_L : PRINCESS_X_R;
+      const reinforce = cp.find(c => ['musketeer','wizard','babydragon','minions','archer','darkprince','valkyrie','minipekka','knight','bomber','speargoblin'].includes(c)) || cp[0];
+      playCard('ai', reinforce, px + (Math.random()-0.5)*20, 120 + Math.random()*20);
+      return;
+    }
+  }
   let atkThreshold = game.difficulty === 'easy' ? 8 : game.difficulty === 'hard' ? 5 : 6;
   atkThreshold = Math.max(3, atkThreshold - skill * 2.5);   // 训练越高越主动进攻
   if (game.overtime) atkThreshold = Math.max(3, atkThreshold - 2);
@@ -1672,6 +1733,7 @@ function gameLoop(timestamp) {
     }
     for (const u of game.units) updateUnit(u, dt);
     resolveCollisions();
+    separateFromTowers();   // 地面单位贴边绕过塔模型，避免卡进塔里
     // 兜底清扫：血量耗尽的单位立即标记死亡，杜绝任何边界残留（双保险）
     for (const u of game.units) { if (u.hp <= 0) u.dead = true; }
     game.units = game.units.filter(u => !u.dead);
