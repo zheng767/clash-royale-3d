@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clash Royale - 皇室战争 v13</title>
+<title>Clash Royale - 皇室战争 v13.2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -1402,7 +1402,19 @@ function render() {
   // 诊断：每帧刷新单位/网格计数（左下角蓝底绿字面板）
   const uc = game ? game.units.filter(u => !u.dead && u.hp > 0).length : 0;
   const mc = unitGroup ? unitGroup.children.length : 0;
-  _showDbg('单位:' + uc + ' 网格:' + mc + ' | 塔Mesh:' + (towerGroup?towerGroup.children.length:0) + ' | ' + (game?'state:'+game.state:'no-game'));
+  _showDbg('=== v13.2 ===' + '\n单位:' + uc + ' 网格:' + mc + ' | 塔Mesh:' + (towerGroup?towerGroup.children.length:0) + ' | ' + (game?'state:'+game.state:'no-game'));
+  // 版本水印（右上角，确认缓存是否刷新）
+  (function() {
+    let b = document.getElementById('ver-badge');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'ver-badge';
+      b.style.cssText = 'position:absolute;top:42px;right:8px;z-index:9999;background:#e74c3c;color:#fff;font:bold 14px/1.4 monospace;padding:4px 10px;border-radius:6px;pointer-events:none;';
+      const w = document.getElementById('game-wrap');
+      if (w) w.appendChild(b);
+    }
+    b.textContent = 'v13.2 | units:' + uc + ' meshes:' + mc;
+  })();
 }
 function updateTowerMesh(t) {
   if (!t.__mesh) {
@@ -1746,6 +1758,7 @@ function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
   }
 }
 function makeUnitMesh(u) {
+  console.log('[MAKE] 建模:', u.name, 'model:', u.model, 'atk:', u.atk, 'pos:', u.x, u.y);
   const g = new THREE.Group();
   const r = u.radius || 12;
   const col = new THREE.Color(u.color);
@@ -1785,6 +1798,7 @@ function addUnitCommon(g, u, r) {
 function updateUnitMesh(m, u) {
   const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
+  if (u._posLog !== 1) { u._posLog = 1; console.log('[POS]', u.name, '→ world(', (u.x-CENTER_X).toFixed(1), hov, (u.y-340).toFixed(1), ') logic(', u.x.toFixed(1), u.y.toFixed(1), ')'); }
   const ud = m.userData;
   const t = game.gameTime || 0;
   const spd = Math.hypot(u.vx, u.vy);
