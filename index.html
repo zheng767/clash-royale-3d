@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clash Royale - 皇室战争</title>
+<title>Clash Royale - 皇室战争 v4</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -141,16 +141,17 @@ const CW = 400, CH = 680;
 // 河流居中 2 瓦片(中心 y=340)；双桥各 4 瓦片宽，对齐两路公主塔
 // CR 源码真实坐标(LogicBattle.cs)：18×32格，河中心 y=16格，公主塔 y=6.5/25.5格，国王塔 y=3/29格
 // 映射后：公主塔离河 9.5 格、国王塔离河 13 格、公主塔↔国王塔 3.5 格；桥与公主塔同列
-const RIVER_TOP = 319, RIVER_BOT = 361;   // 河流宽 2 格(≈42px)，中心 y=340
-const BRIDGE_L = { x: 78, y: 340 };       // 左桥：对齐左路公主塔(源码 x=3.5格)
-const BRIDGE_R = { x: 322, y: 340 };       // 右桥：对齐右路公主塔(源码 x=14.5格)
-const BRIDGE_TOL = 44;   // 过桥容差(≈桥半宽 4格/2)
-const BRIDGE_HALF = 44;  // 视觉桥半宽(CR 桥 4 格宽)
-// 公主塔中心距河 9.5 格(≈202px)，国王塔距河 13 格(≈276px)——CR 源码精确比例
-const PRINCESS_Y_AI = 138;     // AI 公主塔 Y（河上沿 319 - 181）
-const PRINCESS_Y_P = 542;      // 玩家公主塔 Y（河下沿 361 + 181）
-const KING_Y_AI = 64;          // AI 国王塔 Y（河上沿 - 276）
-const KING_Y_P = 616;          // 玩家国王塔 Y（河下沿 + 276）
+// 与 2D 版完全一致的地图坐标
+const RIVER_TOP = 320, RIVER_BOT = 360;   // 河流宽 40px，中心 y=340
+const BRIDGE_L = { x: 90, y: 340 };       // 左桥：对齐左路公主塔
+const BRIDGE_R = { x: 310, y: 340 };       // 右桥：对齐右路公主塔
+const BRIDGE_TOL = 22;   // 过桥容差
+const BRIDGE_HALF = 22;  // 视觉桥半宽
+// 与 2D 版完全一致的坐标（已验证距离正确）
+const PRINCESS_Y_AI = 170;     // AI 公主塔 Y（距河中心 170px）
+const PRINCESS_Y_P = 510;      // 玩家公主塔 Y（距河中心 170px）
+const KING_Y_AI = 55;          // AI 国王塔 Y
+const KING_Y_P = 625;          // 玩家国王塔 Y
 const TOWER_DEFS = {
   king: { hp: 2568, damage: 116, range: 154, atkSpeed: 1.0, w: 70, h: 55 },
   princess: { hp: 2512, damage: 161, range: 165, atkSpeed: 0.8, w: 50, h: 45 }
@@ -314,12 +315,12 @@ function createGame(difficulty, playerDeckCards) {
 
 function createTowers() {
   return [
-    // CR 布局：公主塔距河 9.5 格、公主塔↔国王塔 3.5 格、桥对齐公主塔所在路
+    // 与 2D 版完全一致的塔坐标
     { id:'aKing', type:'king', owner:'ai', x:200, y:KING_Y_AI, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 },
-    { id:'aLP', type:'princess', owner:'ai', x:78, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'aRP', type:'princess', owner:'ai', x:322, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'pLP', type:'princess', owner:'player', x:78, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'pRP', type:'princess', owner:'player', x:322, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'aLP', type:'princess', owner:'ai', x:90, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'aRP', type:'princess', owner:'ai', x:310, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pLP', type:'princess', owner:'player', x:90, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pRP', type:'princess', owner:'player', x:310, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
     { id:'pKing', type:'king', owner:'player', x:200, y:KING_Y_P, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 }
   ];
 }
@@ -976,7 +977,7 @@ function updateAI(dt) {
       const leftThreat = enemyUnits.filter(u => u.x < 200).reduce((s,u) => s + u.hp, 0);
       const rightThreat = enemyUnits.filter(u => u.x >= 200).reduce((s,u) => s + u.hp, 0);
       const defendLeft = leftThreat >= rightThreat;
-      const defendX = defendLeft ? 78 : 322;
+      const defendX = defendLeft ? 90 : 310;
 
       // 根据威胁类型选防守卡
     const hasTank = enemyUnits.some(u => u.hp > 500);
@@ -1035,7 +1036,7 @@ function updateAI(dt) {
     });
     if (playable.length === 0) return;
 
-    const laneX = ai.attackLane === 'left' ? 78 : 322;
+    const laneX = ai.attackLane === 'left' ? 90 : 310;
 
     // 策略A：有巨人/野猪/皇家巨人在手且圣水充裕，先出攻城单位
     const giantInHand = playable.find(c => c === 'giant');
