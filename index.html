@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clash Royale - 皇室战争 v12</title>
+<title>Clash Royale - 皇室战争 v13</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -165,37 +165,38 @@ const CARD_DEFS = {
   // 移速换算：CR 速度档位内部数值 30/45/60/90/120（VerySlow/Slow/Medium/Fast/VeryFast）
   //   对应游戏内 0.5/0.75/1.0/1.5/2.0 格/秒（CR 官方速度档位定义），统一 ×21.25px/格（与塔/射程同基准；竞技场 18×32 正方形瓦片，X/Y 同系数已消除各向异性）
   //   部署时间统一 1 秒（CR 标准）
-  knight:     { name:'骑士', cost:3, hp:1766, dmg:202, range:26, spd:21.25, atkSpd:1.2, tgt:'ground', count:1, color:'#5B6EE1', icon:'剑', radius:13, deployTime:1.0 },
-  archer:     { name:'弓箭手', cost:3, hp:304, dmg:112, range:106, spd:21.25, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:9, deployTime:1.0 },
-  goblin:     { name:'哥布林', cost:2, hp:202, dmg:120, range:11, spd:42.5, atkSpd:1.1, tgt:'ground', count:4, color:'#7CB342', icon:'哥', radius:8, deployTime:1.0 },
-  giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:10.6, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:17, deployTime:1.0 },
-  bomber:     { name:'炸弹人', cost:3, hp:304, dmg:225, range:96, spd:21.25, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:10, splash:33, deployTime:1.0 },
-  minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:21.25, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:12, deployTime:1.0 },
-  skeletons:  { name:'骷髅兵', cost:1, hp:81, dmg:81, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:3, color:'#BDBDBD', icon:'骷', radius:7, deployTime:1.0 },
-  fireball:   { name:'火球术', cost:4, type:'spell', dmg:688, radius:53, color:'#FF6B35', icon:'火', delay:1.0 },
-  musketeer:  { name:'火枪手', cost:4, hp:721, dmg:217, range:128, spd:21.25, atkSpd:1.0, tgt:'any', count:1, color:'#E91E63', icon:'枪', radius:10, deployTime:1.0 },
-  valkyrie:   { name:'女武神', cost:4, hp:1907, dmg:266, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#FF6F00', icon:'武', radius:13, splash:44, selfSplash:true, deployTime:1.0 },
-  barbarians: { name:'野蛮人', cost:5, hp:691, dmg:191, range:15, spd:21.25, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:1.0 },
-  hogrider:   { name:'野猪骑士', cost:4, hp:1697, dmg:317, range:18, spd:42.5, atkSpd:1.6, tgt:'building', count:1, color:'#F57C00', icon:'猪', radius:13, deployTime:1.0, canJumpRiver:true },
-  wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:117, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:10, splash:22, deployTime:1.0 },
-  arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:243, radius:74, color:'#42A5F5', icon:'箭', delay:0.4 },
-  pekka:      { name:'皮卡超人', cost:7, hp:3760, dmg:842, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:15, deployTime:1.0 },
-  skarmy:     { name:'骷髅军团', cost:3, hp:67, dmg:67, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:6, deployTime:1.0 },
-  rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1484, radius:43, color:'#FF1744', icon:'炸', delay:2.0 },
-  royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:106, spd:15.9, atkSpd:1.7, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:15, deployTime:1.0 },
-  lightning:  { name:'雷电法术', cost:2, type:'spell', dmg:1057, radius:74, color:'#FFEB3B', icon:'雷', delay:1.2, stun:0.5 },
-  darkprince: { name:'黑暗王子', cost:4, hp:1240, dmg:248, range:26, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:13, splash:22, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0 },
-  princess:   { name:'公主', cost:3, hp:216, dmg:140, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:10, splash:22, deployTime:1.0 },
-  cannon:     { name:'加农炮', cost:3, hp:824, dmg:212, range:117, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#607D8B', icon:'炮', radius:14, deployTime:1.0, isBuilding:true, decay:30 },
-  tesla:      { name:'电磁塔', cost:4, hp:1152, dmg:220, range:117, spd:0, atkSpd:1.1, tgt:'any', count:1, color:'#03A9F4', icon:'磁', radius:14, deployTime:1.0, isBuilding:true, decay:25 },
-  minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:34, spd:42.5, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'灵', radius:7, flying:true, deployTime:1.0 },
-  babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:168, range:74, spd:21.25, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:14, splash:22, flying:true, deployTime:1.0 },
-  speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:106, spd:42.5, atkSpd:1.7, tgt:'any', count:3, color:'#9CCC65', icon:'矛', radius:8, deployTime:1.0 },
-  goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:32, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3 },
+  // model = 外观原型（决定建模造型）；atk = 攻击方式（决定动画+特效）；spellFx = 法术落点特效
+  knight:     { name:'骑士', cost:3, hp:1766, dmg:202, range:26, spd:21.25, atkSpd:1.2, tgt:'ground', count:1, color:'#5B6EE1', icon:'剑', radius:13, deployTime:1.0, model:'soldier', atk:'sword' },
+  archer:     { name:'弓箭手', cost:3, hp:304, dmg:112, range:106, spd:21.25, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:9, deployTime:1.0, model:'archer', atk:'arrow' },
+  goblin:     { name:'哥布林', cost:2, hp:202, dmg:120, range:11, spd:42.5, atkSpd:1.1, tgt:'ground', count:4, color:'#7CB342', icon:'哥', radius:8, deployTime:1.0, model:'goblin', atk:'stab' },
+  giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:10.6, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:17, deployTime:1.0, model:'giant', atk:'punch' },
+  bomber:     { name:'炸弹人', cost:3, hp:304, dmg:225, range:96, spd:21.25, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:10, splash:33, deployTime:1.0, model:'bomber', atk:'lob' },
+  minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:21.25, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:12, deployTime:1.0, model:'minipekka', atk:'bigslash' },
+  skeletons:  { name:'骷髅兵', cost:1, hp:81, dmg:81, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:3, color:'#BDBDBD', icon:'骷', radius:7, deployTime:1.0, model:'skeleton', atk:'stab' },
+  fireball:   { name:'火球术', cost:4, type:'spell', dmg:688, radius:53, color:'#FF6B35', icon:'火', delay:1.0, spellFx:'fireball' },
+  musketeer:  { name:'火枪手', cost:4, hp:721, dmg:217, range:128, spd:21.25, atkSpd:1.0, tgt:'any', count:1, color:'#E91E63', icon:'枪', radius:10, deployTime:1.0, model:'soldier', atk:'shot' },
+  valkyrie:   { name:'女武神', cost:4, hp:1907, dmg:266, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#FF6F00', icon:'武', radius:13, splash:44, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
+  barbarians: { name:'野蛮人', cost:5, hp:691, dmg:191, range:15, spd:21.25, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:1.0, model:'barbarian', atk:'sword' },
+  hogrider:   { name:'野猪骑士', cost:4, hp:1697, dmg:317, range:18, spd:42.5, atkSpd:1.6, tgt:'building', count:1, color:'#F57C00', icon:'猪', radius:13, deployTime:1.0, canJumpRiver:true, model:'hogrider', atk:'hammer' },
+  wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:117, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:10, splash:22, deployTime:1.0, model:'wizard', atk:'fireball' },
+  arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:243, radius:74, color:'#42A5F5', icon:'箭', delay:0.4, spellFx:'arrows' },
+  pekka:      { name:'皮卡超人', cost:7, hp:3760, dmg:842, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:15, deployTime:1.0, model:'pekka', atk:'bigslash' },
+  skarmy:     { name:'骷髅军团', cost:3, hp:67, dmg:67, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:6, deployTime:1.0, model:'skeleton', atk:'stab' },
+  rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1484, radius:43, color:'#FF1744', icon:'炸', delay:2.0, spellFx:'rocket' },
+  royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:106, spd:15.9, atkSpd:1.7, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:15, deployTime:1.0, model:'royalgiant', atk:'shot' },
+  lightning:  { name:'雷电法术', cost:2, type:'spell', dmg:1057, radius:74, color:'#FFEB3B', icon:'雷', delay:1.2, stun:0.5, spellFx:'lightning' },
+  darkprince: { name:'黑暗王子', cost:4, hp:1240, dmg:248, range:26, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:13, splash:22, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, model:'darkprince', atk:'spin' },
+  princess:   { name:'公主', cost:3, hp:216, dmg:140, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:10, splash:22, deployTime:1.0, model:'princess', atk:'arrow_long' },
+  cannon:     { name:'加农炮', cost:3, hp:824, dmg:212, range:117, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#607D8B', icon:'炮', radius:14, deployTime:1.0, isBuilding:true, decay:30, model:'cannon', atk:'shot' },
+  tesla:      { name:'电磁塔', cost:4, hp:1152, dmg:220, range:117, spd:0, atkSpd:1.1, tgt:'any', count:1, color:'#03A9F4', icon:'磁', radius:14, deployTime:1.0, isBuilding:true, decay:25, model:'tesla', atk:'beam' },
+  minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:34, spd:42.5, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'灵', radius:7, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
+  babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:168, range:74, spd:21.25, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:14, splash:22, flying:true, deployTime:1.0, model:'babydragon', atk:'breath' },
+  speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:106, spd:42.5, atkSpd:1.7, tgt:'any', count:3, color:'#9CCC65', icon:'矛', radius:8, deployTime:1.0, model:'speargoblin', atk:'spear' },
+  goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:32, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3, spellFx:'barrel' },
   // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(VeryFast)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
-  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:44.4, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:9, splash:51, deployTime:1.0, suicide:true },
-  healtotem: { name:'治疗图腾', cost:4, hp:480, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:14, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132 },
-  frosttower: { name:'冰霜塔', cost:4, hp:700, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:14, deployTime:1.0, isBuilding:true, decay:18, slow:true }
+  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:44.4, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:9, splash:51, deployTime:1.0, suicide:true, model:'flamesprite', atk:'magic' },
+  healtotem: { name:'治疗图腾', cost:4, hp:480, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:14, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132, model:'totem', atk:'none' },
+  frosttower: { name:'冰霜塔', cost:4, hp:700, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:14, deployTime:1.0, isBuilding:true, decay:18, slow:true, model:'frosttower', atk:'ice' }
 };
 const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower'];
 
@@ -589,14 +590,9 @@ function updateUnit(unit, dt) {
         unit.curSpd = unit.spd;
         game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.25, maxLife:0.25, color:'#ffffff' });
       }
-      // ===== 进攻显示：近战挥击弧光 / 远程发射抛射物（同时触发身体前冲动画）=====
-      unit._lunge = 0.16;
-      if (unit.range > 45) {
-        game.effects.push({ type:'bolt', sx:unit.x, sy:unit.y, tx:unit.target.x, ty:unit.target.y, life:0.16, maxLife:0.16, color:unit.color });
-      } else {
-        const ang = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
-        game.effects.push({ type:'slash', x:unit.x, y:unit.y, ang, life:0.18, maxLife:0.18, color:unit.color });
-      }
+      // ===== 进攻显示：按 atk 分类型的攻击动画 + 差异特效（同时触发身体前冲/挥击动画）=====
+      unit._atkT = 0.30;
+      spawnAttackFx(unit, unit.target);
       dealDamage(unit, unit.target, dmg);
       game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.2, maxLife:0.2, color:unit.color });
       // 冰霜塔：命中后给目标及范围内敌人施加减速
@@ -1228,8 +1224,10 @@ function makeUnit(owner, def, x, y) {
     healAura: def.healAura || 0, healRadius: def.healRadius || 0,
     slow: def.slow || false, suicide: def.suicide || false,
     color: def.color, icon: def.icon, radius: def.radius,
-    name: def.name, target: null, dead: false, stunTimer: 0, slowTimer: 0, vx: 0, vy: 0,
-    curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false
+    name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
+    target: null, dead: false, stunTimer: 0, slowTimer: 0, vx: 0, vy: 0,
+    curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false,
+    _atkT: 0, _lunge: 0, _spin: 0
   };
 }
 
@@ -1238,7 +1236,7 @@ function castSpell(owner, def, x, y) {
   const delay = def.delay || 1.0;
   game.pendingSpells.push({
     owner, x, y, radius: def.radius, dmg: def.dmg, color: def.color,
-    stun: def.stun || 0,
+    stun: def.stun || 0, kind: def.spellFx || 'fireball',
     spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
     timer: delay, maxTimer: delay
   });
@@ -1249,8 +1247,13 @@ function updatePendingSpells(dt) {
     const s = game.pendingSpells[i];
     s.timer -= dt;
     if (s.timer <= 0) {
-      // 爆炸：造成伤害
-      game.effects.push({ type:'fireball', x:s.x, y:s.y, life:0.5, maxLife:0.5, radius:s.radius, color:s.color });
+      // 爆炸：按法术类型渲染差异落点特效
+      let fxType = 'fireball', fxColor = s.color;
+      if (s.kind === 'arrows') { fxType = 'rain'; fxColor = '#cfe8ff'; }
+      else if (s.kind === 'lightning') { fxType = 'chain'; fxColor = '#fff27a'; }
+      else if (s.kind === 'barrel') { fxType = 'barrel'; }
+      else if (s.kind === 'rocket') { fxType = 'fireball'; fxColor = '#ff3b30'; }
+      game.effects.push({ type: fxType, x: s.x, y: s.y, life: 0.5, maxLife: 0.5, radius: s.radius, color: fxColor });
       // 仅对有伤害值的法术结算伤害（哥布林飞桶等纯召唤法术无 dmg，跳过以免 NaN 污染血量）
       if (typeof s.dmg === 'number') {
         const enemyOwner = s.owner === 'player' ? 'ai' : 'player';
@@ -1507,53 +1510,207 @@ function makeLabel(text, color) {
   sp.renderOrder = 999;
   return sp;
 }
+// ==================== 差异化建模（按 model 原型）====================
+function _mat(c, o) {
+  const m = new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0 });
+  if (o) {
+    if (o.emissive !== undefined) { m.emissive.setHex(o.emissive); delete o.emissive; }
+    if (o.emissiveIntensity !== undefined) { m.emissiveIntensity = o.emissiveIntensity; delete o.emissiveIntensity; }
+    if (o.transparent !== undefined) m.transparent = o.transparent;
+    if (o.opacity !== undefined) m.opacity = o.opacity;
+    if (o.side !== undefined) m.side = o.side;
+    if (o.roughness !== undefined) m.roughness = o.roughness;
+    if (o.metalness !== undefined) m.metalness = o.metalness;
+  }
+  return m;
+}
+function _box(w, h, d, c) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), c); }
+function _cyl(rt, rb, h, c, s) { return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s || 10), c); }
+function _sph(rad, c, s) { return new THREE.Mesh(new THREE.SphereGeometry(rad, s || 12, s || 10), c); }
+function _cone(rad, h, c, s) { return new THREE.Mesh(new THREE.ConeGeometry(rad, h, s || 8), c); }
+function _blade(r, mat, len, thick) {
+  const grp = new THREE.Group();
+  const b = _box(thick, len, thick, mat); b.position.y = len / 2; grp.add(b);
+  const g = _box(thick * 3, thick * 0.8, thick * 0.8, mat); grp.add(g);
+  return grp;
+}
+function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, skin) {
+  const hy = head.position.y;
+  switch (u.model) {
+    case 'knight':
+      { const helm = _sph(headR * 1.15, metal, 10); helm.scale.y = 0.7; helm.position.y = hy; parent.add(helm);
+        const visor = _box(headR * 1.2, headR * 0.28, headR * 1.2, dark); visor.position.y = hy - headR * 0.15; parent.add(visor); break; }
+    case 'musketeer':
+      { const hat = _cone(headR * 1.3, headR * 1.3, _mat(0x3a2c20), 3); hat.position.y = hy + headR * 0.9; parent.add(hat); break; }
+    case 'archer':
+      { const hood = _cone(headR * 1.25, headR * 1.9, _mat(col), 12); hood.position.y = hy + headR * 0.4; parent.add(hood); break; }
+    case 'goblin': case 'speargoblin':
+      { for (const sx of [-1, 1]) { const ear = _cone(headR * 0.4, headR * 0.9, _mat(0x8bc34a), 6); ear.position.set(sx * headR * 0.9, hy + headR * 0.3, 0); parent.add(ear); } break; }
+    case 'skeleton': case 'skarmy':
+      { for (const sx of [-1, 1]) { const eye = _sph(headR * 0.18, _mat(0x111111)); eye.position.set(sx * headR * 0.35, hy + headR * 0.1, headR * 0.85); parent.add(eye); } break; }
+    case 'wizard':
+      { const hood = _cone(headR * 1.55, headR * 2.5, _mat(col), 12); hood.position.y = hy + headR * 0.5; parent.add(hood);
+        const brim = _box(headR * 2.2, headR * 0.2, headR * 2.2, _mat(col)); brim.position.y = hy + headR * 0.1; parent.add(brim); break; }
+    case 'princess':
+      { const hat = _cone(headR * 1.7, headR * 1.1, _mat(0xff69b4), 18); hat.position.y = hy + headR * 0.6; parent.add(hat);
+        const brim = _box(headR * 2.4, headR * 0.18, headR * 2.4, _mat(0xff69b4)); brim.position.y = hy + headR * 0.15; parent.add(brim); break; }
+    case 'valkyrie':
+      { const tail = _box(headR * 0.5, headR * 1.3, headR * 0.5, _mat(col)); tail.position.set(0, hy + headR * 0.2, -headR * 0.9); parent.add(tail); break; }
+    case 'barbarian':
+      { const beard = _box(headR * 1.1, headR * 0.9, headR * 1.1, _mat(0xddc9a0)); beard.position.y = hy - headR * 0.5; parent.add(beard);
+        for (const sx of [-1, 1]) { const horn = _cone(headR * 0.3, headR * 0.9, _mat(0xeeeeee), 6); horn.position.set(sx * headR * 0.9, hy + headR * 0.7, 0); parent.add(horn); } break; }
+    case 'hogrider':
+      { const helm = _sph(headR * 1.1, metal, 10); helm.position.y = hy; parent.add(helm);
+        for (const sx of [-1, 1]) { const horn = _cone(headR * 0.25, headR * 0.7, _mat(0xeeeeee), 6); horn.position.set(sx * headR * 0.8, hy + headR * 0.6, 0); parent.add(horn); } break; }
+    case 'darkprince':
+      { const helm = _sph(headR * 1.1, _mat(0x4a148c), 10); helm.position.y = hy; parent.add(helm);
+        for (const sx of [-1, 1]) { const horn = _cone(headR * 0.28, headR * 0.9, metal, 6); horn.position.set(sx * headR * 0.8, hy + headR * 0.7, 0); parent.add(horn); } break; }
+    case 'minipekka': case 'pekka':
+      { const slit = _box(headR * 1.1, headR * 0.28, headR * 0.3, _mat(0xff3355, { emissive: 0xff3355, emissiveIntensity: 0.9 })); slit.position.set(0, hy, headR * 0.8); parent.add(slit); break; }
+    case 'giant': case 'royalgiant':
+      { const brow = _box(headR * 1.4, headR * 0.25, headR * 0.4, dark); brow.position.set(0, hy + headR * 0.2, headR * 0.8); parent.add(brow); break; }
+    default: break;
+  }
+}
+function addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW, legH, bodyH) {
+  switch (u.model) {
+    case 'knight':
+    case 'barbarian': {
+      const w = _blade(r, metal, r * 0.95, r * 0.16); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.22); ud.weaponR = w; break; }
+    case 'musketeer': {
+      const w = _box(r * 0.14, r * 1.4, r * 0.14, dark); w.rotation.x = Math.PI / 2; ud.armR.add(w); w.position.set(0, -bodyH * 0.2, r * 0.4); ud.weaponR = w; break; }
+    case 'archer':
+    case 'princess': {
+      const bow = new THREE.Mesh(new THREE.TorusGeometry(r * 0.55, r * 0.08, 6, 14, Math.PI * 1.3), _mat(0x8d6e63)); bow.rotation.z = Math.PI / 2 - Math.PI * 0.65; ud.armL.add(bow); bow.position.set(0, -bodyH * 0.1, r * 0.1); ud.weaponL = bow;
+      const ar = _box(r * 0.08, r * 0.7, r * 0.08, _mat(0xeeeeee)); ud.armR.add(ar); ar.position.set(0, -bodyH * 0.1, r * 0.2); ud.weaponR = ar; break; }
+    case 'goblin': case 'skeleton': {
+      const w = _blade(r, _mat(u.model === 'skeleton' ? 0xf2f2f2 : 0xcfcfcf), r * 0.5, r * 0.1); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.2); ud.weaponR = w; break; }
+    case 'giant': {
+      for (const [arm, sx] of [[ud.armL, -1], [ud.armR, 1]]) { const fist = _sph(r * 0.32, baseMat); fist.position.set(0, -bodyH * 0.46, r * 0.2); arm.add(fist); } break; }
+    case 'minipekka': case 'pekka': {
+      const w = _blade(r, _mat(0x2b2f36, { metalness: 0.6, roughness: 0.4 }), r * 1.3, r * 0.28); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.28); ud.weaponR = w; break; }
+    case 'valkyrie': {
+      const w = new THREE.Group(); const h = _box(r * 0.14, r * 1.0, r * 0.14, metal); h.position.y = r * 0.5; w.add(h);
+      const blade = _box(r * 0.7, r * 0.5, r * 0.1, metal); blade.position.y = r * 0.95; w.add(blade); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.25); ud.weaponR = w; break; }
+    case 'hogrider': {
+      const w = new THREE.Group(); const h = _box(r * 0.14, r * 1.1, r * 0.14, _mat(0x6d4f43)); h.position.y = r * 0.55; w.add(h);
+      const head = _box(r * 0.6, r * 0.5, r * 0.6, metal); head.position.y = r * 1.15; w.add(head); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.3); ud.weaponR = w; break; }
+    case 'wizard': {
+      const w = new THREE.Group(); const h = _cyl(r * 0.08, r * 0.1, r * 1.4, _mat(0x4a3b2a), 8); h.position.y = r * 0.7; w.add(h);
+      const orb = _sph(r * 0.32, _mat(0xff8a3d, { emissive: 0xff6a00, emissiveIntensity: 0.9 })); orb.position.y = r * 1.45; w.add(orb); ud.armR.add(w); w.position.set(0, -bodyH * 0.1, r * 0.2); ud.weaponR = w; ud.staffOrb = orb; break; }
+    case 'royalgiant': {
+      const barrel = _cyl(r * 0.2, r * 0.26, r * 1.3, metal, 12); barrel.rotation.x = Math.PI / 2 - 0.25; barrel.position.set(bodyW * 0.2, legH + bodyH * 0.85, r * 0.55); pivot.add(barrel); ud.barrel = barrel; barrel.userData.baseZ = barrel.position.z; break; }
+    case 'darkprince': {
+      const sh = _box(r * 0.7, r * 0.9, r * 0.18, metal); ud.armL.add(sh); sh.position.set(0, -bodyH * 0.1, r * 0.25); ud.weaponL = sh;
+      const w = _blade(r, metal, r * 0.85, r * 0.15); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.22); ud.weaponR = w; break; }
+    case 'bomber': {
+      const w = new THREE.Group(); const b = _sph(r * 0.34, _mat(0x222222)); b.position.y = r * 0.34; w.add(b);
+      const fuse = _cyl(r * 0.04, r * 0.04, r * 0.3, _mat(0xaa8844), 6); fuse.position.y = r * 0.6; w.add(fuse); ud.armR.add(w); w.position.set(0, -bodyH * 0.3, r * 0.2); ud.weaponR = w; break; }
+    case 'speargoblin': {
+      const w = new THREE.Group(); const h = _cyl(r * 0.06, r * 0.06, r * 1.6, _mat(0x8d6e63), 6); h.position.y = r * 0.8; w.add(h);
+      const tip = _cone(r * 0.16, r * 0.35, metal, 6); tip.position.y = r * 1.6; w.add(tip); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.18); ud.weaponR = w; break; }
+    default: break;
+  }
+}
+function buildGround(g, u, ud, r, col, baseMat, skin, dark, metal) {
+  if (u.model === 'flamesprite') {
+    const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
+    const body = _sph(r * 0.95, _mat(0xff5722, { emissive: 0xff4400, emissiveIntensity: 0.8 })); body.position.y = r * 0.7; pivot.add(body); ud.body = body;
+    const flame = _cone(r * 0.7, r * 1.1, _mat(0xffc107, { emissive: 0xff7700, emissiveIntensity: 0.9 }), 10); flame.position.y = r * 1.5; pivot.add(flame);
+    ud.floatBob = true; return;
+  }
+  const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
+  const legH = r * 0.95, bodyH = r * 1.15, headR = r * 0.55;
+  const bodyW = (u.model === 'giant' || u.model === 'royalgiant' || u.model === 'pekka') ? r * 1.5 :
+                (u.model === 'barbarian') ? r * 1.35 : r * 1.15;
+  const body = _box(bodyW, bodyH, r * 0.75, baseMat); body.position.y = legH + bodyH / 2; pivot.add(body); ud.body = body;
+  const headCol = (u.model === 'skeleton' || u.model === 'skarmy') ? 0xf2f2f2 :
+                  (u.model === 'goblin' || u.model === 'speargoblin') ? 0x8bc34a :
+                  (u.model === 'minipekka' || u.model === 'pekka') ? 0x9aa0a8 : 0xffe0bd;
+  const head = (u.model === 'minipekka' || u.model === 'pekka') ? _box(headR * 1.5, headR * 1.5, headR * 1.5, metal) : _sph(headR, _mat(headCol));
+  head.position.y = legH + bodyH + (u.model === 'minipekka' || u.model === 'pekka' ? headR * 0.9 : headR * 0.7);
+  pivot.add(head); ud.head = head;
+  addHeadDetail(u, pivot, head, headR, legH, bodyH, col, dark, metal, skin);
+  const legGeo = _box(r * 0.38, legH, r * 0.38);
+  const legL = new THREE.Mesh(legGeo, baseMat); legL.position.set(-r * 0.32, legH / 2, 0); pivot.add(legL); ud.legL = legL;
+  const legR = new THREE.Mesh(legGeo, baseMat); legR.position.set(r * 0.32, legH / 2, 0); pivot.add(legR); ud.legR = legR;
+  const armGeo = _box(r * 0.28, bodyH * 0.85, r * 0.28);
+  const armL = new THREE.Mesh(armGeo, baseMat); armL.position.set(-bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armL); ud.armL = armL;
+  const armR = new THREE.Mesh(armGeo, baseMat); armR.position.set(bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armR); ud.armR = armR;
+  if (u.model === 'hogrider') {
+    const hog = new THREE.Group();
+    const hbody = _box(r * 1.5, r * 0.9, r * 2.0, _mat(0x8d6e63)); hbody.position.y = r * 0.7; hog.add(hbody);
+    const hhead = _box(r * 0.7, r * 0.7, r * 0.7, _mat(0x8d6e63)); hhead.position.set(0, r * 0.9, r * 1.1); hog.add(hhead);
+    for (const sx of [-1, 1]) { const t = _cone(r * 0.1, r * 0.4, _mat(0xffffff), 6); t.position.set(sx * r * 0.2, r * 0.7, r * 1.45); hog.add(t); }
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const leg = _box(r * 0.25, r * 0.7, r * 0.25, _mat(0x6d4f43)); leg.position.set(sx * r * 0.6, r * 0.35, sz * r * 0.8); hog.add(leg); }
+    g.add(hog); ud.hog = hog; ud.riderLift = r * 0.55;
+  }
+  addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW, legH, bodyH);
+}
+function buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal) {
+  const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
+  if (u.model === 'minion') {
+    const body = _sph(r * 0.85, _mat(0x4a3f5e)); body.position.y = r * 0.2; pivot.add(body); ud.body = body;
+    const head = _sph(r * 0.5, _mat(0x4a3f5e)); head.position.y = r * 0.7; pivot.add(head); ud.head = head;
+    const eyeMat = _mat(0xffe14d, { emissive: 0xffe14d, emissiveIntensity: 0.9 });
+    const e1 = _sph(r * 0.12, eyeMat); e1.position.set(-r * 0.2, r * 0.75, r * 0.4); pivot.add(e1);
+    const e2 = _sph(r * 0.12, eyeMat); e2.position.set(r * 0.2, r * 0.75, r * 0.4); pivot.add(e2);
+    const horn = _cone(r * 0.18, r * 0.5, _mat(0x2a2433), 6); horn.position.set(0, r * 1.1, 0); pivot.add(horn);
+    const wmat = new THREE.MeshStandardMaterial({ color: 0x6a5a82, roughness: 0.6, side: THREE.DoubleSide });
+    const wl = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.4, r * 0.8), wmat); wl.position.set(-r * 0.7, r * 0.3, 0); wl.rotation.y = 0.6; pivot.add(wl);
+    const wr = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.4, r * 0.8), wmat); wr.position.set(r * 0.7, r * 0.3, 0); wr.rotation.y = -0.6; pivot.add(wr);
+    ud.wings = [wl, wr];
+  } else if (u.model === 'babydragon') {
+    const body = _sph(r * 0.95, _mat(0x66bb6a)); body.scale.set(1, 1.2, 1); body.position.y = r * 0.1; pivot.add(body); ud.body = body;
+    const headGrp = new THREE.Group(); headGrp.position.set(0, r * 0.9, r * 0.3); pivot.add(headGrp); ud.head = headGrp;
+    const h = _sph(r * 0.6, _mat(0x66bb6a)); headGrp.add(h);
+    const eye = _sph(r * 0.13, _mat(0xffe14d, { emissive: 0xffe14d, emissiveIntensity: 0.9 })); eye.position.set(0, r * 0.1, r * 0.5); headGrp.add(eye);
+    const snout = _box(r * 0.5, r * 0.4, r * 0.5, _mat(0x57a05a)); snout.position.set(0, -r * 0.1, r * 0.5); headGrp.add(snout);
+    const jaw = _box(r * 0.45, r * 0.18, r * 0.45, _mat(0x57a05a)); jaw.position.set(0, -r * 0.28, r * 0.5); headGrp.add(jaw); ud.jaw = jaw; ud.dragonHead = headGrp;
+    const wmat = new THREE.MeshStandardMaterial({ color: 0x4f9e54, roughness: 0.6, side: THREE.DoubleSide });
+    const wl = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.8, r * 1.0), wmat); wl.position.set(-r * 1.0, r * 0.3, 0); wl.rotation.y = 0.6; pivot.add(wl);
+    const wr = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.8, r * 1.0), wmat); wr.position.set(r * 1.0, r * 0.3, 0); wr.rotation.y = -0.6; pivot.add(wr);
+    ud.wings = [wl, wr];
+    const tail = _cone(r * 0.3, r * 1.0, _mat(0x57a05a), 6); tail.rotation.x = Math.PI / 2; tail.position.set(0, r * 0.0, -r * 1.0); pivot.add(tail);
+  }
+}
+function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
+  const base = _box(r * 2 + 6, 8, r * 2 + 6, _mat(0x2a2a3a, { roughness: 1 })); base.position.y = 4; g.add(base);
+  if (u.model === 'cannon') {
+    const body = _box(r * 1.7, r * 1.1, r * 1.7, baseMat); body.position.y = 8 + r * 0.55; g.add(body); ud.body = body;
+    const wgeo = _cyl(r * 0.5, r * 0.5, r * 0.4, dark, 12);
+    const wl = wgeo.clone(); wl.rotation.z = Math.PI / 2; wl.position.set(-r * 0.9, r * 0.5, 0); g.add(wl);
+    const wr = wgeo.clone(); wr.rotation.z = Math.PI / 2; wr.position.set(r * 0.9, r * 0.5, 0); g.add(wr);
+    const barrel = _cyl(r * 0.22, r * 0.28, r * 1.2, metal, 12); barrel.rotation.x = Math.PI / 2 - 0.3; barrel.position.set(0, 8 + r * 0.7, r * 0.7); g.add(barrel); ud.barrel = barrel; barrel.userData.baseZ = barrel.position.z;
+  } else if (u.model === 'tesla') {
+    const pole = _cyl(r * 0.25, r * 0.3, r * 2.0, metal, 10); pole.position.y = 8 + r; g.add(pole); ud.body = pole;
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(r * 0.5, r * 0.12, 8, 16), _mat(0x03A9F4, { emissive: 0x03A9F4, emissiveIntensity: 0.7 })); coil.rotation.x = Math.PI / 2; coil.position.y = 8 + r * 1.6; g.add(coil); ud.coil = coil;
+    const orb = _sph(r * 0.3, _mat(0x9fe8ff, { emissive: 0x7fe3ff, emissiveIntensity: 0.9 })); orb.position.y = 8 + r * 2.0; g.add(orb); ud.crystal = orb;
+  } else if (u.model === 'totem') {
+    const pole = _box(r * 0.7, r * 2.4, r * 0.7, _mat(0x8d6e63)); pole.position.y = 8 + r * 1.2; g.add(pole); ud.body = pole;
+    const cross = new THREE.Group();
+    const v = _box(r * 0.35, r * 1.2, r * 0.35, _mat(0x33e0c0, { emissive: 0x33e0c0, emissiveIntensity: 0.6 }));
+    const h = _box(r * 1.2, r * 0.35, r * 0.35, _mat(0x33e0c0, { emissive: 0x33e0c0, emissiveIntensity: 0.6 }));
+    cross.add(v); cross.add(h); cross.position.y = 8 + r * 1.5; g.add(cross); ud.crystal = cross;
+  } else if (u.model === 'frosttower') {
+    const tower = _cyl(r * 0.5, r * 0.8, r * 2.0, _mat(0x5a6b7a), 10); tower.position.y = 8 + r; g.add(tower); ud.body = tower;
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(r * 0.6), _mat(0x9fe8ff, { emissive: 0x4fc3f7, emissiveIntensity: 0.8, transparent: true, opacity: 0.9 }));
+    crystal.position.y = 8 + r * 2.1; g.add(crystal); ud.crystal = crystal;
+  }
+}
 function makeUnitMesh(u) {
   const g = new THREE.Group();
   const r = u.radius || 12;
   const col = new THREE.Color(u.color);
-  const limbMat = new THREE.MeshStandardMaterial({color: col, roughness:0.7});
-  const skinMat = new THREE.MeshStandardMaterial({color:0xffe0bd, roughness:0.6});
-  // ===== 建筑：炮 / 电磁塔 / 治疗图腾 / 冰霜塔 =====
-  if (u.isBuilding) {
-    const base = new THREE.Mesh(new THREE.BoxGeometry(r*2+6, 8, r*2+6), new THREE.MeshStandardMaterial({color:0x2a2a3a, roughness:1}));
-    base.position.y = 4; g.add(base);
-    const bodyH = r*1.7;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(r*1.8, bodyH, r*1.8), limbMat);
-    body.position.y = 8 + bodyH/2; g.add(body);
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(r*0.32, r*0.55, r*0.9, 10), new THREE.MeshStandardMaterial({color:0x333a44, roughness:0.6}));
-    top.position.y = 8 + bodyH + r*0.35; g.add(top);
-    if (u.healAura) {
-      const cross = new THREE.Mesh(new THREE.BoxGeometry(r*1.4, r*0.4, r*0.4), new THREE.MeshStandardMaterial({color:0x33e0c0}));
-      cross.position.y = 8 + bodyH + r*0.95; g.add(cross);
-    }
-    g.userData = { body, barW: Math.max(28, r*3.0), fg:null, legL:null, pivot:null };
-    addUnitCommon(g, u, r);
-    return g;
-  }
-  // ===== 人形单位：头 + 躯干 + 四肢 + 帽 + 武器 =====
-  const legH = r*0.95, bodyH = r*1.15, headR = r*0.55;
-  const pivot = new THREE.Group(); g.add(pivot);
-  const body = new THREE.Mesh(new THREE.BoxGeometry(r*1.15, bodyH, r*0.75), limbMat);
-  body.position.y = legH + bodyH/2; pivot.add(body);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 12, 10), skinMat);
-  head.position.y = legH + bodyH + headR*0.7; pivot.add(head);
-  const hat = new THREE.Mesh(new THREE.ConeGeometry(headR*1.15, headR*1.3, 8), new THREE.MeshStandardMaterial({color: col, roughness:0.6}));
-  hat.position.y = legH + bodyH + headR*1.5; pivot.add(hat);
-  const legGeo = new THREE.BoxGeometry(r*0.38, legH, r*0.38);
-  const legL = new THREE.Mesh(legGeo, limbMat); legL.position.set(-r*0.32, legH/2, 0); pivot.add(legL);
-  const legR = new THREE.Mesh(legGeo, limbMat); legR.position.set(r*0.32, legH/2, 0); pivot.add(legR);
-  const armGeo = new THREE.BoxGeometry(r*0.3, bodyH*0.85, r*0.3);
-  const armL = new THREE.Mesh(armGeo, limbMat); armL.position.set(-r*0.72, legH+bodyH*0.62, 0); pivot.add(armL);
-  const armR = new THREE.Mesh(armGeo, limbMat); armR.position.set(r*0.72, legH+bodyH*0.62, 0); pivot.add(armR);
-  const weapon = new THREE.Mesh(new THREE.BoxGeometry(r*0.18, r*0.9, r*0.18), new THREE.MeshStandardMaterial({color:0xdddddd, metalness:0.4, roughness:0.4}));
-  weapon.position.set(0, bodyH*0.45, r*0.3); armR.add(weapon);
-  if (u.flying) {
-    const wingMat = new THREE.MeshStandardMaterial({color:0xeeeeee, roughness:0.5, side:THREE.DoubleSide});
-    const wl = new THREE.Mesh(new THREE.PlaneGeometry(r*1.2, r*0.7), wingMat); wl.position.set(-r*0.9, legH+bodyH*0.7, 0); wl.rotation.y = 0.5; pivot.add(wl);
-    const wr = new THREE.Mesh(new THREE.PlaneGeometry(r*1.2, r*0.7), wingMat); wr.position.set(r*0.9, legH+bodyH*0.7, 0); wr.rotation.y = -0.5; pivot.add(wr);
-    g.userData.wings = [wl, wr];
-  }
-  g.userData = { pivot, body, head, legL, legR, armL, armR, barW: Math.max(28, r*3.0), fg:null };
+  const baseMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.7 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x33363f, roughness: 0.7 });
+  const metal = new THREE.MeshStandardMaterial({ color: 0xd6dae2, metalness: 0.5, roughness: 0.35 });
+  const ud = { r, barW: Math.max(28, r * 3.0), fg: null, pivot: null, body: null, head: null, legL: null, legR: null, armL: null, armR: null, weaponR: null, weaponL: null, wings: null, dragonHead: null, jaw: null, hog: null, barrel: null, coil: null, crystal: null, model: u.model, atk: u.atk, riderLift: 0, floatBob: false };
+  if (u.isBuilding) buildBuilding(g, u, ud, r, baseMat, dark, metal);
+  else if (u.flying) buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal);
+  else buildGround(g, u, ud, r, col, baseMat, skin, dark, metal);
+  g.userData = ud;
   addUnitCommon(g, u, r);
   return g;
 }
@@ -1579,31 +1736,52 @@ function addUnitCommon(g, u, r) {
   }
 }
 function updateUnitMesh(m, u) {
-  const hov = u.flying ? 40 : 0;
+  const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
   const ud = m.userData;
   const t = game.gameTime || 0;
-  const moving = (Math.abs(u.vx) + Math.abs(u.vy)) > 1.5;
-  // 走路动画：腿/臂摆动 + 身体起伏
+  const spd = Math.hypot(u.vx, u.vy);
+  const moving = spd > 1.5;
+  const freq = 7 + spd * 0.32;          // 腿摆/扇翅频率随真实移速缩放（巨人慢、野猪快）
+  const ph = t * freq;
+  // 走路动画（有腿的人形）
   if (ud.legL) {
-    const sw = moving ? Math.sin(t*12)*0.5 : 0;
+    const sw = moving ? Math.sin(ph) * 0.55 : 0;
     ud.legL.rotation.x = sw; ud.legR.rotation.x = -sw;
-    ud.armL.rotation.x = -sw*0.8; ud.armR.rotation.x = sw*0.8;
-    ud.pivot.position.y = moving ? Math.abs(Math.sin(t*12))*1.5 : 0;
+    ud.armL.rotation.x = -sw * 0.8; ud.armR.rotation.x = sw * 0.8;
+    const bob = moving ? Math.abs(Math.sin(ph)) * (ud.r * 0.16) : 0;
+    ud.pivot.position.y = (ud.riderLift || 0) + bob;
+  } else if (ud.floatBob) {
+    ud.pivot.position.y = Math.abs(Math.sin(t * 6)) * 3;
   }
-  // 翅膀扇动
-  if (ud.wings) { const f = Math.sin(t*16)*0.5; ud.wings[0].rotation.z = f; ud.wings[1].rotation.z = -f; }
-  // 前冲（攻击瞬间）
-  if (u._lunge > 0) {
-    u._lunge = Math.max(0, u._lunge - (game._dt || 0.016));
-    if (ud.pivot) { ud.pivot.position.z = u._lunge * 20; ud.pivot.position.y += u._lunge * 7; }
+  // 翅膀扇动（频率随移速）
+  if (ud.wings) { const f = Math.sin(ph * 1.4) * 0.6; ud.wings[0].rotation.z = f; ud.wings[1].rotation.z = -f; }
+  // 野猪骑士：坐骑起伏
+  if (ud.hog) ud.hog.position.y = Math.abs(Math.sin(ph)) * (ud.r * 0.12);
+  // 建筑特征部件常驻微动
+  if (ud.coil) ud.coil.rotation.z = t * 1.5;
+  if (ud.crystal && u.atk === 'none') { const s = 1 + Math.sin(t * 3) * 0.12; ud.crystal.scale.set(s, s, s); }
+  if (ud.crystal && u.model === 'frosttower') ud.crystal.rotation.y = t * 1.2;
+  // ===== 攻击动画（按 atk 分类型）=====
+  if (ud.pivot) ud.pivot.position.z = 0;   // 每帧先归位，避免位移累积
+  if (u._atkT > 0) {
+    u._atkT = Math.max(0, u._atkT - (game._dt || 0.016));
+    animateAttack(ud, u, 1 - u._atkT / 0.30);
+  } else if (ud.armR) {
+    ud.armR.rotation.x *= 0.6;
+    if (ud.armL) ud.armL.rotation.x *= 0.6;
+    if (ud.staffOrb) ud.staffOrb.scale.set(1, 1, 1);
   }
-  // 朝向目标 / 移动方向
+  // 朝向目标 / 移动方向（旋风攻击时改为原地旋转）
   if (ud.pivot) {
-    let dx = 0, dy = 0;
-    if (u.target) { dx = u.target.x - u.x; dy = u.target.y - u.y; }
-    else if (moving) { dx = u.vx; dy = u.vy; }
-    if (dx || dy) ud.pivot.rotation.y = Math.atan2(dx, dy);
+    if (u._atkT > 0 && u.atk === 'spin') {
+      ud.pivot.rotation.y += (game._dt || 0.016) * (Math.PI * 2 / 0.30);
+    } else {
+      let dx = 0, dy = 0;
+      if (u.target) { dx = u.target.x - u.x; dy = u.target.y - u.y; }
+      else if (moving) { dx = u.vx; dy = u.vy; }
+      if (dx || dy) ud.pivot.rotation.y = Math.atan2(dx, dy);
+    }
   }
   // 部署闪烁 / 眩晕发光
   const body = ud.body;
@@ -1616,6 +1794,121 @@ function updateUnitMesh(m, u) {
   const ratio = Math.max(0, u.hp / u.maxHp);
   const fg = ud.fg, barW = ud.barW;
   if (fg) { fg.scale.x = ratio; fg.position.x = -barW/2 + (barW*ratio)/2; }
+}
+// 按 atk 分类型的攻击姿态（p: 0→1 攻击进程）
+function animateAttack(ud, u, p) {
+  const R = ud.r || 12;
+  const lunge = Math.sin(p * Math.PI);
+  const pivot = ud.pivot;
+  if (pivot) pivot.position.z = 0;
+  switch (u.atk) {
+    case 'sword': case 'bigslash': {
+      const a = p < 0.45 ? -2.4 * (p / 0.45) : -2.4 + (p - 0.45) / 0.55 * 3.4;
+      if (ud.armR) ud.armR.rotation.x = a;
+      if (pivot) pivot.position.z = lunge * R * 0.5;
+      break; }
+    case 'stab': {
+      const a = p < 0.35 ? -0.6 * (p / 0.35) : (p < 0.65 ? -0.6 + (p - 0.35) / 0.3 * 1.6 : -0.6 + 1.6 * (1 - (p - 0.65) / 0.35));
+      if (ud.armR) ud.armR.rotation.x = a;
+      if (pivot) pivot.position.z = lunge * R * 0.5;
+      break; }
+    case 'punch': {
+      if (ud.armR) ud.armR.rotation.x = -0.3 + lunge * 1.3;
+      if (ud.armL) ud.armL.rotation.x = -0.3 + lunge * 1.3;
+      if (pivot) pivot.position.z = lunge * R * 0.6;
+      break; }
+    case 'spin': {
+      if (pivot) pivot.position.y = (ud.riderLift || 0) - R * 0.1 * lunge;
+      break; }
+    case 'hammer': {
+      const a = p < 0.5 ? -2.6 * (p / 0.5) : -2.6 + (p - 0.5) / 0.5 * 3.6;
+      if (ud.armR) ud.armR.rotation.x = a;
+      if (pivot) pivot.position.z = lunge * R * 0.3;
+      break; }
+    case 'arrow': case 'arrow_long': {
+      const draw = p < 0.4 ? -(p / 0.4) * 0.9 : -0.9 * (1 - (p - 0.4) / 0.6);
+      if (ud.armR) ud.armR.rotation.x = draw;
+      break; }
+    case 'spear': {
+      const a = p < 0.35 ? -0.4 * (p / 0.35) : (p < 0.6 ? -0.4 + (p - 0.35) / 0.25 * 1.4 : -0.4 + 1.4 * (1 - (p - 0.6) / 0.4));
+      if (ud.armR) ud.armR.rotation.x = a;
+      if (pivot) pivot.position.z = lunge * R * 0.4;
+      break; }
+    case 'shot': {
+      if (pivot) pivot.position.z = -lunge * R * 0.35;
+      if (ud.barrel) ud.barrel.position.z = (ud.barrel.userData.baseZ || 0) - lunge * R * 0.25;
+      break; }
+    case 'fireball': {
+      if (ud.armR) ud.armR.rotation.x = -1.4 * lunge - 0.2;
+      if (ud.staffOrb) { const s = 1 + lunge * 0.9; ud.staffOrb.scale.set(s, s, s); }
+      if (pivot) pivot.position.z = lunge * R * 0.2;
+      break; }
+    case 'breath': {
+      if (ud.dragonHead) ud.dragonHead.rotation.x = -0.5 * lunge;
+      if (ud.jaw) ud.jaw.rotation.x = 0.6 * lunge;
+      break; }
+    case 'claw': {
+      if (ud.armR) ud.armR.rotation.x = -0.4 + lunge * 1.0;
+      if (ud.armL) ud.armL.rotation.x = -0.4 + lunge * 1.0;
+      break; }
+    case 'beam': {
+      if (ud.coil) { const s = 1 + lunge * 0.3; ud.coil.scale.set(s, 1, s); }
+      break; }
+    case 'ice': {
+      if (ud.crystal) { const s = 1 + Math.sin(p * Math.PI) * 0.25; ud.crystal.scale.set(s, 1, s); }
+      break; }
+    case 'lob': {
+      const a = p < 0.5 ? -2.2 * (p / 0.5) : -2.2 + (p - 0.5) / 0.5 * 2.6;
+      if (ud.armR) ud.armR.rotation.x = a;
+      break; }
+    case 'magic': {
+      if (ud.body) { const s = 1 + lunge * 0.4; ud.body.scale.set(s, s, s); }
+      break; }
+    case 'none': default: break;
+  }
+}
+// 按 atk 分类型的攻击特效
+function spawnAttackFx(u, tgt) {
+  const ang = Math.atan2(tgt.y - u.y, tgt.x - u.x);
+  switch (u.atk) {
+    case 'sword': case 'bigslash': case 'stab': case 'hammer': case 'spear':
+      game.effects.push({ type: 'slash', x: u.x, y: u.y, ang, life: 0.18, maxLife: 0.18, color: u.color });
+      break;
+    case 'spin':
+      game.effects.push({ type: 'spinring', x: u.x, y: u.y, life: 0.28, maxLife: 0.28, color: u.color, radius: (u.splash || 40) });
+      break;
+    case 'punch':
+      game.effects.push({ type: 'punch', x: tgt.x, y: tgt.y, life: 0.22, maxLife: 0.22, color: u.color, radius: u.radius * 1.6 });
+      break;
+    case 'arrow': case 'arrow_long':
+      game.effects.push({ type: 'arrow', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.18, maxLife: 0.18, color: u.color });
+      break;
+    case 'shot':
+      game.effects.push({ type: 'bolt', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.16, maxLife: 0.16, color: (u.model === 'cannon' || u.model === 'royalgiant') ? '#9aa3ad' : u.color });
+      break;
+    case 'fireball':
+      game.effects.push({ type: 'orb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.20, maxLife: 0.20, color: '#ff7a1a' });
+      break;
+    case 'breath':
+      game.effects.push({ type: 'breath', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.22, maxLife: 0.22, color: '#ff8a3d', radius: (u.splash || 22) });
+      break;
+    case 'claw':
+      game.effects.push({ type: 'bolt', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.14, maxLife: 0.14, color: '#7a5fa6' });
+      break;
+    case 'beam':
+      game.effects.push({ type: 'beam', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.18, maxLife: 0.18, color: '#7fe3ff' });
+      break;
+    case 'ice':
+      game.effects.push({ type: 'ice', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.20, maxLife: 0.20, color: '#9fe8ff' });
+      break;
+    case 'lob':
+      game.effects.push({ type: 'bomb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.30, maxLife: 0.30, color: '#2b2b2b' });
+      break;
+    case 'magic':
+      game.effects.push({ type: 'orb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.22, maxLife: 0.22, color: '#ff5722' });
+      break;
+    case 'none': default: break;
+  }
 }
 function updateDeployZone() {
   if (!deployZoneMesh) return;
@@ -1675,6 +1968,93 @@ function updateEffectMeshes() {
       ring.rotation.x = -Math.PI/2; ring.position.set(x, 4, z); fxGroup.add(ring);
       const burst = new THREE.Mesh(new THREE.SphereGeometry(rad*0.5, 16, 12), new THREE.MeshBasicMaterial({color:0xffe680, transparent:true, opacity:p*0.7}));
       burst.position.set(x, 10 + 30*(1-p), z); fxGroup.add(burst);
+    } else if (e.type === 'spinring') {
+      const rad = (e.radius || 40) * (1 + (1 - pct) * 0.5);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.55, rad, 30), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:pct*0.85, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 6, z); fxGroup.add(ring);
+    } else if (e.type === 'punch') {
+      const rad = (e.radius || 20) * (2 - pct);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.6, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:pct*0.8, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 4, z); fxGroup.add(ring);
+      const fl = new THREE.Mesh(new THREE.SphereGeometry(5, 10, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:pct}));
+      fl.position.set(x, 10, z); fxGroup.add(fl);
+    } else if (e.type === 'arrow') {
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const ax = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.2, 14), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.95}));
+      ax.rotation.y = Math.atan2(e.tx - e.sx, e.ty - e.sy);
+      ax.position.set(bx, 10, bz); fxGroup.add(ax);
+    } else if (e.type === 'orb') {
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const o = new THREE.Mesh(new THREE.SphereGeometry(5.5, 12, 10), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.95}));
+      o.position.set(bx, 14, bz); fxGroup.add(o);
+      const gl = new THREE.Mesh(new THREE.SphereGeometry(9, 12, 10), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.3}));
+      gl.position.set(bx, 14, bz); fxGroup.add(gl);
+    } else if (e.type === 'breath') {
+      for (let k = 1; k <= 4; k++) {
+        const f = k / 5;
+        const px = (e.sx + (e.tx - e.sx) * f) - CENTER_X;
+        const pz = (e.sy + (e.ty - e.sy) * f) - 340;
+        const s = new THREE.Mesh(new THREE.SphereGeometry((e.radius||22) * (1 - f * 0.5), 10, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:pct*0.8}));
+        s.position.set(px, 10, pz); fxGroup.add(s);
+      }
+    } else if (e.type === 'beam') {
+      const dx = e.tx - e.sx, dz = e.ty - e.sy;
+      const len = Math.hypot(dx, dz) || 1;
+      const mx = (e.sx + e.tx) / 2 - CENTER_X, mz = (e.sy + e.ty) / 2 - 340;
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, len, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.5 + 0.5*Math.random()}));
+      beam.position.set(mx, 14, mz);
+      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(dx,0,dz).normalize());
+      fxGroup.add(beam);
+    } else if (e.type === 'ice') {
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const sh = new THREE.Mesh(new THREE.ConeGeometry(3.5, 12, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.9}));
+      sh.position.set(bx, 12, bz);
+      sh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(e.tx-e.sx,0,e.ty-e.sy).normalize());
+      fxGroup.add(sh);
+      if (p > 0.8) { const rad = (e.radius||20)*(2-(p-0.8)/0.2); const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.6, rad, 20), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.7, side:THREE.DoubleSide})); ring.rotation.x = -Math.PI/2; ring.position.set(e.tx - CENTER_X, 3, e.ty - 340); fxGroup.add(ring); }
+    } else if (e.type === 'bomb') {
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const by = 14 + Math.sin(p*Math.PI) * 22;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const b = new THREE.Mesh(new THREE.SphereGeometry(4.5, 10, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.95}));
+      b.position.set(bx, by, bz); fxGroup.add(b);
+      if (p > 0.85) { const fl = new THREE.Mesh(new THREE.SphereGeometry(8, 10, 8), new THREE.MeshBasicMaterial({color:0xff7a1a, transparent:true, opacity:0.7})); fl.position.set(e.tx-CENTER_X, 10, e.ty-340); fxGroup.add(fl); }
+    } else if (e.type === 'rain') {
+      const rad = e.radius || 60;
+      for (let k = 0; k < 10; k++) {
+        const ang = k / 10 * Math.PI * 2;
+        const off = rad * (0.2 + 0.8 * ((k * 0.37) % 1));
+        const px = x + Math.cos(ang) * off;
+        const pz = z + Math.sin(ang) * off;
+        const yy = 8 + (1 - pct) * 40;
+        const a = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 12), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.8}));
+        a.position.set(px, yy, pz); fxGroup.add(a);
+      }
+    } else if (e.type === 'chain') {
+      const rad = e.radius || 60;
+      for (let k = 0; k < 3; k++) {
+        const ang = k / 3 * Math.PI * 2 + 0.5;
+        const off = rad * (0.25 + k * 0.22);
+        const px = x + Math.cos(ang) * off;
+        const pz = z + Math.sin(ang) * off;
+        const col = new THREE.Mesh(new THREE.BoxGeometry(2.4, 46, 2.4), new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff27a), transparent:true, opacity:0.6 + 0.4*Math.random()}));
+        col.position.set(px, 25, pz); fxGroup.add(col);
+      }
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff27a), transparent:true, opacity:pct*0.7, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 3, z); fxGroup.add(ring);
+    } else if (e.type === 'barrel') {
+      const yy = 6 + pct * 40;
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 16, 12), new THREE.MeshBasicMaterial({color:0x8d6e63}));
+      bar.position.set(x, yy, z); bar.rotation.z = (1 - pct) * 6; fxGroup.add(bar);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(20, 30, 20), new THREE.MeshBasicMaterial({color:0xc8a06a, transparent:true, opacity:(1-pct)*0.8, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
     }
     if (mesh) fxGroup.add(mesh);
   }
