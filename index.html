@@ -136,11 +136,14 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
 <script>
 // ==================== 配置常量 ====================
 const CW = 400, CH = 680;
-const RIVER_TOP = 320, RIVER_BOT = 360;
-const BRIDGE_L = { x: 90, y: 340 };
-const BRIDGE_R = { x: 310, y: 340 };
-const BRIDGE_TOL = 22;   // 过桥容差（单位中心距桥中心小于此值才允许过河）
-const BRIDGE_HALF = 22;  // 视觉桥半宽
+// ===== 皇室战争真实地图比例（18×32 瓦片网格）=====
+// 换算：X 1格 = 400/18 ≈ 22.2px，Y 1格 = 680/32 = 21.25px
+// 河流居中 2 瓦片(中心 y=340)；双桥各 4 瓦片宽，对齐两路公主塔(瓦片x=4.5/13.5)
+const RIVER_TOP = 319, RIVER_BOT = 361;   // 河流宽 2 格(≈42px)
+const BRIDGE_L = { x: 100, y: 340 };       // 左桥：左路中心
+const BRIDGE_R = { x: 300, y: 340 };       // 右桥：右路中心
+const BRIDGE_TOL = 44;   // 过桥容差(≈桥半宽 4格/2)
+const BRIDGE_HALF = 44;  // 视觉桥半宽(CR 桥 4 格宽)
 const TOWER_DEFS = {
   king: { hp: 2568, damage: 116, range: 154, atkSpeed: 1.0, w: 70, h: 55 },
   princess: { hp: 2512, damage: 161, range: 165, atkSpeed: 0.8, w: 50, h: 45 }
@@ -304,12 +307,13 @@ function createGame(difficulty, playerDeckCards) {
 
 function createTowers() {
   return [
-    { id:'aKing', type:'king', owner:'ai', x:200, y:55, hp:3500, maxHp:3500, w:70, h:55, atkCD:0 },
-    { id:'aLP', type:'princess', owner:'ai', x:90, y:170, hp:2500, maxHp:2500, w:50, h:45, atkCD:0 },
-    { id:'aRP', type:'princess', owner:'ai', x:310, y:170, hp:2500, maxHp:2500, w:50, h:45, atkCD:0 },
-    { id:'pLP', type:'princess', owner:'player', x:90, y:510, hp:2500, maxHp:2500, w:50, h:45, atkCD:0 },
-    { id:'pRP', type:'princess', owner:'player', x:310, y:510, hp:2500, maxHp:2500, w:50, h:45, atkCD:0 },
-    { id:'pKing', type:'king', owner:'player', x:200, y:625, hp:3500, maxHp:3500, w:70, h:55, atkCD:0 }
+    // 皇室战争布局：公主塔距侧边 2 格(x≈56/344)、贴河边(距河中心 2 格)；国王塔居中靠后(距底边 2 格)
+    { id:'aKing', type:'king', owner:'ai', x:200, y:42, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 },
+    { id:'aLP', type:'princess', owner:'ai', x:56, y:298, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'aRP', type:'princess', owner:'ai', x:344, y:298, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pLP', type:'princess', owner:'player', x:56, y:382, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pRP', type:'princess', owner:'player', x:344, y:382, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'pKing', type:'king', owner:'player', x:200, y:638, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 }
   ];
 }
 
@@ -357,15 +361,15 @@ function canDeploy(owner, x, y, cardKey) {
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
     // 摧毁公主塔后只能延伸到公主塔位置，不能直接下到国王塔底
-    if (x < 200 && aLP && aLP.hp <= 0 && y >= 170 && y <= RIVER_TOP) return true;
-    if (x >= 200 && aRP && aRP.hp <= 0 && y >= 170 && y <= RIVER_TOP) return true;
+    if (x < 200 && aLP && aLP.hp <= 0 && y >= 298 && y <= RIVER_TOP) return true;
+    if (x >= 200 && aRP && aRP.hp <= 0 && y >= 298 && y <= RIVER_TOP) return true;
     return false;
   } else {
     if (y >= 5 && y <= RIVER_TOP) return true;
     const pLP = game.towers.find(t => t.id === 'pLP');
     const pRP = game.towers.find(t => t.id === 'pRP');
-    if (x < 200 && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= 510) return true;
-    if (x >= 200 && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= 510) return true;
+    if (x < 200 && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= 382) return true;
+    if (x >= 200 && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= 382) return true;
     return false;
   }
 }
@@ -931,7 +935,7 @@ function updateAI(dt) {
   // ===== 1.5 国王塔紧急防守 =====
   const aiKing = game.towers.find(t => t.id === 'aKing' && t.hp > 0);
   if (aiKing) {
-    const kingAttackers = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < 170);
+    const kingAttackers = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < 298);
     if (kingAttackers.length > 0) {
       const playable = ai.hand.filter(c => {
         const def = CARD_DEFS[c];
@@ -968,7 +972,7 @@ function updateAI(dt) {
       const leftThreat = enemyUnits.filter(u => u.x < 200).reduce((s,u) => s + u.hp, 0);
       const rightThreat = enemyUnits.filter(u => u.x >= 200).reduce((s,u) => s + u.hp, 0);
       const defendLeft = leftThreat >= rightThreat;
-      const defendX = defendLeft ? 90 : 310;
+      const defendX = defendLeft ? 100 : 300;
 
       // 根据威胁类型选防守卡
     const hasTank = enemyUnits.some(u => u.hp > 500);
@@ -1027,7 +1031,7 @@ function updateAI(dt) {
     });
     if (playable.length === 0) return;
 
-    const laneX = ai.attackLane === 'left' ? 90 : 310;
+    const laneX = ai.attackLane === 'left' ? 100 : 300;
 
     // 策略A：有巨人/野猪/皇家巨人在手且圣水充裕，先出攻城单位
     const giantInHand = playable.find(c => c === 'giant');
@@ -1246,17 +1250,17 @@ function buildArena() {
   const base = new THREE.Mesh(new THREE.BoxGeometry(408, 4, 688), new THREE.MeshStandardMaterial({color:0x1a1a28, roughness:1}));
   base.position.set(0, -2, 0);
   arena.add(base);
-  // 上场(AI侧)红棕、下场(玩家侧)深蓝
-  arena.add(makePlane(400, 320, 0, -180, 0x7a4242, 0.5));
-  arena.add(makePlane(400, 320, 0,  180, 0x21456e, 0.5));
+  // 上场(AI侧)红棕、下场(玩家侧)深蓝，按真实河流位置划分上下半场
+  arena.add(makePlane(400, RIVER_TOP, 0, -180.5, 0x7a4242, 0.5));
+  arena.add(makePlane(400, CH - RIVER_BOT, 0, 180.5, 0x21456e, 0.5));
   // 河流：中间青色带，明显区别于两侧，且略高于场地区域避免z冲突
-  arena.add(makePlane(400, 40, 0, 0, 0x39c6e8, 0.9));
+  arena.add(makePlane(400, RIVER_BOT - RIVER_TOP, 0, 0, 0x39c6e8, 0.9));
   // 河流上下两条深色岸线，让河道边界更清晰
-  arena.add(makePlane(400, 3, 0, -20, 0x15708c, 1.0));
-  arena.add(makePlane(400, 3, 0,  20, 0x15708c, 1.0));
-  // 桥：木块色，叠在河流之上
-  arena.add(makePlane(BRIDGE_HALF*2, 40, BRIDGE_L.x - 200, 0, 0xc0925a, 1.1));
-  arena.add(makePlane(BRIDGE_HALF*2, 40, BRIDGE_R.x - 200, 0, 0xc0925a, 1.1));
+  arena.add(makePlane(400, 3, 0, -(RIVER_BOT - RIVER_TOP)/2, 0x15708c, 1.0));
+  arena.add(makePlane(400, 3, 0,  (RIVER_BOT - RIVER_TOP)/2, 0x15708c, 1.0));
+  // 桥：木块色，4 格宽，叠在河流之上对齐两路公主塔
+  arena.add(makePlane(BRIDGE_HALF*2, RIVER_BOT - RIVER_TOP, BRIDGE_L.x - 200, 0, 0xc0925a, 1.1));
+  arena.add(makePlane(BRIDGE_HALF*2, RIVER_BOT - RIVER_TOP, BRIDGE_R.x - 200, 0, 0xc0925a, 1.1));
   scene.add(arena);
 }
 function makePlane(w, d, x, z, color, y) {
@@ -1442,7 +1446,7 @@ function updateDeployZone() {
     let zMin = 20, zMax = 340;
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
-    if ((aLP && aLP.hp <= 0) || (aRP && aRP.hp <= 0)) zMin = 170 - 340;
+    if ((aLP && aLP.hp <= 0) || (aRP && aRP.hp <= 0)) zMin = 298 - 340;
     const cz = (zMin + zMax)/2, depth = zMax - zMin;
     deployZoneMesh.scale.set(1, depth/320, 1);
     deployZoneMesh.position.set(0, 1.5, cz);
