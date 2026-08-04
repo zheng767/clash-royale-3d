@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clash Royale - 皇室战争 v8</title>
+<title>Clash Royale - 皇室战争 v9</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -155,7 +155,7 @@ const PRINCESS_Y_P = 25.5*TILE;     // 玩家公主塔 Y（离河中心 9.5 格�
 const KING_Y_AI = 3*TILE;           // AI 国王塔 Y（离河中心 13 格）
 const KING_Y_P = 29*TILE;           // 玩家国王塔 Y（离河中心 13 格）
 const TOWER_DEFS = {
-  king: { hp: 2568, damage: 116, range: 149, atkSpeed: 1.0, w: 85, h: 85 },
+  king: { hp: 4824, damage: 109, range: 149, atkSpeed: 1.0, w: 85, h: 85 },
   princess: { hp: 3052, damage: 109, range: 159, atkSpeed: 0.8, w: 64, h: 64 }
 };
 
@@ -163,7 +163,7 @@ const TOWER_DEFS = {
 const CARD_DEFS = {
   // ===== 皇室战争 11 级数据（来源：CR 官方百科 / clasher.us / royaleapi）=====
   // 移速换算：CR 速度档位内部数值 30/45/60/90/120（VerySlow/Slow/Medium/Fast/VeryFast）
-  //   对应游戏内 0.5/0.75/1.0/1.5/2.0 格/秒（CR 官方速度档位定义），统一 ×21.25px/格（与塔/射程同 Y 轴换算；竞技场 400×680 非正方形，X 轴为 22.22px/格，存在约 4.5% 各向异性）
+  //   对应游戏内 0.5/0.75/1.0/1.5/2.0 格/秒（CR 官方速度档位定义），统一 ×21.25px/格（与塔/射程同基准；竞技场 18×32 正方形瓦片，X/Y 同系数已消除各向异性）
   //   部署时间统一 1 秒（CR 标准）
   knight:     { name:'骑士', cost:3, hp:1766, dmg:202, range:26, spd:21.25, atkSpd:1.2, tgt:'ground', count:1, color:'#5B6EE1', icon:'剑', radius:13, deployTime:1.0 },
   archer:     { name:'弓箭手', cost:3, hp:304, dmg:112, range:106, spd:21.25, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:9, deployTime:1.0 },
@@ -320,12 +320,12 @@ function createGame(difficulty, playerDeckCards) {
 
 function createTowers() {
   return [
-    { id:'aKing', type:'king', owner:'ai', x:CENTER_X, y:KING_Y_AI, hp:2568, maxHp:2568, w:85, h:85, atkCD:0, active:false },
+    { id:'aKing', type:'king', owner:'ai', x:CENTER_X, y:KING_Y_AI, hp:4824, maxHp:4824, w:85, h:85, atkCD:0, active:false },
     { id:'aLP', type:'princess', owner:'ai', x:PRINCESS_X_L, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
     { id:'aRP', type:'princess', owner:'ai', x:PRINCESS_X_R, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
     { id:'pLP', type:'princess', owner:'player', x:PRINCESS_X_L, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
     { id:'pRP', type:'princess', owner:'player', x:PRINCESS_X_R, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
-    { id:'pKing', type:'king', owner:'player', x:CENTER_X, y:KING_Y_P, hp:2568, maxHp:2568, w:85, h:85, atkCD:0, active:false }
+    { id:'pKing', type:'king', owner:'player', x:CENTER_X, y:KING_Y_P, hp:4824, maxHp:4824, w:85, h:85, atkCD:0, active:false }
   ];
 }
 
