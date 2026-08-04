@@ -1399,6 +1399,10 @@ function render() {
     else { st.style.display='none'; }
   }
   renderer.render(scene, camera);
+  // 诊断：每帧刷新单位/网格计数（左下角蓝底绿字面板）
+  const uc = game ? game.units.filter(u => !u.dead && u.hp > 0).length : 0;
+  const mc = unitGroup ? unitGroup.children.length : 0;
+  _showDbg('单位:' + uc + ' 网格:' + mc + ' | 塔Mesh:' + (towerGroup?towerGroup.children.length:0) + ' | ' + (game?'state:'+game.state:'no-game'));
 }
 function updateTowerMesh(t) {
   if (!t.__mesh) {
@@ -1481,10 +1485,15 @@ function updateUnitMeshes() {
     if (!m) {
       // 防御：单个单位建模失败绝不许拖垮整个渲染循环（否则后续所有卡牌都不再显示）
       try { m = makeUnitMesh(u); unitGroup.add(m); unitMeshMap.set(u, m); }
-      catch (err) { if (!u._meshErr) { u._meshErr = true; console.error('单位建模失败 [' + (u.model || '?') + ']:', err); } continue; }
+      catch (err) {
+        if (!u._meshErr) { u._meshErr = true; console.error('单位建模失败 [' + (u.model || '?') + ']:', err); _showDbg('建模失败: ' + (u.model||'?') + ' - ' + err.message); }
+        continue;
+      }
     }
     try { updateUnitMesh(m, u); }
-    catch (err) { if (!u._animErr) { u._animErr = true; console.error('单位动画失败 [' + (u.model || '?') + ']:', err); } }
+    catch (err) {
+      if (!u._animErr) { u._animErr = true; console.error('单位动画失败 [' + (u.model || '?') + ']:', err); _showDbg('动画失败: ' + (u.model||'?') + ' - ' + err.message); }
+    }
     if (m && u.healAura && u.healRadius && m.userData.healFill) {
       const uwx = u.x - CENTER_X, uwz = u.y - 340;
       const hover = hoverWorld && Math.hypot(hoverWorld.x - uwx, hoverWorld.y - uwz) <= u.healRadius;
@@ -1492,6 +1501,21 @@ function updateUnitMeshes() {
       m.userData.healRing.material.opacity = hover ? 0.85 : 0.4;
     }
   }
+}
+// 诊断面板：把建模/动画错误和关键状态显示到屏幕上（无需 DevTools）
+let _dbgLines = [];
+function _showDbg(msg) {
+  _dbgLines.push(msg);
+  if (_dbgLines.length > 8) _dbgLines.shift();
+  let box = document.getElementById('dbg-panel');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'dbg-panel';
+    box.style.cssText = 'position:absolute;bottom:8px;left:8px;z-index:9999;background:rgba(0,0,180,0.88);color:#0f0;font:bold 11px/1.5 monospace;padding:6px 10px;border-radius:6px;white-space:pre;pointer-events:none;';
+    const wrap = document.getElementById('game-wrap');
+    if (wrap) wrap.appendChild(box);
+  }
+  box.textContent = _dbgLines.join('\n');
 }
 function makeNumberSprite(color) {
   const cv = document.createElement('canvas');
