@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clash Royale - 皇室战争 v4</title>
+<title>Clash Royale - 皇室战争 v5</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -136,59 +136,60 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
 <script>
 // ==================== 配置常量 ====================
 const CW = 400, CH = 680;
-// ===== 皇室战争真实地图比例（18×32 瓦片网格）=====
-// 换算：X 1格 = 400/18 ≈ 22.2px，Y 1格 = 680/32 = 21.25px
-// 河流居中 2 瓦片(中心 y=340)；双桥各 4 瓦片宽，对齐两路公主塔
-// CR 源码真实坐标(LogicBattle.cs)：18×32格，河中心 y=16格，公主塔 y=6.5/25.5格，国王塔 y=3/29格
-// 映射后：公主塔离河 9.5 格、国王塔离河 13 格、公主塔↔国王塔 3.5 格；桥与公主塔同列
-// 与 2D 版完全一致的地图坐标
-const RIVER_TOP = 320, RIVER_BOT = 360;   // 河流宽 40px，中心 y=340
-const BRIDGE_L = { x: 90, y: 340 };       // 左桥：对齐左路公主塔
-const BRIDGE_R = { x: 310, y: 340 };       // 右桥：对齐右路公主塔
-const BRIDGE_TOL = 22;   // 过桥容差
-const BRIDGE_HALF = 22;  // 视觉桥半宽
-// 与 2D 版完全一致的坐标（已验证距离正确）
-const PRINCESS_Y_AI = 170;     // AI 公主塔 Y（距河中心 170px）
-const PRINCESS_Y_P = 510;      // 玩家公主塔 Y（距河中心 170px）
-const KING_Y_AI = 55;          // AI 国王塔 Y
-const KING_Y_P = 625;          // 玩家国王塔 Y
+// ===== 皇室战争真实地图比例（18×32 瓦片网格，坐标取自 CR 真实布局）=====
+// 换算：X 1格 = 400/18 ≈ 22.22px，Y 1格 = 680/32 = 21.25px；河中心 y=340(=16格)
+// 河流 2 瓦片宽(中心 y=340)；双桥各 2 瓦片宽，与公主塔同列(x≈25%/75%)
+// CR 坐标(河中心=16格)：公主塔 y=6.5/25.5格(离河 9.5 格)、国王塔 y=3/29格(离河 13 格)
+// 公主塔↔国王塔 3.5 格；桥与公主塔同列。下面常量已严格采用这些 CR 值（非 2D 近似）。
+const RIVER_TOP = 319, RIVER_BOT = 361;   // 河流 2 瓦片 ≈42px，中心 y=340
+const BRIDGE_L = { x: 90, y: 340 };       // 左桥：与左路公主塔同列(≈25%)
+const BRIDGE_R = { x: 310, y: 340 };       // 右桥：与右路公主塔同列(≈75%)
+const BRIDGE_TOL = 22.2;   // 过桥容差(1格)
+const BRIDGE_HALF = 22.2;  // 视觉桥半宽(1格，桥宽2格)
+const PRINCESS_Y_AI = 138;     // AI 公主塔 Y（6.5格，离河中心 9.5 格）
+const PRINCESS_Y_P = 542;      // 玩家公主塔 Y（25.5格，离河中心 9.5 格）
+const KING_Y_AI = 64;          // AI 国王塔 Y（3格，离河中心 13 格）
+const KING_Y_P = 616;          // 玩家国王塔 Y（29格，离河中心 13 格）
 const TOWER_DEFS = {
-  king: { hp: 2568, damage: 116, range: 154, atkSpeed: 1.0, w: 70, h: 55 },
-  princess: { hp: 2512, damage: 161, range: 165, atkSpeed: 0.8, w: 50, h: 45 }
+  king: { hp: 2568, damage: 116, range: 149, atkSpeed: 1.0, w: 70, h: 55 },
+  princess: { hp: 3052, damage: 109, range: 159, atkSpeed: 0.8, w: 50, h: 45 }
 };
 
 // ==================== 卡牌定义 ====================
 const CARD_DEFS = {
-  // ===== 皇室战争 11 级数据（来源：CR 官方百科；射程 1格≈22px，移速 CR速度×0.25 换算为游戏单位） =====
-  knight:     { name:'骑士', cost:3, hp:1666, dmg:202, range:26, spd:15, atkSpd:1.2, tgt:'ground', count:1, color:'#5B6EE1', icon:'剑', radius:13, deployTime:0.8 },
-  archer:     { name:'弓箭手', cost:3, hp:304, dmg:112, range:110, spd:15, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:9, deployTime:0.6 },
-  goblin:     { name:'哥布林', cost:2, hp:202, dmg:120, range:11, spd:30, atkSpd:1.1, tgt:'ground', count:4, color:'#7CB342', icon:'哥', radius:8, deployTime:0.5 },
-  giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:11, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:17, deployTime:1.2 },
-  bomber:     { name:'炸弹人', cost:3, hp:304, dmg:225, range:99, spd:15, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:10, splash:33, deployTime:0.7 },
-  minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:22, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:12, deployTime:0.9 },
-  skeletons:  { name:'骷髅兵', cost:1, hp:81, dmg:81, range:11, spd:22, atkSpd:1.1, tgt:'ground', count:3, color:'#BDBDBD', icon:'骷', radius:7, deployTime:0.4 },
+  // ===== 皇室战争 11 级数据（来源：CR 官方百科）=====
+  // 移速换算：CR 真实移速(格/秒) × 22.22px/格 → 游戏 px/秒
+  //   CR 数据文件实测：慢1.5 / 中2.0 / 快3.0 / 极快4.0 格/秒
+  //   部署时间统一 1 秒（CR 标准）
+  knight:     { name:'骑士', cost:3, hp:1666, dmg:202, range:26, spd:44.4, atkSpd:1.2, tgt:'ground', count:1, color:'#5B6EE1', icon:'剑', radius:13, deployTime:1.0 },
+  archer:     { name:'弓箭手', cost:3, hp:304, dmg:112, range:110, spd:66.7, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:9, deployTime:1.0 },
+  goblin:     { name:'哥布林', cost:2, hp:202, dmg:120, range:11, spd:88.9, atkSpd:1.1, tgt:'ground', count:4, color:'#7CB342', icon:'哥', radius:8, deployTime:1.0 },
+  giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:33.3, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:17, deployTime:1.0 },
+  bomber:     { name:'炸弹人', cost:3, hp:304, dmg:225, range:99, spd:44.4, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:10, splash:33, deployTime:1.0 },
+  minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:44.4, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:12, deployTime:1.0 },
+  skeletons:  { name:'骷髅兵', cost:1, hp:81, dmg:81, range:11, spd:66.7, atkSpd:1.1, tgt:'ground', count:3, color:'#BDBDBD', icon:'骷', radius:7, deployTime:1.0 },
   fireball:   { name:'火球术', cost:4, type:'spell', dmg:688, radius:55, color:'#FF6B35', icon:'火', delay:1.0 },
-  musketeer:  { name:'火枪手', cost:4, hp:721, dmg:217, range:132, spd:15, atkSpd:1.0, tgt:'any', count:1, color:'#E91E63', icon:'枪', radius:10, deployTime:0.8 },
-  valkyrie:   { name:'女武神', cost:4, hp:1907, dmg:266, range:26, spd:15, atkSpd:1.5, tgt:'ground', count:1, color:'#FF6F00', icon:'武', radius:13, splash:44, selfSplash:true, deployTime:0.9 },
-  barbarians: { name:'野蛮人', cost:5, hp:691, dmg:191, range:15, spd:15, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:0.7 },
-  hogrider:   { name:'野猪骑士', cost:4, hp:1697, dmg:317, range:18, spd:30, atkSpd:1.6, tgt:'building', count:1, color:'#F57C00', icon:'猪', radius:13, deployTime:0.8, canJumpRiver:true },
-  wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:121, spd:15, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:10, splash:22, deployTime:0.8 },
+  musketeer:  { name:'火枪手', cost:4, hp:721, dmg:217, range:132, spd:44.4, atkSpd:1.0, tgt:'any', count:1, color:'#E91E63', icon:'枪', radius:10, deployTime:1.0 },
+  valkyrie:   { name:'女武神', cost:4, hp:1907, dmg:266, range:26, spd:66.7, atkSpd:1.5, tgt:'ground', count:1, color:'#FF6F00', icon:'武', radius:13, splash:44, selfSplash:true, deployTime:1.0 },
+  barbarians: { name:'野蛮人', cost:5, hp:691, dmg:191, range:15, spd:44.4, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:1.0 },
+  hogrider:   { name:'野猪骑士', cost:4, hp:1697, dmg:317, range:18, spd:66.7, atkSpd:1.6, tgt:'building', count:1, color:'#F57C00', icon:'猪', radius:13, deployTime:1.0, canJumpRiver:true },
+  wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:121, spd:44.4, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:10, splash:22, deployTime:1.0 },
   arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:243, radius:77, color:'#42A5F5', icon:'箭', delay:0.4 },
-  pekka:      { name:'皮卡超人', cost:7, hp:3760, dmg:842, range:26, spd:11, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:15, deployTime:1.0 },
-  skarmy:     { name:'骷髅军团', cost:3, hp:67, dmg:67, range:11, spd:22, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:6, deployTime:0.5 },
+  pekka:      { name:'皮卡超人', cost:7, hp:3760, dmg:842, range:26, spd:44.4, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:15, deployTime:1.0 },
+  skarmy:     { name:'骷髅军团', cost:3, hp:67, dmg:67, range:11, spd:66.7, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:6, deployTime:1.0 },
   rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1484, radius:44, color:'#FF1744', icon:'炸', delay:2.0 },
-  royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:132, spd:11, atkSpd:1.8, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:15, deployTime:1.0 },
+  royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:132, spd:33.3, atkSpd:1.8, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:15, deployTime:1.0 },
   lightning:  { name:'雷电法术', cost:2, type:'spell', dmg:1057, radius:77, color:'#FFEB3B', icon:'雷', delay:1.2, stun:0.5 },
-  darkprince: { name:'黑暗王子', cost:4, hp:1240, dmg:248, range:26, spd:15, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:13, splash:22, deployTime:0.9, canCharge:true, chargeMaxSpd:30, chargeAccel:70, chargeBonus:2.0 },
-  princess:   { name:'公主', cost:3, hp:216, dmg:139, range:198, spd:15, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:10, splash:22, deployTime:0.6 },
+  darkprince: { name:'黑暗王子', cost:4, hp:1240, dmg:248, range:26, spd:44.4, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:13, splash:22, deployTime:1.0, canCharge:true, chargeMaxSpd:88.9, chargeAccel:150, chargeBonus:2.0 },
+  princess:   { name:'公主', cost:3, hp:216, dmg:139, range:198, spd:44.4, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:10, splash:22, deployTime:1.0 },
   cannon:     { name:'加农炮', cost:3, hp:824, dmg:212, range:121, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#607D8B', icon:'炮', radius:14, deployTime:1.0, isBuilding:true, decay:30 },
   tesla:      { name:'电磁塔', cost:4, hp:1152, dmg:220, range:121, spd:0, atkSpd:1.1, tgt:'any', count:1, color:'#03A9F4', icon:'磁', radius:14, deployTime:1.0, isBuilding:true, decay:25 },
-  minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:55, spd:22, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'灵', radius:7, flying:true, deployTime:0.5 },
-  babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:168, range:77, spd:22, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:14, splash:22, flying:true, deployTime:0.8 },
-  speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:110, spd:30, atkSpd:1.7, tgt:'any', count:3, color:'#9CCC65', icon:'矛', radius:8, deployTime:0.5 },
+  minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:55, spd:88.9, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'灵', radius:7, flying:true, deployTime:1.0 },
+  babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:168, range:77, spd:44.4, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:14, splash:22, flying:true, deployTime:1.0 },
+  speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:110, spd:88.9, atkSpd:1.7, tgt:'any', count:3, color:'#9CCC65', icon:'矛', radius:8, deployTime:1.0 },
   goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:33, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3 },
   // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(L11，2021重做后1费1只)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
-  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:30, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:9, splash:51, deployTime:0.4, suicide:true },
+  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:88.9, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:9, splash:51, deployTime:1.0, suicide:true },
   healtotem: { name:'治疗图腾', cost:4, hp:480, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:14, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132 },
   frosttower: { name:'冰霜塔', cost:4, hp:700, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:14, deployTime:1.0, isBuilding:true, decay:18, slow:true }
 };
@@ -317,10 +318,10 @@ function createTowers() {
   return [
     // 与 2D 版完全一致的塔坐标
     { id:'aKing', type:'king', owner:'ai', x:200, y:KING_Y_AI, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 },
-    { id:'aLP', type:'princess', owner:'ai', x:90, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'aRP', type:'princess', owner:'ai', x:310, y:PRINCESS_Y_AI, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'pLP', type:'princess', owner:'player', x:90, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
-    { id:'pRP', type:'princess', owner:'player', x:310, y:PRINCESS_Y_P, hp:2512, maxHp:2512, w:50, h:45, atkCD:0 },
+    { id:'aLP', type:'princess', owner:'ai', x:90, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
+    { id:'aRP', type:'princess', owner:'ai', x:310, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
+    { id:'pLP', type:'princess', owner:'player', x:90, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
+    { id:'pRP', type:'princess', owner:'player', x:310, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
     { id:'pKing', type:'king', owner:'player', x:200, y:KING_Y_P, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 }
   ];
 }
