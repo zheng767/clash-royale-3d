@@ -155,8 +155,8 @@ const PRINCESS_Y_P = 25.5*TILE;     // 玩家公主塔 Y（离河中心 9.5 格�
 const KING_Y_AI = 3*TILE;           // AI 国王塔 Y（离河中心 13 格）
 const KING_Y_P = 29*TILE;           // 玩家国王塔 Y（离河中心 13 格）
 const TOWER_DEFS = {
-  king: { hp: 4824, damage: 109, range: 149, atkSpeed: 1.0, w: 85, h: 85 },
-  princess: { hp: 3052, damage: 109, range: 159, atkSpeed: 0.8, w: 64, h: 64 }
+  king: { hp: 4824, damage: 109, range: 149, atkSpeed: 1.0, w: 42, h: 42 },
+  princess: { hp: 3052, damage: 109, range: 159, atkSpeed: 0.8, w: 34, h: 34 }
 };
 
 // ==================== 卡牌定义 ====================
@@ -321,12 +321,12 @@ function createGame(difficulty, playerDeckCards) {
 
 function createTowers() {
   return [
-    { id:'aKing', type:'king', owner:'ai', x:CENTER_X, y:KING_Y_AI, hp:4824, maxHp:4824, w:85, h:85, atkCD:0, active:false },
-    { id:'aLP', type:'princess', owner:'ai', x:PRINCESS_X_L, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
-    { id:'aRP', type:'princess', owner:'ai', x:PRINCESS_X_R, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
-    { id:'pLP', type:'princess', owner:'player', x:PRINCESS_X_L, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
-    { id:'pRP', type:'princess', owner:'player', x:PRINCESS_X_R, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:64, h:64, atkCD:0, active:true },
-    { id:'pKing', type:'king', owner:'player', x:CENTER_X, y:KING_Y_P, hp:4824, maxHp:4824, w:85, h:85, atkCD:0, active:false }
+    { id:'aKing', type:'king', owner:'ai', x:CENTER_X, y:KING_Y_AI, hp:4824, maxHp:4824, w:42, h:42, atkCD:0, active:false },
+    { id:'aLP', type:'princess', owner:'ai', x:PRINCESS_X_L, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:34, h:34, atkCD:0, active:true },
+    { id:'aRP', type:'princess', owner:'ai', x:PRINCESS_X_R, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:34, h:34, atkCD:0, active:true },
+    { id:'pLP', type:'princess', owner:'player', x:PRINCESS_X_L, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:34, h:34, atkCD:0, active:true },
+    { id:'pRP', type:'princess', owner:'player', x:PRINCESS_X_R, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:34, h:34, atkCD:0, active:true },
+    { id:'pKing', type:'king', owner:'player', x:CENTER_X, y:KING_Y_P, hp:4824, maxHp:4824, w:42, h:42, atkCD:0, active:false }
   ];
 }
 
@@ -1407,42 +1407,42 @@ function makeTowerMesh(t) {
   const baseCol = t.owner === 'player' ? 0x3a6ea5 : 0xb05a52;
   const stoneCol = t.owner === 'player' ? 0x6fa8d6 : 0xe08a80;
   // 底座
-  const base = new THREE.Mesh(new THREE.BoxGeometry(t.w+14, 12, t.h+14), new THREE.MeshStandardMaterial({color:0x2a2a3a, roughness:1}));
-  base.position.y = 6; g.add(base);
-  // 城堡主楼
+  const base = new THREE.Mesh(new THREE.BoxGeometry(t.w+12, 10, t.h+12), new THREE.MeshStandardMaterial({color:0x2a2a3a, roughness:1}));
+  base.position.y = 5; g.add(base);
+  // 城堡主楼（CR 比例：公主塔约 2 格高、国王塔约 2.6 格高，整体细长）
   const bodyMat = new THREE.MeshStandardMaterial({color: stoneCol, roughness:0.85});
-  const bodyH = isKing ? 70 : 50;
+  const bodyH = isKing ? 56 : 42;
   const body = new THREE.Mesh(new THREE.BoxGeometry(t.w, bodyH, t.h), bodyMat);
-  body.position.y = 12 + bodyH/2; g.add(body);
+  body.position.y = 10 + bodyH/2; g.add(body);
   // 顶部雉堞（4 角小方块）
   const crenMat = new THREE.MeshStandardMaterial({color: baseCol, roughness:0.9});
-  const cz = 12 + bodyH;
-  const off = t.w/2 - 5;
-  for (const dx of [-off, off]) for (const dz of [-(t.h/2-5), t.h/2-5]) {
-    const cr = new THREE.Mesh(new THREE.BoxGeometry(8, 9, 8), crenMat);
-    cr.position.set(dx, cz + 4.5, dz); g.add(cr);
+  const cz = 10 + bodyH;
+  const off = t.w/2 - 4;
+  for (const dx of [-off, off]) for (const dz of [-(t.h/2-4), t.h/2-4]) {
+    const cr = new THREE.Mesh(new THREE.BoxGeometry(7, 8, 7), crenMat);
+    cr.position.set(dx, cz + 4, dz); g.add(cr);
   }
   // 国王塔：王冠（4 尖顶）
   if (isKing) {
     const crownMat = new THREE.MeshStandardMaterial({color:0xffcc33, roughness:0.4, metalness:0.3});
-    for (const dx of [-off, off]) for (const dz of [-(t.h/2-5), t.h/2-5]) {
-      const sp = new THREE.Mesh(new THREE.ConeGeometry(4, 12, 6), crownMat);
-      sp.position.set(dx, cz + 13, dz); g.add(sp);
+    for (const dx of [-off, off]) for (const dz of [-(t.h/2-4), t.h/2-4]) {
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(3.5, 10, 6), crownMat);
+      sp.position.set(dx, cz + 11, dz); g.add(sp);
     }
   }
   // 旗帜
   const flagMat = new THREE.MeshStandardMaterial({color: isKing?0xffcc33:stoneCol, roughness:0.6, side:THREE.DoubleSide});
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 18, 6), new THREE.MeshStandardMaterial({color:0x444444}));
-  pole.position.set(0, cz + (isKing?20:12), 0); g.add(pole);
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(14, 9), flagMat);
-  flag.position.set(7, cz + (isKing?25:17), 0); g.add(flag);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 14, 6), new THREE.MeshStandardMaterial({color:0x444444}));
+  pole.position.set(0, cz + (isKing?16:12), 0); g.add(pole);
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), flagMat);
+  flag.position.set(6, cz + (isKing?20:14), 0); g.add(flag);
   if (isKing) bodyMat.emissive = new THREE.Color(0x332200); // 休眠时暗淡
   // 血条
-  const barW = t.w + 16;
+  const barW = t.w + 12;
   const frame = new THREE.Mesh(new THREE.BoxGeometry(barW + 6, 1.4, 8), new THREE.MeshBasicMaterial({color:0xffffff}));
   const bg = new THREE.Mesh(new THREE.BoxGeometry(barW, 1.4, 6), new THREE.MeshBasicMaterial({color:0x555555}));
   const fg = new THREE.Mesh(new THREE.BoxGeometry(barW, 1.8, 6), new THREE.MeshBasicMaterial({color: t.owner==='player'?0x2ecc71:0xe74c3c}));
-  const barY = cz + (isKing?34:20);
+  const barY = cz + (isKing?30:20);
   frame.position.set(0, barY - 1.2, 0); bg.position.set(0, barY, 0); fg.position.set(0, barY + 1.2, 0);
   g.add(frame); g.add(bg); g.add(fg);
   const num = makeNumberSprite('#ffffff');
