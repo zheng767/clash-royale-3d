@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Clash Royale - 皇室战争 v6</title>
+<title>Clash Royale - 皇室战争 v7</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -135,21 +135,25 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
 
 <script>
 // ==================== 配置常量 ====================
-const CW = 400, CH = 680;
-// ===== 皇室战争真实地图比例（18×32 瓦片网格，坐标取自 CR 真实布局）=====
-// 换算：X 1格 = 400/18 ≈ 22.22px，Y 1格 = 680/32 = 21.25px；河中心 y=340(=16格)
-// 河流 2 瓦片宽(中心 y=340)；双桥各 2 瓦片宽，与公主塔同列(x≈25%/75%)
-// CR 坐标(河中心=16格)：公主塔 y=6.5/25.5格(离河 9.5 格)、国王塔 y=3/29格(离河 13 格)
-// 公主塔↔国王塔 3.5 格；桥与公主塔同列。下面常量已严格采用这些 CR 值（非 2D 近似）。
-const RIVER_TOP = 319, RIVER_BOT = 361;   // 河流 2 瓦片 ≈42px，中心 y=340
-const BRIDGE_L = { x: 90, y: 340 };       // 左桥：与左路公主塔同列(≈25%)
-const BRIDGE_R = { x: 310, y: 340 };       // 右桥：与右路公主塔同列(≈75%)
-const BRIDGE_TOL = 22.2;   // 过桥容差(1格)
-const BRIDGE_HALF = 22.2;  // 视觉桥半宽(1格，桥宽2格)
-const PRINCESS_Y_AI = 138;     // AI 公主塔 Y（6.5格，离河中心 9.5 格）
-const PRINCESS_Y_P = 542;      // 玩家公主塔 Y（25.5格，离河中心 9.5 格）
-const KING_Y_AI = 64;          // AI 国王塔 Y（3格，离河中心 13 格）
-const KING_Y_P = 616;          // 玩家国王塔 Y（29格，离河中心 13 格）
+const TILE = 21.25;                 // 1 格 = 21.25px（Y 轴基准；公主塔 7.5格=159px）
+const CW = 18 * TILE;               // 382.5，严格皇室战争：18×32 正方形瓦片，X/Y 同系数消除各向异性
+const CH = 32 * TILE;               // 680，32×21.25
+const CENTER_X = CW / 2;           // 191.25，竞技场横向中心（国王塔居中于此）
+const PRINCESS_X_L = 4.5 * TILE;   // 95.625，左路公主塔/左桥 X（25%）
+const PRINCESS_X_R = 13.5 * TILE;  // 286.875，右路公主塔/右桥 X（75%）
+// ===== 皇室战争真实地图比例（18×32 正方形瓦片网格，坐标取自 CR 真实布局）=====
+// X、Y 均 = 21.25px/格（瓦片正方形，严格皇室战争比例，消除此前 X/Y 约 4.5% 各向异性）
+// 河中心 = 第 16 格 = y 340；公主塔 y=6.5/25.5格(离河 9.5 格)；国王塔 y=3/29格(离河 13 格)
+// 双桥/公主塔 x = 4.5/13.5 格（25%/75%）；国王塔 x = 9 格（正中）
+const RIVER_TOP = 16*TILE - TILE, RIVER_BOT = 16*TILE + TILE;   // 河流 2 瓦片宽(≈42px)，中心 y=340
+const BRIDGE_L = { x: PRINCESS_X_L, y: 16*TILE };   // 左桥：与左路公主塔同列
+const BRIDGE_R = { x: PRINCESS_X_R, y: 16*TILE };   // 右桥：与右路公主塔同列
+const BRIDGE_TOL = TILE;       // 过桥容差(1格)
+const BRIDGE_HALF = TILE;      // 视觉桥半宽(1格，桥宽2格)
+const PRINCESS_Y_AI = 6.5*TILE;     // AI 公主塔 Y（离河中心 9.5 格）
+const PRINCESS_Y_P = 25.5*TILE;     // 玩家公主塔 Y（离河中心 9.5 格）
+const KING_Y_AI = 3*TILE;           // AI 国王塔 Y（离河中心 13 格）
+const KING_Y_P = 29*TILE;           // 玩家国王塔 Y（离河中心 13 格）
 const TOWER_DEFS = {
   king: { hp: 2568, damage: 116, range: 149, atkSpeed: 1.0, w: 70, h: 55 },
   princess: { hp: 3052, damage: 109, range: 159, atkSpeed: 0.8, w: 50, h: 45 }
@@ -222,7 +226,7 @@ function ensureScene() {
     // 正交投影无透视畸变，可视范围是一个固定矩形盒子，只要盒子比场地大就绝不会裁切。
     // 相机略偏向玩家侧做轻微俯角，既能看到塔身立体感，覆盖仍按矩形 bounding 计算，稳妥。
     // 场地区域：X∈[-200,200]，Z∈[-340,340]（逻辑 400×680 映射到 XZ 平面）。
-    const halfW = 230, halfH = 380; // 比场地各边多留 20~40 余量
+    const halfW = 200, halfH = 360; // 覆盖 382.5×680 世界（CENTER_X=191.25 + 余量），严格等比例
     camera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 1, 4000);
     camera.position.set(0, 950, 170);   // 正上方略偏玩家侧 → 约 10° 俯角
     camera.up.set(0, 1, 0);
@@ -236,7 +240,7 @@ function ensureScene() {
     buildArena();
     scene.add(towerGroup); scene.add(unitGroup); scene.add(fxGroup);
     deployZoneMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(400, 320),
+      new THREE.PlaneGeometry(CW, 320),
       new THREE.MeshBasicMaterial({ color: 0x2ecc71, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
     );
     deployZoneMesh.rotation.x = -Math.PI/2;
@@ -316,13 +320,12 @@ function createGame(difficulty, playerDeckCards) {
 
 function createTowers() {
   return [
-    // 与 2D 版完全一致的塔坐标
-    { id:'aKing', type:'king', owner:'ai', x:200, y:KING_Y_AI, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 },
-    { id:'aLP', type:'princess', owner:'ai', x:90, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
-    { id:'aRP', type:'princess', owner:'ai', x:310, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
-    { id:'pLP', type:'princess', owner:'player', x:90, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
-    { id:'pRP', type:'princess', owner:'player', x:310, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:50, h:45, atkCD:0 },
-    { id:'pKing', type:'king', owner:'player', x:200, y:KING_Y_P, hp:2568, maxHp:2568, w:70, h:55, atkCD:0 }
+    { id:'aKing', type:'king', owner:'ai', x:CENTER_X, y:KING_Y_AI, hp:2568, maxHp:2568, w:70, h:55, atkCD:0, active:false },
+    { id:'aLP', type:'princess', owner:'ai', x:PRINCESS_X_L, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:50, h:45, atkCD:0, active:true },
+    { id:'aRP', type:'princess', owner:'ai', x:PRINCESS_X_R, y:PRINCESS_Y_AI, hp:3052, maxHp:3052, w:50, h:45, atkCD:0, active:true },
+    { id:'pLP', type:'princess', owner:'player', x:PRINCESS_X_L, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:50, h:45, atkCD:0, active:true },
+    { id:'pRP', type:'princess', owner:'player', x:PRINCESS_X_R, y:PRINCESS_Y_P, hp:3052, maxHp:3052, w:50, h:45, atkCD:0, active:true },
+    { id:'pKing', type:'king', owner:'player', x:CENTER_X, y:KING_Y_P, hp:2568, maxHp:2568, w:70, h:55, atkCD:0, active:false }
   ];
 }
 
@@ -370,15 +373,15 @@ function canDeploy(owner, x, y, cardKey) {
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
     // 摧毁公主塔后只能延伸到公主塔位置，不能直接下到国王塔底
-    if (x < 200 && aLP && aLP.hp <= 0 && y >= PRINCESS_Y_AI && y <= RIVER_TOP) return true;
-    if (x >= 200 && aRP && aRP.hp <= 0 && y >= PRINCESS_Y_AI && y <= RIVER_TOP) return true;
+    if (x < CENTER_X && aLP && aLP.hp <= 0 && y >= PRINCESS_Y_AI && y <= RIVER_TOP) return true;
+    if (x >= CENTER_X && aRP && aRP.hp <= 0 && y >= PRINCESS_Y_AI && y <= RIVER_TOP) return true;
     return false;
   } else {
     if (y >= 5 && y <= RIVER_TOP) return true;
     const pLP = game.towers.find(t => t.id === 'pLP');
     const pRP = game.towers.find(t => t.id === 'pRP');
-    if (x < 200 && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= PRINCESS_Y_P) return true;
-    if (x >= 200 && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= PRINCESS_Y_P) return true;
+    if (x < CENTER_X && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= PRINCESS_Y_P) return true;
+    if (x >= CENTER_X && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= PRINCESS_Y_P) return true;
     return false;
   }
 }
@@ -389,7 +392,7 @@ function canDeploy(owner, x, y, cardKey) {
 function findTarget(unit) {
   const enemyOwner = unit.owner === 'player' ? 'ai' : 'player';
   let nearest = null, minD = Infinity;
-  const unitLeft = unit.x < 200;
+  const unitLeft = unit.x < CENTER_X;
   const sight = unit.sightRange;   // 感知半径：超出此范围的目标不锁定，杜绝跨场/跨桥锁定
 
   if (unit.tgtType === 'building') {
@@ -421,7 +424,7 @@ function findTarget(unit) {
   for (const t of game.towers) {
     if (t.owner !== enemyOwner || t.hp <= 0) continue;
     if (t.type === 'princess') {
-      const towerLeft = t.x < 200;
+      const towerLeft = t.x < CENTER_X;
       if (towerLeft !== unitLeft) continue;
     }
     const d = dist(unit, t);
@@ -433,11 +436,11 @@ function findTarget(unit) {
 // 检查是否有塔在攻击范围内（走到塔旁才锁定）
 function findTowerInRange(unit) {
   const enemyOwner = unit.owner === 'player' ? 'ai' : 'player';
-  const unitLeft = unit.x < 200;
+  const unitLeft = unit.x < CENTER_X;
   for (const t of game.towers) {
     if (t.owner !== enemyOwner || t.hp <= 0) continue;
     if (t.type === 'princess') {
-      const towerLeft = t.x < 200;
+      const towerLeft = t.x < CENTER_X;
       if (towerLeft !== unitLeft) continue;
     }
     const d = dist(unit, t);
@@ -449,12 +452,12 @@ function findTowerInRange(unit) {
 
 function findNearestTower(unit, enemyOwner) {
   let nearest = null, minD = Infinity;
-  const unitLeft = unit.x < 200;
+  const unitLeft = unit.x < CENTER_X;
   for (const t of game.towers) {
     if (t.owner !== enemyOwner || t.hp <= 0) continue;
     // 公主塔只选同侧的；同侧公主塔被毁后自然只剩国王塔
     if (t.type === 'princess') {
-      const towerLeft = t.x < 200;
+      const towerLeft = t.x < CENTER_X;
       if (towerLeft !== unitLeft) continue;
     }
     const d = dist(unit, t);
@@ -585,6 +588,14 @@ function updateUnit(unit, dt) {
         unit.charged = false;
         unit.curSpd = unit.spd;
         game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.25, maxLife:0.25, color:'#ffffff' });
+      }
+      // ===== 进攻显示：近战挥击弧光 / 远程发射抛射物（同时触发身体前冲动画）=====
+      unit._lunge = 0.16;
+      if (unit.range > 45) {
+        game.effects.push({ type:'bolt', sx:unit.x, sy:unit.y, tx:unit.target.x, ty:unit.target.y, life:0.16, maxLife:0.16, color:unit.color });
+      } else {
+        const ang = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
+        game.effects.push({ type:'slash', x:unit.x, y:unit.y, ang, life:0.18, maxLife:0.18, color:unit.color });
       }
       dealDamage(unit, unit.target, dmg);
       game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.2, maxLife:0.2, color:unit.color });
@@ -734,6 +745,16 @@ function dealDamage(attacker, target, dmg) {
 // ==================== 塔更新 ====================
 function updateTower(tower, dt) {
   if (tower.hp <= 0) return;
+  // 国王塔：初始休眠，直到本方任一公主塔被摧毁才激活（皇室战争规则）
+  if (tower.type === 'king' && !tower.active) {
+    const princessDown = game.towers.some(p => p.owner === tower.owner && p.type === 'princess' && p.hp <= 0);
+    if (princessDown) {
+      tower.active = true;
+      game.effects.push({ type:'kingactivate', x:tower.x, y:tower.y, life:0.9, maxLife:0.9, radius:60 });
+    } else {
+      return; // 休眠期间不攻击
+    }
+  }
   tower.atkCD -= dt;
   if (tower.atkCD > 0) return;
   const enemyOwner = tower.owner === 'player' ? 'ai' : 'player';
@@ -746,6 +767,8 @@ function updateTower(tower, dt) {
   if (nearest) {
     tower.atkCD = TOWER_DEFS[tower.type].atkSpeed;
     dealDamage(tower, nearest, TOWER_DEFS[tower.type].damage);
+    // 进攻显示：塔发射金色抛射物
+    game.effects.push({ type:'bolt', sx:tower.x, sy:tower.y, tx:nearest.x, ty:nearest.y, life:0.18, maxLife:0.18, color:'#ffd700', tgt:tower.type });
     game.effects.push({ type:'hit', x:nearest.x, y:nearest.y, life:0.15, maxLife:0.15, color:'#ffd700' });
   }
 }
@@ -975,10 +998,10 @@ function updateAI(dt) {
     const totalThreat = enemyUnits.reduce((s,u) => s + u.hp, 0);
     if (totalThreat > threatThreshold) {
       // 判断威胁在哪一路
-      const leftThreat = enemyUnits.filter(u => u.x < 200).reduce((s,u) => s + u.hp, 0);
-      const rightThreat = enemyUnits.filter(u => u.x >= 200).reduce((s,u) => s + u.hp, 0);
+      const leftThreat = enemyUnits.filter(u => u.x < CENTER_X).reduce((s,u) => s + u.hp, 0);
+      const rightThreat = enemyUnits.filter(u => u.x >= CENTER_X).reduce((s,u) => s + u.hp, 0);
       const defendLeft = leftThreat >= rightThreat;
-      const defendX = defendLeft ? 90 : 310;
+      const defendX = defendLeft ? PRINCESS_X_L : PRINCESS_X_R;
 
       // 根据威胁类型选防守卡
     const hasTank = enemyUnits.some(u => u.hp > 500);
@@ -1037,7 +1060,7 @@ function updateAI(dt) {
     });
     if (playable.length === 0) return;
 
-    const laneX = ai.attackLane === 'left' ? 90 : 310;
+    const laneX = ai.attackLane === 'left' ? PRINCESS_X_L : PRINCESS_X_R;
 
     // 策略A：有巨人/野猪/皇家巨人在手且圣水充裕，先出攻城单位
     const giantInHand = playable.find(c => c === 'giant');
@@ -1253,20 +1276,20 @@ function checkWin() {
 function buildArena() {
   const arena = new THREE.Group();
   // 底座：放在场地下方(y=-2, 顶面y=0)，仅作边框底色，不再遮挡场地
-  const base = new THREE.Mesh(new THREE.BoxGeometry(408, 4, 688), new THREE.MeshStandardMaterial({color:0x1a1a28, roughness:1}));
+  const base = new THREE.Mesh(new THREE.BoxGeometry(CW+8, 4, CH+8), new THREE.MeshStandardMaterial({color:0x1a1a28, roughness:1}));
   base.position.set(0, -2, 0);
   arena.add(base);
   // 上场(AI侧)红棕、下场(玩家侧)深蓝，按真实河流位置划分上下半场
-  arena.add(makePlane(400, RIVER_TOP, 0, -180.5, 0x7a4242, 0.5));
-  arena.add(makePlane(400, CH - RIVER_BOT, 0, 180.5, 0x21456e, 0.5));
+  arena.add(makePlane(CW, RIVER_TOP, 0, -180.5, 0x7a4242, 0.5));
+  arena.add(makePlane(CW, CH - RIVER_BOT, 0, 180.5, 0x21456e, 0.5));
   // 河流：中间青色带，明显区别于两侧，且略高于场地区域避免z冲突
-  arena.add(makePlane(400, RIVER_BOT - RIVER_TOP, 0, 0, 0x39c6e8, 0.9));
+  arena.add(makePlane(CW, RIVER_BOT - RIVER_TOP, 0, 0, 0x39c6e8, 0.9));
   // 河流上下两条深色岸线，让河道边界更清晰
-  arena.add(makePlane(400, 3, 0, -(RIVER_BOT - RIVER_TOP)/2, 0x15708c, 1.0));
-  arena.add(makePlane(400, 3, 0,  (RIVER_BOT - RIVER_TOP)/2, 0x15708c, 1.0));
+  arena.add(makePlane(CW, 3, 0, -(RIVER_BOT - RIVER_TOP)/2, 0x15708c, 1.0));
+  arena.add(makePlane(CW, 3, 0,  (RIVER_BOT - RIVER_TOP)/2, 0x15708c, 1.0));
   // 桥：木块色，4 格宽，叠在河流之上对齐两路公主塔
-  arena.add(makePlane(BRIDGE_HALF*2, RIVER_BOT - RIVER_TOP, BRIDGE_L.x - 200, 0, 0xc0925a, 1.1));
-  arena.add(makePlane(BRIDGE_HALF*2, RIVER_BOT - RIVER_TOP, BRIDGE_R.x - 200, 0, 0xc0925a, 1.1));
+  arena.add(makePlane(BRIDGE_HALF*2, RIVER_BOT - RIVER_TOP, BRIDGE_L.x - CENTER_X, 0, 0xc0925a, 1.1));
+  arena.add(makePlane(BRIDGE_HALF*2, RIVER_BOT - RIVER_TOP, BRIDGE_R.x - CENTER_X, 0, 0xc0925a, 1.1));
   scene.add(arena);
 }
 function makePlane(w, d, x, z, color, y) {
@@ -1308,31 +1331,60 @@ function updateTowerMesh(t) {
   const fg = m.userData.fg, barW = m.userData.barW;
   fg.scale.x = ratio; fg.position.x = -barW/2 + (barW*ratio)/2;
   if (m.userData.num) m.userData.num.set(t.hp);
+  // 国王塔激活视觉：休眠暗淡 → 激活后金色呼吸光
+  if (m.userData.bodyMat && t.type === 'king') {
+    if (!t.active) { m.userData.bodyMat.emissive.setHex(0x332200); m.userData.bodyMat.emissiveIntensity = 0.25; }
+    else { const pulse = 0.5 + 0.5*Math.sin(performance.now()*0.005); m.userData.bodyMat.emissive.setHex(0xffcc33); m.userData.bodyMat.emissiveIntensity = 0.4 + 0.4*pulse; }
+  }
 }
 function makeTowerMesh(t) {
   const g = new THREE.Group();
   const isKing = t.type === 'king';
-  const h = isKing ? 72 : 52;
-  const base = new THREE.Mesh(new THREE.BoxGeometry(t.w+8, 10, t.h+8), new THREE.MeshStandardMaterial({color:0x222233}));
-  base.position.y = 5; g.add(base);
-  const col = t.owner === 'player' ? 0x4a90d9 : 0xd9534f;
-  const body = new THREE.Mesh(new THREE.BoxGeometry(t.w, h, t.h), new THREE.MeshStandardMaterial({color: col, roughness:0.8}));
-  body.position.y = 10 + h/2; g.add(body);
-  const top = new THREE.Mesh(new THREE.BoxGeometry(t.w*0.6, 8, t.h*0.6), new THREE.MeshStandardMaterial({color: t.owner==='player'?0x7fb3e0:0xef8a86}));
-  top.position.y = 10 + h + 4; g.add(top);
+  const baseCol = t.owner === 'player' ? 0x3a6ea5 : 0xb05a52;
+  const stoneCol = t.owner === 'player' ? 0x6fa8d6 : 0xe08a80;
+  // 底座
+  const base = new THREE.Mesh(new THREE.BoxGeometry(t.w+14, 12, t.h+14), new THREE.MeshStandardMaterial({color:0x2a2a3a, roughness:1}));
+  base.position.y = 6; g.add(base);
+  // 城堡主楼
+  const bodyMat = new THREE.MeshStandardMaterial({color: stoneCol, roughness:0.85});
+  const bodyH = isKing ? 64 : 46;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(t.w, bodyH, t.h), bodyMat);
+  body.position.y = 12 + bodyH/2; g.add(body);
+  // 顶部雉堞（4 角小方块）
+  const crenMat = new THREE.MeshStandardMaterial({color: baseCol, roughness:0.9});
+  const cz = 12 + bodyH;
+  const off = t.w/2 - 5;
+  for (const dx of [-off, off]) for (const dz of [-(t.h/2-5), t.h/2-5]) {
+    const cr = new THREE.Mesh(new THREE.BoxGeometry(8, 9, 8), crenMat);
+    cr.position.set(dx, cz + 4.5, dz); g.add(cr);
+  }
+  // 国王塔：王冠（4 尖顶）
+  if (isKing) {
+    const crownMat = new THREE.MeshStandardMaterial({color:0xffcc33, roughness:0.4, metalness:0.3});
+    for (const dx of [-off, off]) for (const dz of [-(t.h/2-5), t.h/2-5]) {
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(4, 12, 6), crownMat);
+      sp.position.set(dx, cz + 13, dz); g.add(sp);
+    }
+  }
+  // 旗帜
+  const flagMat = new THREE.MeshStandardMaterial({color: isKing?0xffcc33:stoneCol, roughness:0.6, side:THREE.DoubleSide});
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 18, 6), new THREE.MeshStandardMaterial({color:0x444444}));
+  pole.position.set(0, cz + (isKing?20:12), 0); g.add(pole);
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(14, 9), flagMat);
+  flag.position.set(7, cz + (isKing?25:17), 0); g.add(flag);
+  if (isKing) bodyMat.emissive = new THREE.Color(0x332200); // 休眠时暗淡
+  // 血条
   const barW = t.w + 16;
-  // 血条平铺(X=长度, Z≈1.5mm变细)。层级: frame白边最低、bg灰容量中间、fg绿/红填充最高(最靠相机)→可见且随血量缩短露灰
   const frame = new THREE.Mesh(new THREE.BoxGeometry(barW + 6, 1.4, 8), new THREE.MeshBasicMaterial({color:0xffffff}));
   const bg = new THREE.Mesh(new THREE.BoxGeometry(barW, 1.4, 6), new THREE.MeshBasicMaterial({color:0x555555}));
   const fg = new THREE.Mesh(new THREE.BoxGeometry(barW, 1.8, 6), new THREE.MeshBasicMaterial({color: t.owner==='player'?0x2ecc71:0xe74c3c}));
-  const barY = 10 + h + 18;
+  const barY = cz + (isKing?34:20);
   frame.position.set(0, barY - 1.2, 0); bg.position.set(0, barY, 0); fg.position.set(0, barY + 1.2, 0);
   g.add(frame); g.add(bg); g.add(fg);
-  // 数字在血条正上方(+24)，与血条零重叠
   const num = makeNumberSprite('#ffffff');
   num.sprite.position.set(0, barY + 24, 0); g.add(num.sprite);
-  g.position.set(t.x - 200, 0, t.y - 340);
-  g.userData = { h, barW, fg, num };
+  g.position.set(t.x - CENTER_X, 0, t.y - 340);
+  g.userData = { h: bodyH, barW, fg, num, bodyMat };
   return g;
 }
 function updateUnitMeshes() {
@@ -1347,7 +1399,7 @@ function updateUnitMeshes() {
     if (!m) { m = makeUnitMesh(u); unitGroup.add(m); unitMeshMap.set(u, m); }
     updateUnitMesh(m, u);
     if (u.healAura && u.healRadius && m.userData.healFill) {
-      const uwx = u.x - 200, uwz = u.y - 340;
+      const uwx = u.x - CENTER_X, uwz = u.y - 340;
       const hover = hoverWorld && Math.hypot(hoverWorld.x - uwx, hoverWorld.y - uwz) <= u.healRadius;
       m.userData.healFill.material.opacity = hover ? 0.24 : 0.10;
       m.userData.healRing.material.opacity = hover ? 0.85 : 0.4;
@@ -1397,47 +1449,112 @@ function makeLabel(text, color) {
 function makeUnitMesh(u) {
   const g = new THREE.Group();
   const r = u.radius || 12;
-  let geo, bodyH;
-  if (u.isBuilding) { geo = new THREE.BoxGeometry(r*2, 34, r*2); bodyH = 34; }
-  else { geo = new THREE.CylinderGeometry(r, r, 26, 14); bodyH = 26; }
-  const body = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: new THREE.Color(u.color), roughness:0.7 }));
-  body.position.y = bodyH/2; g.add(body);
+  const col = new THREE.Color(u.color);
+  const limbMat = new THREE.MeshStandardMaterial({color: col, roughness:0.7});
+  const skinMat = new THREE.MeshStandardMaterial({color:0xffe0bd, roughness:0.6});
+  // ===== 建筑：炮 / 电磁塔 / 治疗图腾 / 冰霜塔 =====
+  if (u.isBuilding) {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(r*2+6, 8, r*2+6), new THREE.MeshStandardMaterial({color:0x2a2a3a, roughness:1}));
+    base.position.y = 4; g.add(base);
+    const bodyH = r*1.7;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(r*1.8, bodyH, r*1.8), limbMat);
+    body.position.y = 8 + bodyH/2; g.add(body);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(r*0.32, r*0.55, r*0.9, 10), new THREE.MeshStandardMaterial({color:0x333a44, roughness:0.6}));
+    top.position.y = 8 + bodyH + r*0.35; g.add(top);
+    if (u.healAura) {
+      const cross = new THREE.Mesh(new THREE.BoxGeometry(r*1.4, r*0.4, r*0.4), new THREE.MeshStandardMaterial({color:0x33e0c0}));
+      cross.position.y = 8 + bodyH + r*0.95; g.add(cross);
+    }
+    g.userData = { body, barW: Math.max(28, r*3.0), fg:null, legL:null, pivot:null };
+    addUnitCommon(g, u, r);
+    return g;
+  }
+  // ===== 人形单位：头 + 躯干 + 四肢 + 帽 + 武器 =====
+  const legH = r*0.95, bodyH = r*1.15, headR = r*0.55;
+  const pivot = new THREE.Group(); g.add(pivot);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(r*1.15, bodyH, r*0.75), limbMat);
+  body.position.y = legH + bodyH/2; pivot.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 12, 10), skinMat);
+  head.position.y = legH + bodyH + headR*0.7; pivot.add(head);
+  const hat = new THREE.Mesh(new THREE.ConeGeometry(headR*1.15, headR*1.3, 8), new THREE.MeshStandardMaterial({color: col, roughness:0.6}));
+  hat.position.y = legH + bodyH + headR*1.5; pivot.add(hat);
+  const legGeo = new THREE.BoxGeometry(r*0.38, legH, r*0.38);
+  const legL = new THREE.Mesh(legGeo, limbMat); legL.position.set(-r*0.32, legH/2, 0); pivot.add(legL);
+  const legR = new THREE.Mesh(legGeo, limbMat); legR.position.set(r*0.32, legH/2, 0); pivot.add(legR);
+  const armGeo = new THREE.BoxGeometry(r*0.3, bodyH*0.85, r*0.3);
+  const armL = new THREE.Mesh(armGeo, limbMat); armL.position.set(-r*0.72, legH+bodyH*0.62, 0); pivot.add(armL);
+  const armR = new THREE.Mesh(armGeo, limbMat); armR.position.set(r*0.72, legH+bodyH*0.62, 0); pivot.add(armR);
+  const weapon = new THREE.Mesh(new THREE.BoxGeometry(r*0.18, r*0.9, r*0.18), new THREE.MeshStandardMaterial({color:0xdddddd, metalness:0.4, roughness:0.4}));
+  weapon.position.set(0, bodyH*0.45, r*0.3); armR.add(weapon);
+  if (u.flying) {
+    const wingMat = new THREE.MeshStandardMaterial({color:0xeeeeee, roughness:0.5, side:THREE.DoubleSide});
+    const wl = new THREE.Mesh(new THREE.PlaneGeometry(r*1.2, r*0.7), wingMat); wl.position.set(-r*0.9, legH+bodyH*0.7, 0); wl.rotation.y = 0.5; pivot.add(wl);
+    const wr = new THREE.Mesh(new THREE.PlaneGeometry(r*1.2, r*0.7), wingMat); wr.position.set(r*0.9, legH+bodyH*0.7, 0); wr.rotation.y = -0.5; pivot.add(wr);
+    g.userData.wings = [wl, wr];
+  }
+  g.userData = { pivot, body, head, legL, legR, armL, armR, barW: Math.max(28, r*3.0), fg:null };
+  addUnitCommon(g, u, r);
+  return g;
+}
+function addUnitCommon(g, u, r) {
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(r*1.15, 16), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.28}));
   shadow.rotation.x = -Math.PI/2; shadow.position.y = 0.5; g.add(shadow);
-  const barW = Math.max(28, r*3.0);
-  // 血条平铺在地面(X=长度, Z=厚度≈1.5mm@96DPI,变细)。层级关键: frame白边最低、bg灰容量中间、fg绿/红填充最高(最靠相机)→可见且随血量缩短露出灰底
+  const barW = g.userData.barW;
   const frame = new THREE.Mesh(new THREE.BoxGeometry(barW + 6, 1.4, 8), new THREE.MeshBasicMaterial({color:0xffffff}));
   const bg = new THREE.Mesh(new THREE.BoxGeometry(barW, 1.4, 6), new THREE.MeshBasicMaterial({color:0x555555}));
   const fg = new THREE.Mesh(new THREE.BoxGeometry(barW, 1.8, 6), new THREE.MeshBasicMaterial({color: u.owner==='player'?0x2ecc71:0xe74c3c}));
-  // 血条在模型正上方(barY)，代表字(icon)在模型正下方(y=-14)，二者都不与模型重叠；单位不显示数字
-  const barY = bodyH + 16 + (u.flying ? 40 : 0);
+  const barY = u.isBuilding ? (8 + r*1.7 + r*0.35 + 10) : (r*0.95 + r*1.15 + r*0.55 + 14);
   frame.position.set(0, barY - 1.2, 0); bg.position.set(0, barY, 0); fg.position.set(0, barY + 1.2, 0);
   g.add(frame); g.add(bg); g.add(fg);
+  g.userData.fg = fg; g.userData.barW = barW;
   const label = makeLabel(u.icon || u.name.charAt(0), u.owner === 'player' ? '#b8ffd0' : '#ffc2c2');
   label.position.set(0, -14, 0); g.add(label);
-  g.userData = { barW, fg, body, bodyH, labelTex: label.material.map };
-  // 治疗图腾：地面显示治疗范围圈（常显淡色；指针悬停/点击时高亮，逻辑在 updateUnitMeshes）
   if (u.healAura && u.healRadius) {
     const healFill = new THREE.Mesh(new THREE.CircleGeometry(u.healRadius, 48), new THREE.MeshBasicMaterial({color:0x33e0c0, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
-    healFill.rotation.x = -Math.PI/2; healFill.position.y = 1.4;
+    healFill.rotation.x = -Math.PI/2; healFill.position.y = 1.4; g.add(healFill);
     const healRing = new THREE.Mesh(new THREE.RingGeometry(u.healRadius-3, u.healRadius, 56), new THREE.MeshBasicMaterial({color:0x33e0c0, transparent:true, opacity:0.4, side:THREE.DoubleSide, depthWrite:false}));
-    healRing.rotation.x = -Math.PI/2; healRing.position.y = 1.5;
-    g.add(healFill); g.add(healRing);
+    healRing.rotation.x = -Math.PI/2; healRing.position.y = 1.5; g.add(healRing);
     g.userData.healFill = healFill; g.userData.healRing = healRing;
   }
-  return g;
 }
 function updateUnitMesh(m, u) {
   const hov = u.flying ? 40 : 0;
-  m.position.set(u.x - 200, hov, u.y - 340);
-  const body = m.userData.body;
-  if (u.deployTimer > 0) { body.material.transparent = true; body.material.opacity = 0.45 + 0.35*Math.sin(u.deployTimer*12); }
-  else { body.material.transparent = false; body.material.opacity = 1; }
-  body.material.emissive = new THREE.Color(u.stunTimer > 0 ? 0xFFEB3B : 0x000000);
-  body.material.emissiveIntensity = u.stunTimer > 0 ? 0.7 : 0;
+  m.position.set(u.x - CENTER_X, hov, u.y - 340);
+  const ud = m.userData;
+  const t = game.gameTime || 0;
+  const moving = (Math.abs(u.vx) + Math.abs(u.vy)) > 1.5;
+  // 走路动画：腿/臂摆动 + 身体起伏
+  if (ud.legL) {
+    const sw = moving ? Math.sin(t*12)*0.5 : 0;
+    ud.legL.rotation.x = sw; ud.legR.rotation.x = -sw;
+    ud.armL.rotation.x = -sw*0.8; ud.armR.rotation.x = sw*0.8;
+    ud.pivot.position.y = moving ? Math.abs(Math.sin(t*12))*1.5 : 0;
+  }
+  // 翅膀扇动
+  if (ud.wings) { const f = Math.sin(t*16)*0.5; ud.wings[0].rotation.z = f; ud.wings[1].rotation.z = -f; }
+  // 前冲（攻击瞬间）
+  if (u._lunge > 0) {
+    u._lunge = Math.max(0, u._lunge - (game._dt || 0.016));
+    if (ud.pivot) { ud.pivot.position.z = u._lunge * 20; ud.pivot.position.y += u._lunge * 7; }
+  }
+  // 朝向目标 / 移动方向
+  if (ud.pivot) {
+    let dx = 0, dy = 0;
+    if (u.target) { dx = u.target.x - u.x; dy = u.target.y - u.y; }
+    else if (moving) { dx = u.vx; dy = u.vy; }
+    if (dx || dy) ud.pivot.rotation.y = Math.atan2(dx, dy);
+  }
+  // 部署闪烁 / 眩晕发光
+  const body = ud.body;
+  if (body) {
+    if (u.deployTimer > 0) { body.material.transparent = true; body.material.opacity = 0.45 + 0.35*Math.sin(u.deployTimer*12); }
+    else { body.material.transparent = false; body.material.opacity = 1; }
+    body.material.emissive = new THREE.Color(u.stunTimer > 0 ? 0xFFEB3B : 0x000000);
+    body.material.emissiveIntensity = u.stunTimer > 0 ? 0.7 : 0;
+  }
   const ratio = Math.max(0, u.hp / u.maxHp);
-  const fg = m.userData.fg, barW = m.userData.barW;
-  fg.scale.x = ratio; fg.position.x = -barW/2 + (barW*ratio)/2;
+  const fg = ud.fg, barW = ud.barW;
+  if (fg) { fg.scale.x = ratio; fg.position.x = -barW/2 + (barW*ratio)/2; }
 }
 function updateDeployZone() {
   if (!deployZoneMesh) return;
@@ -1463,7 +1580,7 @@ function updateEffectMeshes() {
   while (fxGroup.children.length) { const c = fxGroup.children[0]; fxGroup.remove(c); disposeGroup(c); }
   for (const e of game.effects) {
     const pct = e.life / e.maxLife;
-    const x = e.x - 200, z = e.y - 340;
+    const x = e.x - CENTER_X, z = e.y - 340;
     let mesh = null;
     if (e.type === 'hit' || e.type === 'death' || e.type === 'explosion' || e.type === 'fireball') {
       const colorMap = { hit: e.color || '#ffffff', death: '#888888', explosion: '#ff6b35', fireball: e.color || '#ff6b35' };
@@ -1479,6 +1596,24 @@ function updateEffectMeshes() {
       const col = e.type === 'deploy' ? (e.color || '#ffffff') : (e.color || '#FF6F00');
       mesh = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(col), transparent:true, opacity:pct*0.8, side:THREE.DoubleSide}));
       mesh.rotation.x = -Math.PI/2; mesh.position.set(x, 2, z);
+    } else if (e.type === 'bolt') {
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const r = e.tgt === 'king' ? 4.5 : 3;
+      mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color), transparent:true, opacity:0.95 }));
+      mesh.position.set(bx, 16, bz);
+    } else if (e.type === 'slash') {
+      const p = e.life / e.maxLife;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(13, 21, 14, 1, e.ang - 0.7, 1.4), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:p*0.9, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 3, z); fxGroup.add(ring);
+    } else if (e.type === 'kingactivate') {
+      const p = e.life / e.maxLife;
+      const rad = (e.radius || 60) * (1 - p) + 10;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 28), new THREE.MeshBasicMaterial({color:0xffd700, transparent:true, opacity:p, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 4, z); fxGroup.add(ring);
+      const burst = new THREE.Mesh(new THREE.SphereGeometry(rad*0.5, 16, 12), new THREE.MeshBasicMaterial({color:0xffe680, transparent:true, opacity:p*0.7}));
+      burst.position.set(x, 10 + 30*(1-p), z); fxGroup.add(burst);
     }
     if (mesh) fxGroup.add(mesh);
   }
@@ -1486,7 +1621,7 @@ function updateEffectMeshes() {
 function updatePendingSpellMeshes() {
   for (const s of game.pendingSpells) {
     const pct = s.timer / s.maxTimer;
-    const x = s.x - 200, z = s.y - 340;
+    const x = s.x - CENTER_X, z = s.y - 340;
     const ring = new THREE.Mesh(new THREE.RingGeometry(s.radius*0.92, s.radius, 28), new THREE.MeshBasicMaterial({color:0xff4444, transparent:true, opacity:0.6+0.4*Math.sin(s.timer*15), side:THREE.DoubleSide}));
     ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
     const fill = new THREE.Mesh(new THREE.CircleGeometry(s.radius*(1-pct)+5, 24), new THREE.MeshBasicMaterial({color:0xff5028, transparent:true, opacity:0.15, side:THREE.DoubleSide}));
@@ -1513,6 +1648,7 @@ function gameLoop(timestamp) {
   if (!game.lastTime) game.lastTime = timestamp;
   const dt = Math.min((timestamp - game.lastTime) / 1000, 0.05);
   game.lastTime = timestamp;
+  game._dt = dt;
   game.gameTime += dt;
   if (game.gameTime > 1) {
     if (game.overtimeAnnounce > 0) game.overtimeAnnounce -= dt;
