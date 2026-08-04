@@ -176,8 +176,8 @@ const CARD_DEFS = {
   babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:168, range:77, spd:22, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:14, splash:22, flying:true, deployTime:0.8 },
   speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:110, spd:30, atkSpd:1.7, tgt:'any', count:3, color:'#9CCC65', icon:'矛', radius:8, deployTime:0.5 },
   goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:33, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3 },
-  // ===== 自定义卡（CR 无对应，自行平衡） =====
-  flamesprite: { name:'烈焰精灵', cost:1, hp:84, dmg:122, range:16, spd:30, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:9, splash:45, deployTime:0.4, suicide:true },
+  // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(L11，2021重做后1费1只)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
+  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:30, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:9, splash:51, deployTime:0.4, suicide:true },
   healtotem: { name:'治疗图腾', cost:4, hp:480, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:14, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132 },
   frosttower: { name:'冰霜塔', cost:4, hp:700, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:14, deployTime:1.0, isBuilding:true, decay:18, slow:true }
 };
@@ -186,6 +186,7 @@ const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skel
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
 let renderer, scene, camera, raycaster, groundPlaneMath, THREE_OK = true;
+let hoverWorld = null; // 指针在地面上的世界坐标 {x,z}，用于治疗图腾范围圈高亮
 const towerGroup = new THREE.Group();
 const unitGroup = new THREE.Group();
 const fxGroup = new THREE.Group();
@@ -1335,6 +1336,12 @@ function updateUnitMeshes() {
     let m = unitMeshMap.get(u);
     if (!m) { m = makeUnitMesh(u); unitGroup.add(m); unitMeshMap.set(u, m); }
     updateUnitMesh(m, u);
+    if (u.healAura && u.healRadius && m.userData.healFill) {
+      const uwx = u.x - 200, uwz = u.y - 340;
+      const hover = hoverWorld && Math.hypot(hoverWorld.x - uwx, hoverWorld.y - uwz) <= u.healRadius;
+      m.userData.healFill.material.opacity = hover ? 0.24 : 0.10;
+      m.userData.healRing.material.opacity = hover ? 0.85 : 0.4;
+    }
   }
 }
 function makeNumberSprite(color) {
@@ -1399,6 +1406,15 @@ function makeUnitMesh(u) {
   const label = makeLabel(u.icon || u.name.charAt(0), u.owner === 'player' ? '#b8ffd0' : '#ffc2c2');
   label.position.set(0, -14, 0); g.add(label);
   g.userData = { barW, fg, body, bodyH, labelTex: label.material.map };
+  // 治疗图腾：地面显示治疗范围圈（常显淡色；指针悬停/点击时高亮，逻辑在 updateUnitMeshes）
+  if (u.healAura && u.healRadius) {
+    const healFill = new THREE.Mesh(new THREE.CircleGeometry(u.healRadius, 48), new THREE.MeshBasicMaterial({color:0x33e0c0, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
+    healFill.rotation.x = -Math.PI/2; healFill.position.y = 1.4;
+    const healRing = new THREE.Mesh(new THREE.RingGeometry(u.healRadius-3, u.healRadius, 56), new THREE.MeshBasicMaterial({color:0x33e0c0, transparent:true, opacity:0.4, side:THREE.DoubleSide, depthWrite:false}));
+    healRing.rotation.x = -Math.PI/2; healRing.position.y = 1.5;
+    g.add(healFill); g.add(healRing);
+    g.userData.healFill = healFill; g.userData.healRing = healRing;
+  }
   return g;
 }
 function updateUnitMesh(m, u) {
@@ -1629,6 +1645,7 @@ function screenToWorld(e) {
   return { x: pt.x + 200, y: pt.z + 340 };
 }
 canvas.addEventListener('pointerdown', (e) => {
+  if (game) { const p = screenToWorld(e); hoverWorld = p ? { x:p.x, y:p.z } : null; }
   if (!game || game.state !== 'playing' || game.gameTime < 1) return;
   if (game.selectedCardIdx === null) return;
   const p = screenToWorld(e);
@@ -1643,6 +1660,7 @@ canvas.addEventListener('pointerdown', (e) => {
   }
 });
 canvas.addEventListener('pointermove', (e) => {
+  if (game) { const p = screenToWorld(e); hoverWorld = p ? { x:p.x, y:p.z } : null; }
   if (!game || game.selectedCardIdx === null) { canvas.style.cursor = 'default'; return; }
   const p = screenToWorld(e);
   if (!p) { canvas.style.cursor = 'default'; return; }
