@@ -1706,33 +1706,35 @@ function buildGround(g, u, ud, r, col, baseMat, skin, dark, metal) {
     const flame = _cone(r * 0.7, r * 1.1, _mat(0xffc107, { emissive: 0xff7700, emissiveIntensity: 0.9 }), 10); flame.position.y = r * 1.5; pivot.add(flame);
     ud.floatBob = true; return;
   }
-  const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
+  const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot; console.log('[BUILD]', u.name, 'pivot OK');
   const legH = r * 0.95, bodyH = r * 1.15, headR = r * 0.55;
   const bodyW = (u.model === 'giant' || u.model === 'royalgiant' || u.model === 'pekka') ? r * 1.5 :
                 (u.model === 'barbarian') ? r * 1.35 : r * 1.15;
-  const body = _box(bodyW, bodyH, r * 0.75, baseMat); body.position.y = legH + bodyH / 2; pivot.add(body); ud.body = body;
+  const body = _box(bodyW, bodyH, r * 0.75, baseMat); body.position.y = legH + bodyH / 2; pivot.add(body); ud.body = body; console.log('[BUILD]', u.name, 'body OK');
   const headCol = (u.model === 'skeleton' || u.model === 'skarmy') ? 0xf2f2f2 :
                   (u.model === 'goblin' || u.model === 'speargoblin') ? 0x8bc34a :
                   (u.model === 'minipekka' || u.model === 'pekka') ? 0x9aa0a8 : 0xffe0bd;
   const head = (u.model === 'minipekka' || u.model === 'pekka') ? _box(headR * 1.5, headR * 1.5, headR * 1.5, metal) : _sph(headR, _mat(headCol));
   head.position.y = legH + bodyH + (u.model === 'minipekka' || u.model === 'pekka' ? headR * 0.9 : headR * 0.7);
-  pivot.add(head); ud.head = head;
-  addHeadDetail(u, pivot, head, headR, legH, bodyH, col, dark, metal, skin);
+  pivot.add(head); ud.head = head; console.log('[BUILD]', u.name, 'head OK');
+  addHeadDetail(u, pivot, head, headR, legH, bodyH, col, dark, metal, skin); console.log('[BUILD]', u.name, 'headDetail OK');
   const legGeo = _box(r * 0.38, legH, r * 0.38);
   const legL = new THREE.Mesh(legGeo, baseMat); legL.position.set(-r * 0.32, legH / 2, 0); pivot.add(legL); ud.legL = legL;
-  const legR = new THREE.Mesh(legGeo, baseMat); legR.position.set(r * 0.32, legH / 2, 0); pivot.add(legR); ud.legR = legR;
+  const legR = new THREE.Mesh(legGeo, baseMat); legR.position.set(r * 0.32, legH / 2, 0); pivot.add(legR); ud.legR = legR; console.log('[BUILD]', u.name, 'legs OK');
   const armGeo = _box(r * 0.28, bodyH * 0.85, r * 0.28);
   const armL = new THREE.Mesh(armGeo, baseMat); armL.position.set(-bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armL); ud.armL = armL;
-  const armR = new THREE.Mesh(armGeo, baseMat); armR.position.set(bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armR); ud.armR = armR;
+  const armR = new THREE.Mesh(armGeo, baseMat); armR.position.set(bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armR); ud.armR = armR; console.log('[BUILD]', u.name, 'arms OK');
   if (u.model === 'hogrider') {
     const hog = new THREE.Group();
     const hbody = _box(r * 1.5, r * 0.9, r * 2.0, _mat(0x8d6e63)); hbody.position.y = r * 0.7; hog.add(hbody);
     const hhead = _box(r * 0.7, r * 0.7, r * 0.7, _mat(0x8d6e63)); hhead.position.set(0, r * 0.9, r * 1.1); hog.add(hhead);
     for (const sx of [-1, 1]) { const t = _cone(r * 0.1, r * 0.4, _mat(0xffffff), 6); t.position.set(sx * r * 0.2, r * 0.7, r * 1.45); hog.add(t); }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const leg = _box(r * 0.25, r * 0.7, r * 0.25, _mat(0x6d4f43)); leg.position.set(sx * r * 0.6, r * 0.35, sz * r * 0.8); hog.add(leg); }
-    g.add(hog); ud.hog = hog; ud.riderLift = r * 0.55;
+    g.add(hog); ud.hog = hog; ud.riderLift = r * 0.55; console.log('[BUILD]', u.name, 'hog OK');
   }
+  console.log('[BUILD]', u.name, 'call addWeaponProps');
   addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW, legH, bodyH);
+  console.log('[BUILD]', u.name, 'weaponProps OK - buildGround COMPLETE');
 }
 function buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal) {
   const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
@@ -1786,21 +1788,30 @@ function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
   }
 }
 function makeUnitMesh(u) {
+  var _step = '';
+  function _log(s) { _step = s; console.log('[MAKE]', u.name, s); }
+  try {
   console.log('[MAKE] 建模:', u.name, 'model:', u.model, 'atk:', u.atk, 'pos:', u.x, u.y);
-  const g = new THREE.Group();
-  const r = u.radius || 12;
-  const col = new THREE.Color(u.color);
-  const baseMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.7 });
-  const skin = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x33363f, roughness: 0.7 });
-  const metal = new THREE.MeshStandardMaterial({ color: 0xd6dae2, metalness: 0.5, roughness: 0.35 });
-  const ud = { r, barW: Math.max(28, r * 3.0), fg: null, pivot: null, body: null, head: null, legL: null, legR: null, armL: null, armR: null, weaponR: null, weaponL: null, wings: null, dragonHead: null, jaw: null, hog: null, barrel: null, coil: null, crystal: null, model: u.model, atk: u.atk, riderLift: 0, floatBob: false };
-  if (u.isBuilding) buildBuilding(g, u, ud, r, baseMat, dark, metal);
-  else if (u.flying) buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal);
-  else buildGround(g, u, ud, r, col, baseMat, skin, dark, metal);
+  const g = new THREE.Group(); _log('Group OK');
+  const r = u.radius || 12; _log('r=' + r);
+  const col = new THREE.Color(u.color); _log('Color OK');
+  const baseMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.7 }); _log('baseMat OK');
+  const skin = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6 }); _log('skin OK');
+  const dark = new THREE.MeshStandardMaterial({ color: 0x33363f, roughness: 0.7 }); _log('dark OK');
+  const metal = new THREE.MeshStandardMaterial({ color: 0xd6dae2, metalness: 0.5, roughness: 0.35 }); _log('metal OK');
+  const ud = { r, barW: Math.max(28, r * 3.0), fg: null, pivot: null, body: null, head: null, legL: null, legR: null, armL: null, armR: null, weaponR: null, weaponL: null, wings: null, dragonHead: null, jaw: null, hog: null, barrel: null, coil: null, crystal: null, model: u.model, atk: u.atk, riderLift: 0, floatBob: false }; _log('ud OK');
+  if (u.isBuilding) { _log('call buildBuilding'); buildBuilding(g, u, ud, r, baseMat, dark, metal); }
+  else if (u.flying) { _log('call buildFlyer'); buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal); }
+  else { _log('call buildGround'); buildGround(g, u, ud, r, col, baseMat, skin, dark, metal); }
+  _log('build DONE');
   g.userData = ud;
+  _log('addUnitCommon start');
   addUnitCommon(g, u, r);
+  _log('ALL DONE');
   return g;
+  } catch(e) {
+    throw new Error('[MAKE-' + (u.model||'?') + '] at step "' + _step + '": ' + e.message + '\n' + (e.stack||''));
+  }
 }
 function addUnitCommon(g, u, r) {
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(r*1.15, 16), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.28}));
