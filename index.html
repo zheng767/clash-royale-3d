@@ -1794,15 +1794,16 @@ function makeUnitMesh(u) {
   console.log('[MAKE] 建模:', u.name, 'model:', u.model, 'atk:', u.atk, 'pos:', u.x, u.y);
   const g = new THREE.Group(); _log('Group OK');
   const r = u.radius || 12; _log('r=' + r);
-  const col = new THREE.Color(u.color); _log('Color OK');
-  const baseMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.7 }); _log('baseMat OK');
+  // 直接使用颜色值（字符串或数值），不经过 THREE.Color 中转，避免 r149 兼容性问题
+  const rawColor = u.color || '#cccccc'; _log('rawColor=' + rawColor);
+  const baseMat = new THREE.MeshStandardMaterial({ color: rawColor, roughness: 0.7 }); _log('baseMat OK');
   const skin = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6 }); _log('skin OK');
   const dark = new THREE.MeshStandardMaterial({ color: 0x33363f, roughness: 0.7 }); _log('dark OK');
   const metal = new THREE.MeshStandardMaterial({ color: 0xd6dae2, metalness: 0.5, roughness: 0.35 }); _log('metal OK');
   const ud = { r, barW: Math.max(28, r * 3.0), fg: null, pivot: null, body: null, head: null, legL: null, legR: null, armL: null, armR: null, weaponR: null, weaponL: null, wings: null, dragonHead: null, jaw: null, hog: null, barrel: null, coil: null, crystal: null, model: u.model, atk: u.atk, riderLift: 0, floatBob: false }; _log('ud OK');
   if (u.isBuilding) { _log('call buildBuilding'); buildBuilding(g, u, ud, r, baseMat, dark, metal); }
-  else if (u.flying) { _log('call buildFlyer'); buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal); }
-  else { _log('call buildGround'); buildGround(g, u, ud, r, col, baseMat, skin, dark, metal); }
+  else if (u.flying) { _log('call buildFlyer'); buildFlyer(g, u, ud, r, rawColor, baseMat, skin, dark, metal); }
+  else { _log('call buildGround'); buildGround(g, u, ud, r, rawColor, baseMat, skin, dark, metal); }
   _log('build DONE');
   g.userData = ud;
   _log('addUnitCommon start');
