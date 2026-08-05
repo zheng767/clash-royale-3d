@@ -1508,7 +1508,9 @@ function updateUnitMeshes() {
       // 防御：单个单位建模失败绝不许拖垮整个渲染循环（否则后续所有卡牌都不再显示）
       try { m = makeUnitMesh(u); unitGroup.add(m); unitMeshMap.set(u, m); }
       catch (err) {
-        if (!u._meshErr) { u._meshErr = true; console.error('单位建模失败 [' + (u.model || '?') + ']:', err); _showDbg('建模失败: ' + (u.model||'?') + ' - ' + err.message); }
+        if (!u._meshErr) { u._meshErr = true; console.error('单位建模失败 [' + (u.model || '?') + ']:', err);
+          var fullErr = '建模失败: ' + (u.model||'?') + '\n' + err.message + '\n\n' + (err.stack||'no-stack');
+          _showDbg(fullErr); _showFullErr(fullErr); }
         continue;
       }
     }
@@ -1543,6 +1545,17 @@ function _showDbg(msg) {
   }
   var lines = _dbgErrs.length ? _dbgErrs.concat(['---', _dbgStatus]) : [_dbgStatus];
   box.textContent = lines.join('\n');
+}
+// 全屏错误弹窗：完整显示错误信息+堆栈（不会被截断）
+function _showFullErr(msg) {
+  var ov = document.getElementById('fullerr-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'fullerr-overlay';
+    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(180,0,0,0.92);color:#fff;font:bold 13px/1.6 monospace;padding:20px;overflow:auto;white-space:pre-wrap;word-break:break-all;';
+    document.body.appendChild(ov);
+  }
+  ov.textContent = msg;
 }
 function makeNumberSprite(color) {
   const cv = document.createElement('canvas');
