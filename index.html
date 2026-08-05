@@ -1718,10 +1718,10 @@ function buildGround(g, u, ud, r, col, baseMat, skin, dark, metal) {
   head.position.y = legH + bodyH + (u.model === 'minipekka' || u.model === 'pekka' ? headR * 0.9 : headR * 0.7);
   pivot.add(head); ud.head = head; console.log('[BUILD]', u.name, 'head OK');
   addHeadDetail(u, pivot, head, headR, legH, bodyH, col, dark, metal, skin); console.log('[BUILD]', u.name, 'headDetail OK');
-  const legGeo = _box(r * 0.38, legH, r * 0.38);
+  const legGeo = new THREE.BoxGeometry(r * 0.38, legH, r * 0.38);
   const legL = new THREE.Mesh(legGeo, baseMat); legL.position.set(-r * 0.32, legH / 2, 0); pivot.add(legL); ud.legL = legL;
   const legR = new THREE.Mesh(legGeo, baseMat); legR.position.set(r * 0.32, legH / 2, 0); pivot.add(legR); ud.legR = legR; console.log('[BUILD]', u.name, 'legs OK');
-  const armGeo = _box(r * 0.28, bodyH * 0.85, r * 0.28);
+  const armGeo = new THREE.BoxGeometry(r * 0.28, bodyH * 0.85, r * 0.28);
   const armL = new THREE.Mesh(armGeo, baseMat); armL.position.set(-bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armL); ud.armL = armL;
   const armR = new THREE.Mesh(armGeo, baseMat); armR.position.set(bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armR); ud.armR = armR; console.log('[BUILD]', u.name, 'arms OK');
   if (u.model === 'hogrider') {
