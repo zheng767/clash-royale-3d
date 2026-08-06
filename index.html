@@ -14,7 +14,6 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
 #hud .timer{font-weight:600;font-size:15px;letter-spacing:1px}
 #canvas-wrap{position:relative;width:400px;height:680px;overflow:hidden}
 #game-canvas{display:block;cursor:pointer;width:400px;height:680px;touch-action:none;}
-#deploy-hint{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#ffd700;padding:4px 14px;border-radius:12px;font-size:12px;display:none;pointer-events:none;z-index:10}
 #card-bar{height:140px;background:#15152a;padding:8px;display:flex;gap:8px;align-items:flex-start}
 #elixir-section{width:50px;display:flex;flex-direction:column;align-items:center;gap:4px}
 #elixir-bar{width:24px;height:100px;background:rgba(255,255,255,0.1);border-radius:4px;position:relative;overflow:hidden}
@@ -91,7 +90,6 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
   </div>
   <div id="canvas-wrap">
     <canvas id="game-canvas" width="400" height="680"></canvas>
-    <div id="deploy-hint">点击地图部署</div>
     <div id="played-ai" class="played-card"><span class="pp-side">对方</span><div class="pp-icon"></div><span class="pp-name"></span></div>
     <div id="played-player" class="played-card"><span class="pp-side">我方</span><div class="pp-icon"></div><span class="pp-name"></span></div>
   </div>
@@ -148,8 +146,8 @@ const PRINCESS_X_R = 14.5 * TILE;  // 308.125，右路公主塔/右桥 X（14500
 const RIVER_TOP = 16*TILE - TILE, RIVER_BOT = 16*TILE + TILE;   // 河流 2 瓦片宽(≈42px)，中心 y=340
 const BRIDGE_L = { x: PRINCESS_X_L, y: 16*TILE };   // 左桥：与左路公主塔同列
 const BRIDGE_R = { x: PRINCESS_X_R, y: 16*TILE };   // 右桥：与右路公主塔同列
-const BRIDGE_TOL = TILE * 1.5;   // 过桥对齐容差(1.5格)
-const BRIDGE_HALF = TILE * 1.5;  // 桥道半宽(1.5格，桥宽3格，足够容纳巨人等大体型单位)
+const BRIDGE_TOL = TILE * 3;     // 桥面判定容差(3格=桥道全宽)：缓冲带比桥道半宽更宽，碰撞推挤时被轻微挤碰会吸附回桥面边缘，不会掉下河
+const BRIDGE_HALF = TILE * 1.5;  // 桥道半宽(1.5格，桥宽3格)：过桥路由走廊，单位按进入位置并排过河
 const PRINCESS_Y_AI = 6.5*TILE;     // AI 公主塔 Y（离河中心 9.5 格）
 const PRINCESS_Y_P = 25.5*TILE;     // 玩家公主塔 Y（离河中心 9.5 格）
 const KING_Y_AI = 3*TILE;           // AI 国王塔 Y（离河中心 13 格）
@@ -496,14 +494,17 @@ function getMoveTarget(unit, dest) {
   // 同侧（含都不在河里）：直接走目标
   if (unitTop === destTop && unitBot === destBot) return { x: dest.x, y: dest.y };
   // 需要过河：
-  const aligned = Math.abs(unit.x - bridge.x) <= BRIDGE_HALF;
+  // 关键：保留单位当前的 X（夹在桥道走廊内），只走 Y，让多单位按各自进入位置并排过河，
+  // 不再全部挤到桥中心单列 → 杜绝巨人跟在骑士后面被卡死（覆盖所有体型/任意进入点）。
+  const laneX = Math.max(bridge.x - BRIDGE_HALF, Math.min(bridge.x + BRIDGE_HALF, unit.x));
+  const aligned = Math.abs(unit.x - bridge.x) <= BRIDGE_HALF + 4;
   if (aligned) {
-    // 已对准桥道：沿桥直行到对岸（X 锁定，避免被河岸夹回）
-    return { x: bridge.x, y: dest.y };
+    // 已进入桥道 X 范围：沿当前车道直线过河（X 锁定在走廊内，不被河岸夹回）
+    return { x: laneX, y: dest.y };
   }
-  // 未对准：先沿本侧河岸走到桥口（不斜插进河里，杜绝在桥头反复横跳卡死）
+  // 未对准：先沿本侧河岸走到桥道走廊（保持自身 X 趋势，只把 X 拉进走廊范围），Y 先到河岸
   const bankY = unitTop ? RIVER_TOP : (unitBot ? RIVER_BOT : (unit.y < 340 ? RIVER_TOP : RIVER_BOT));
-  return { x: bridge.x, y: bankY };
+  return { x: laneX, y: bankY };
 }
 
 // 有效攻击距离（含目标体积）
@@ -516,15 +517,26 @@ function clampToRiverBank(unit, newX, newY) {
   if (unit.flying || unit.canJumpRiver) return { x: newX, y: newY };
   // 不在河道 Y 范围：自由移动
   if (newY < RIVER_TOP || newY > RIVER_BOT) return { x: newX, y: newY };
-  // 在河道 Y 范围内：检查是否落在某座桥的 X 通道内（桥宽 = BRIDGE_HALF*2）
+  // 在河道 Y 范围内：检查是否落在某座桥的 X 通道内
+  // 桥道走廊（视觉宽度，BRIDGE_HALF）内 = 合法桥面，自由通行
   const onBridgeL = Math.abs(newX - BRIDGE_L.x) <= BRIDGE_HALF;
   const onBridgeR = Math.abs(newX - BRIDGE_R.x) <= BRIDGE_HALF;
   if (onBridgeL || onBridgeR) {
-    // 在桥面上：允许自由移动
     return { x: newX, y: newY };
   }
-  // 在河道深水（不在桥上）：夹到最近的河岸（不弹到桥边，避免瞬移），
-  // 单位会通过寻路(getMoveTarget)自然沿河岸走向最近的桥
+  // 缓冲带（走廊外、BRIDGE_TOL 内）：是碰撞推挤造成的轻微出界，把 X 拉回桥道边缘，
+  // 不踢下河（避免桥头反复抖动/卡死），让单位继续并排过桥
+  const nearL = Math.abs(newX - BRIDGE_L.x) <= BRIDGE_TOL && Math.abs(unit.x - BRIDGE_L.x) <= BRIDGE_TOL;
+  const nearR = Math.abs(newX - BRIDGE_R.x) <= BRIDGE_TOL && Math.abs(unit.x - BRIDGE_R.x) <= BRIDGE_TOL;
+  if (nearL) {
+    const edge = BRIDGE_L.x + (newX < BRIDGE_L.x ? -BRIDGE_HALF : BRIDGE_HALF);
+    return { x: edge, y: newY };
+  }
+  if (nearR) {
+    const edge = BRIDGE_R.x + (newX < BRIDGE_R.x ? -BRIDGE_HALF : BRIDGE_HALF);
+    return { x: edge, y: newY };
+  }
+  // 真的在河道深水（远离任何桥）：夹到最近的河岸，单位会通过寻路自然沿河岸走向最近的桥
   const bankY = unit.y < (RIVER_TOP + RIVER_BOT) / 2 ? RIVER_TOP : RIVER_BOT;
   return { x: newX, y: bankY };
 }
@@ -2290,13 +2302,6 @@ function selectCard(idx) {
   const def = CARD_DEFS[cardKey];
   if (game.player.elixir < def.cost) return;
   game.selectedCardIdx = game.selectedCardIdx === idx ? null : idx;
-  const hint = document.getElementById('deploy-hint');
-  if (game.selectedCardIdx !== null) {
-    hint.textContent = `已选 ${def.name}（${def.cost}费）· 点击战场放置`;
-    hint.style.display = 'block';
-  } else {
-    hint.style.display = 'none';
-  }
   updateHandState();
 }
 function showDeployToast(name) {
@@ -2344,7 +2349,6 @@ canvas.addEventListener('pointerdown', (e) => {
     playCard('player', cardKey, p.x, p.y);
     showDeployToast(CARD_DEFS[cardKey].name);
     game.selectedCardIdx = null;
-    document.getElementById('deploy-hint').style.display = 'none';
     initHand();
   }
 });
