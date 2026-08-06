@@ -640,6 +640,7 @@ function updateUnit(unit, dt) {
           // 女武神：以自身为中心，一圈全量伤害
           for (const u of game.units) {
             if (u.owner !== enemies || u === unit.target || u.hp <= 0) continue;
+            if (unit.tgtType === 'ground' && u.flying) continue; // 地面单位溅射不波及空中（CR 规则）
             if (dist(unit, u) < unit.splash) {
               dealDamage(unit, u, unit.dmg);
             }
@@ -650,6 +651,7 @@ function updateUnit(unit, dt) {
           // 远程溅射：以目标为中心，副目标受70%伤害
           for (const u of game.units) {
             if (u.owner !== enemies || u === unit.target || u.hp <= 0) continue;
+            if (unit.tgtType === 'ground' && u.flying) continue; // 地面单位溅射不波及空中（CR 规则）
             if (dist(unit.target, u) < unit.splash) {
               dealDamage(unit, u, unit.dmg);   // 溅射对范围内所有目标均为全额伤害（CR 规则）
             }
