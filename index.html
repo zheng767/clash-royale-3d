@@ -193,11 +193,15 @@ const CARD_DEFS = {
   skeletonbarrel: { name:'骷髅飞桶', cost:2, type:'spell', radius:32, color:'#E0E0E0', icon:'骷桶', delay:1.1, spawnCard:'skeletons', spawnCount:4, spellFx:'barrel' },
   // ===== 自创卡（平衡微调，对齐 CR 同类）=====
   stormsentinel: { name:'雷霆守卫', cost:4, hp:950, dmg:130, range:117, spd:0, atkSpd:1.0, tgt:'any', count:1, color:'#03A9F4', icon:'雷守', radius:15, deployTime:1.0, isBuilding:true, decay:30, model:'tesla', atk:'beam' },
-  flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball' },
+  flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
   thornguardian: { name:'荆棘守卫', cost:3, hp:1100, dmg:140, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#43A047', icon:'荆', radius:15, splash:36, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
-  quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake' }
+  quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake' },
+  // ===== 原版新增：矿工（CR 锦标赛 L11）=====
+  miner:      { name:'矿工', cost:3, hp:1270, dmg:213, range:22, spd:30, atkSpd:1.3, tgt:'building', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, model:'miner', atk:'punch' },
+  // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
+  fisherman:  { name:'渔夫', cost:3, hp:1075, dmg:130, range:41, spd:30, atkSpd:1.4, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, model:'fisherman', atk:'hook' }
 };
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonbarrel','stormsentinel','flamemage','thornguardian','quake'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonbarrel','stormsentinel','flamemage','thornguardian','quake','miner','fisherman'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -408,7 +412,7 @@ function findTarget(unit) {
   if (unit.tgtType === 'building') {
     // 只打建筑：敌方防御建筑 + 塔，全部参与比较，取最近（限感知范围内）
     for (const u of game.units) {
-      if (u.owner !== enemyOwner || u.dead || u.hp <= 0 || !u.isBuilding) continue;
+      if (u.owner !== enemyOwner || u.dead || u.hp <= 0 || !u.isBuilding || u.underground) continue;
       const d = dist(unit, u);
       if (d < minD && d <= sight) { minD = d; nearest = u; }
     }
@@ -424,7 +428,7 @@ function findTarget(unit) {
   // 普通单位：感知范围内的敌方实体（卡牌 / 建筑 / 塔）都参与比较，取最近；
   // 仅保留地面/天空基本规则（近战地面打不到飞行）。
   for (const u of game.units) {
-    if (u.owner !== enemyOwner || u.dead || u.hp <= 0) continue;
+    if (u.owner !== enemyOwner || u.dead || u.hp <= 0 || u.underground) continue;
     // 近战地面单位（含加农炮等地面建筑）无法锁定飞行单位
     if (unit.tgtType === 'ground' && u.flying) continue;
     const d = dist(unit, u);
@@ -543,11 +547,22 @@ function clampToRiverBank(unit, newX, newY) {
 // ==================== 单位更新 ====================
 function updateUnit(unit, dt) {
   if (unit.hp <= 0) { unit.dead = true; return; }
+  tickBurn(unit, dt);
+  // 矿工挖地中：不可被锁定/攻击/碰撞，不移动不索敌，仅地下掘进倒计时（视觉由 updateDigMeshes 渲染）
+  if (unit.underground) {
+    unit.digTimer -= dt;
+    unit.vx = 0; unit.vy = 0;
+    if (unit.digTimer <= 0) {
+      unit.underground = false;
+      game.effects.push({ type:'splash', x:unit.x, y:unit.y, life:0.3, maxLife:0.3, color:'#8d6e63', radius:unit.radius*1.8 });
+    }
+    return;
+  }
   // 建筑寿命衰减：始终优先执行（即使在部署延迟 / 麻痹状态下），
   // 确保建筑按寿命稳定倒计时消失，不会被这些状态卡住"赖着不消失"
   if (unit.isBuilding && unit.decay) {
     unit.hp -= unit.decay * dt;
-    if (unit.hp <= 0) {
+    if (unit.hp <= 0 && !unit.dead) {
       unit.hp = 0; unit.dead = true;
       game.effects.push({ type:'explosion', x:unit.x, y:unit.y, life:0.5, maxLife:0.5, radius:35 });
       return;
@@ -658,6 +673,22 @@ function updateUnit(unit, dt) {
           }
         }
       }
+      // 渔夫钩索：命中后拉拽（地面兵拉向自己；建筑/塔则把自己拉过去）——遵循 CR 法则
+      if (unit.atk === 'hook') {
+        const tgt = unit.target;
+        if (tgt && tgt.hp > 0 && !tgt.dead) {
+          if (tgt.type === 'king' || tgt.type === 'princess' || tgt.isBuilding) {
+            const ang = Math.atan2(tgt.y - unit.y, tgt.x - unit.x);
+            const reach = (tgt.w ? tgt.w/2 : (tgt.radius||20)) + unit.radius + 6;
+            unit.x = tgt.x - Math.cos(ang)*reach; unit.y = tgt.y - Math.sin(ang)*reach;
+          } else {
+            const ang = Math.atan2(unit.y - tgt.y, unit.x - tgt.x);
+            const reach = unit.radius + (tgt.radius||12) + 6;
+            const c = clampToRiverBank(tgt, unit.x + Math.cos(ang)*reach, unit.y + Math.sin(ang)*reach);
+            tgt.x = c.x; tgt.y = c.y;
+          }
+        }
+      }
     }
   } else {
     // ===== 不在范围内：移动靠近目的地（含绕行避让 + 冲锋加速） =====
@@ -694,7 +725,7 @@ function updateUnit(unit, dt) {
 // 硬碰撞解算：每帧对所有地面单位做一次"位置硬分离"，彻底杜绝重叠（含单位↔建筑、建筑↔建筑）
 // 建筑(spd:0)固定不动，只把移动单位推出去；飞行单位在另一空间层，不参与地面推挤
 function resolveCollisions() {
-  const arr = game.units.filter(u => !u.dead && u.hp > 0 && !u.flying);
+  const arr = game.units.filter(u => !u.dead && u.hp > 0 && !u.flying && !u.underground);
   for (let iter = 0; iter < 3; iter++) {
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
@@ -772,7 +803,7 @@ function computeAvoidance(unit, dirX, dirY) {
 // 塔体硬分离：地面单位被塔模型挡住时，沿最近边“贴边滑过”，而不是直接嵌进塔/卡模型里
 function separateFromTowers() {
   for (const u of game.units) {
-    if (u.dead || u.hp <= 0 || u.flying) continue;
+    if (u.dead || u.hp <= 0 || u.flying || u.underground) continue;
     if (u.target && (u.target.type === 'king' || u.target.type === 'princess')) continue; // 正在攻击该塔：已在射程外停下，无需推
     for (const t of game.towers) {
       if (t.hp <= 0) continue;
@@ -790,6 +821,11 @@ function separateFromTowers() {
 
 function dealDamage(attacker, target, dmg) {
   target.hp -= dmg;
+  // 烈焰法师灼烧 DoT（可叠加）：每次命中给目标挂一个独立计时栈，每栈每秒 dmgPerSec、持续 burnDur 秒
+  if (attacker && attacker.applyBurn && target.hp > 0) {
+    if (!target.burns) target.burns = [];
+    target.burns.push({ timer: attacker.burnDur || 2.0, dmgPerSec: attacker.burnDmg || 20 });
+  }
   // 国王塔受到任何来源的伤害即激活（CR 规则：公主塔被毁 或 国王塔受击 → 苏醒）
   if (target.type === 'king') target.active = true;
   if (target.hp <= 0 && !target.dead) {
@@ -804,9 +840,20 @@ function dealDamage(attacker, target, dmg) {
   }
 }
 
+// 灼烧 DoT 结算：遍历目标身上的 burn 栈，逐栈按 dmgPerSec 持续扣血，计时结束或目标死亡则移除（栈独立→可叠加）
+function tickBurn(u, dt) {
+  if (!u.burns || !u.burns.length) return;
+  for (let i = u.burns.length - 1; i >= 0; i--) {
+    const b = u.burns[i];
+    b.timer -= dt;
+    dealDamage(null, u, b.dmgPerSec * dt);
+    if (b.timer <= 0 || u.hp <= 0) u.burns.splice(i, 1);
+  }
+}
 // ==================== 塔更新 ====================
 function updateTower(tower, dt) {
   if (tower.hp <= 0) return;
+  tickBurn(tower, dt);
   // 国王塔：初始休眠，直到本方任一公主塔被摧毁、或本塔受到任何伤害才激活（皇室战争规则）
   if (tower.type === 'king' && !tower.active) {
     const princessDown = game.towers.some(p => p.owner === tower.owner && p.type === 'princess' && p.hp <= 0);
@@ -1266,7 +1313,7 @@ function makeUnit(owner, def, x, y) {
     slow: def.slow || false, suicide: def.suicide || false,
     color: def.color, icon: def.icon, radius: def.radius,
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
-    target: null, dead: false, stunTimer: 0, slowTimer: 0, vx: 0, vy: 0,
+    target: null, dead: false, stunTimer: 0, slowTimer: 0, vx: 0, vy: 0, burns: [], underground: !!(def.digTime), digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false,
     _atkT: 0, _lunge: 0, _spin: 0
   };
@@ -1313,6 +1360,7 @@ function updatePendingSpells(dt) {
         for (const u of game.units) {
           if (u.owner !== enemyOwner || u.hp <= 0) continue;
           if (s.groundOnly && u.flying) continue;
+          if (u.underground) continue;
           if (dist(s, u) < s.radius) {
             dealDamage({owner:s.owner}, u, s.dmg);
             // 雷电麻痹：被命中的单位眩晕
@@ -1349,7 +1397,7 @@ function updateSpellFields(dt) {
     const f = game.spellFields[i];
     f.timer -= dt;
     for (const u of game.units) {
-      if (u.hp <= 0 || u.isBuilding) continue;
+      if (u.hp <= 0 || u.isBuilding || u.underground) continue;
       const d = Math.hypot(u.x - f.x, u.y - f.y);
       if (d < f.radius && d > 1) {
         const dirx = (f.x - u.x) / d, diry = (f.y - u.y) / d;
@@ -1446,6 +1494,26 @@ function makePlane(w, d, x, z, color, y) {
   mesh.position.set(x, y || 0, z);
   return mesh;
 }
+// 矿工挖地视觉：地下掘进时在落点渲染泥土堆 + 旋转翻土环 + 飞溅泥块
+function updateDigMeshes() {
+  for (const u of game.units) {
+    if (!u.underground) continue;
+    const x = u.x - CENTER_X, z = u.y - 340;
+    const prog = 1 - Math.max(0, u.digTimer) / (u.digTotal || 1);
+    const h = 6 + Math.sin(prog * Math.PI) * 6;
+    const mound = new THREE.Mesh(new THREE.ConeGeometry(u.radius * 1.25, h + 4, 14), new THREE.MeshLambertMaterial({ color: 0x8d6e63 }));
+    mound.position.set(x, (h + 4) / 2, z); fxGroup.add(mound);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(u.radius * 1.3, 1.6, 6, 20), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(x, 1.5, z); ring.rotation.z = (game.gameTime || 0) * 7; fxGroup.add(ring);
+    for (let i = 0; i < 5; i++) {
+      const a = (game.gameTime || 0) * 5 + i * 1.25 + prog * 2;
+      const rad = u.radius * (1.1 + (i % 2) * 0.4);
+      const cx = x + Math.cos(a) * rad, cz = z + Math.sin(a) * rad;
+      const ch = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshLambertMaterial({ color: 0x6d4c41 }));
+      ch.position.set(cx, 4 + Math.abs(Math.sin(a * 2)) * 9, cz); fxGroup.add(ch);
+    }
+  }
+}
 function render() {
   if (!THREE_OK || !scene) return;
   if (game !== renderedGame) {
@@ -1463,6 +1531,7 @@ function render() {
   updateEffectMeshes();
   updatePendingSpellMeshes();
   updateSpellFieldMeshes();
+  updateDigMeshes();
   const st = window.__sceneText;
   if (st) {
     if (game.gameTime < 1) { st.style.display='block'; st.textContent='开战!'; }
@@ -1681,6 +1750,12 @@ function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, sk
       { const slit = _box(headR * 1.1, headR * 0.28, headR * 0.3, _mat(0xff3355, { emissive: 0xff3355, emissiveIntensity: 0.9 })); slit.position.set(0, hy, headR * 0.8); parent.add(slit); break; }
     case 'giant': case 'royalgiant':
       { const brow = _box(headR * 1.4, headR * 0.25, headR * 0.4, dark); brow.position.set(0, hy + headR * 0.2, headR * 0.8); parent.add(brow); break; }
+    case 'miner':
+      { const hat = _cone(headR * 1.25, headR * 1.15, _mat(0xffee58), 16); hat.position.y = hy + headR * 0.7; parent.add(hat);
+        const brim = _box(headR * 2.0, headR * 0.18, headR * 2.0, _mat(0xffee58)); brim.position.y = hy + headR * 0.25; parent.add(brim); break; }
+    case 'fisherman':
+      { const cap = _box(headR * 1.7, headR * 0.5, headR * 1.7, _mat(0xff7043)); cap.position.y = hy + headR * 0.55; parent.add(cap);
+        const brim = _box(headR * 2.3, headR * 0.16, headR * 1.0, _mat(0xff7043)); brim.position.set(0, hy + headR * 0.3, headR * 0.7); parent.add(brim); break; }
     default: break;
   }
 }
@@ -1721,6 +1796,15 @@ function addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW,
     case 'speargoblin': {
       const w = new THREE.Group(); const h = _cyl(r * 0.06, r * 0.06, r * 1.6, _mat(0x8d6e63), 6); h.position.y = r * 0.8; w.add(h);
       const tip = _cone(r * 0.16, r * 0.35, metal, 6); tip.position.y = r * 1.6; w.add(tip); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.18); ud.weaponR = w; break; }
+    case 'miner': {
+      const w = new THREE.Group();
+      const h = _cyl(r * 0.06, r * 0.06, r * 1.2, _mat(0x6d4f43), 6); h.position.y = r * 0.6; w.add(h);
+      const hd1 = _box(r * 0.6, r * 0.14, r * 0.14, metal); hd1.position.set(r * 0.3, r * 1.2, 0); hd1.rotation.z = 0.5; w.add(hd1);
+      const hd2 = _box(r * 0.6, r * 0.14, r * 0.14, metal); hd2.position.set(-r * 0.3, r * 1.0, 0); hd2.rotation.z = -0.5; w.add(hd2);
+      ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.22); ud.weaponR = w; break; }
+    case 'fisherman': {
+      const rod = _cyl(r * 0.05, r * 0.05, r * 2.6, _mat(0x6d4f43), 6); rod.rotation.z = Math.PI / 2 - 0.55; rod.position.set(0, -bodyH * 0.1, r * 0.55); ud.armR.add(rod); ud.weaponR = rod;
+      const line2 = _cyl(r * 0.02, r * 0.02, r * 0.5, _mat(0xeeeeee), 6); line2.rotation.z = Math.PI / 2 - 0.55; line2.position.set(0, -bodyH * 0.1, r * 1.9); ud.armR.add(line2); break; }
     default: break;
   }
 }
@@ -1861,6 +1945,8 @@ function addUnitCommon(g, u, r) {
   }
 }
 function updateUnitMesh(m, u) {
+  if (u.underground) { m.visible = false; return; }
+  m.visible = true;
   const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
   if (u._posLog !== 1) { u._posLog = 1; console.log('[POS]', u.name, '→ world(', (u.x-CENTER_X).toFixed(1), hov, (u.y-340).toFixed(1), ') logic(', u.x.toFixed(1), u.y.toFixed(1), ')'); }
@@ -1987,6 +2073,10 @@ function animateAttack(ud, u, p) {
       const a = p < 0.5 ? -2.2 * (p / 0.5) : -2.2 + (p - 0.5) / 0.5 * 2.6;
       if (ud.armR) ud.armR.rotation.x = a;
       break; }
+    case 'hook': {
+      if (ud.armR) ud.armR.rotation.x = -0.6 + lunge * 1.6;
+      if (pivot) pivot.position.z = lunge * R * 0.6;
+      break; }
     case 'magic': {
       if (ud.body) { const s = 1 + lunge * 0.4; ud.body.scale.set(s, s, s); }
       break; }
@@ -2032,6 +2122,9 @@ function spawnAttackFx(u, tgt) {
       break;
     case 'magic':
       game.effects.push({ type: 'orb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.22, maxLife: 0.22, color: '#ff5722' });
+      break;
+    case 'hook':
+      game.effects.push({ type: 'hookline', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.22, maxLife: 0.22, color: '#cfd8dc' });
       break;
     case 'none': default: break;
   }
@@ -2181,6 +2274,16 @@ function updateEffectMeshes() {
       bar.position.set(x, yy, z); bar.rotation.z = (1 - pct) * 6; fxGroup.add(bar);
       const ring = new THREE.Mesh(new THREE.RingGeometry(20, 30, 20), new THREE.MeshBasicMaterial({color:0xc8a06a, transparent:true, opacity:(1-pct)*0.8, side:THREE.DoubleSide}));
       ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
+    } else if (e.type === 'hookline') {
+      const dx = e.tx - e.sx, dz = e.ty - e.sy;
+      const len = Math.hypot(dx, dz) || 1;
+      const mx = (e.sx + e.tx) / 2 - CENTER_X, mz = (e.sy + e.ty) / 2 - 340;
+      const line = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, len, 6), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color || '#cfd8dc'), transparent:true, opacity:0.95}));
+      line.position.set(mx, 12, mz);
+      line.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(dx,0,dz).normalize());
+      fxGroup.add(line);
+      const hook = new THREE.Mesh(new THREE.TorusGeometry(3.2, 1.2, 6, 10), new THREE.MeshBasicMaterial({color:new THREE.Color('#bdbdbd')}));
+      hook.position.set(e.tx - CENTER_X, 13, e.ty - 340); fxGroup.add(hook);
     } else if (e.type === 'freeze') {
       const rad = e.radius || 60;
       const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.8, rad, 28), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#81D4FA'), transparent:true, opacity:pct*0.8, side:THREE.DoubleSide}));
