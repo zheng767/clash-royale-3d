@@ -186,13 +186,13 @@ const CARD_DEFS = {
   healtotem: { name:'治疗图腾', cost:4, hp:850, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:17, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132, model:'totem', atk:'none' },
   frosttower: { name:'冰霜塔', cost:4, hp:912, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:15, deployTime:1.0, isBuilding:true, decay:18, slow:true, model:'frosttower', atk:'ice' },
   // ===== 原版新增（CR 锦标赛 L11 数值，效果严格还原）=====
-  hurricane:   { name:'飓风法术', cost:3, type:'spell', field:true, duration:4.0, radius:106, dmg:44, pull:80, color:'#4DD0E1', icon:'飓', spellFx:'hurricane' },
+  hurricane:   { name:'飓风法术', cost:3, type:'spell', field:true, duration:4.0, radius:106, dmg:200, pull:90, color:'#4DD0E1', icon:'飓', spellFx:'hurricane' },
   zap:        { name:'电击法术', cost:2, type:'spell', dmg:155, radius:53, stun:1.0, color:'#FFEB3B', icon:'电', delay:0.4, spellFx:'lightning' },
   freeze:     { name:'冰冻法术', cost:4, type:'spell', dmg:159, radius:64, stun:4.0, color:'#81D4FA', icon:'冻', delay:0.6, spellFx:'freeze' },
   minionhorde:{ name:'亡灵大军', cost:5, hp:230, dmg:107, range:34, spd:42.5, atkSpd:1.2, tgt:'any', count:6, color:'#37474F', icon:'群', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
   skeletonbarrel: { name:'骷髅飞桶', cost:2, type:'spell', radius:32, color:'#E0E0E0', icon:'骷桶', delay:1.1, spawnCard:'skeletons', spawnCount:4, spellFx:'barrel' },
   // ===== 自创卡（平衡微调，对齐 CR 同类）=====
-  stormsentinel: { name:'雷霆守卫', cost:4, hp:950, dmg:130, range:117, spd:0, atkSpd:1.0, tgt:'any', count:1, color:'#03A9F4', icon:'雷守', radius:15, deployTime:1.0, isBuilding:true, decay:30, model:'tesla', atk:'beam' },
+  stormsentinel: { name:'雷霆守卫', cost:3, hp:216, dmg:166, range:21, spd:41, atkSpd:1.2, tgt:'ground', count:2, color:'#ECEFF1', icon:'盾骷', radius:9, deployTime:1.0, shield:119, paralyze:true, model:'skguard', atk:'stab' },
   flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
   thornguardian: { name:'荆棘守卫', cost:3, hp:1100, dmg:140, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#43A047', icon:'荆', radius:15, splash:36, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
   quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake' },
@@ -580,6 +580,7 @@ function updateUnit(unit, dt) {
   }
   // 减速（冰霜塔）：缓慢恢复
   if (unit.slowTimer > 0) unit.slowTimer -= dt;
+  if (unit.paralyzeTimer > 0) unit.paralyzeTimer -= dt;
   // 实时速度（px/秒），供 AI 法术预判落点使用；每帧默认清零，移动时再写入
   unit.vx = 0; unit.vy = 0;
   // 治疗图腾：每帧治疗半径内的友军（不含自己），不超过其最大血量
@@ -622,7 +623,7 @@ function updateUnit(unit, dt) {
     // ===== 有锁定目标、在攻击范围内、且已到达对岸：停下攻击 =====
     unit.atkCD -= dt;
     if (unit.atkCD <= 0) {
-      unit.atkCD = unit.atkSpd;
+      unit.atkCD = unit.atkSpd + (unit.paralyzeTimer > 0 ? 0.4 : 0);
       let dmg = unit.dmg;
       if (unit.canCharge && unit.charged) {
         dmg = Math.round(dmg * unit.chargeBonus);
@@ -708,7 +709,7 @@ function updateUnit(unit, dt) {
         let fdirX = dirX + av.x, fdirY = dirY + av.y;
         const nlen = Math.hypot(fdirX, fdirY) || 1;
         fdirX /= nlen; fdirY /= nlen;
-        const spdNow = (unit.canCharge ? unit.curSpd : unit.spd) * (unit.slowTimer > 0 ? 0.7 : 1);
+        const spdNow = (unit.canCharge ? unit.curSpd : unit.spd) * ((unit.slowTimer > 0 ? 0.7 : 1) * (unit.paralyzeTimer > 0 ? 0.85 : 1));
         const step = spdNow * dt;
         unit.vx = fdirX * spdNow; unit.vy = fdirY * spdNow;
         let newX = unit.x + fdirX * step;
@@ -820,11 +821,25 @@ function separateFromTowers() {
 }
 
 function dealDamage(attacker, target, dmg) {
+  // 盾牌吸收：带盾单位先扣盾，盾破后才掉血（皇室战争·骷髅守卫机制）
+  if (target.shield > 0 && dmg > 0) {
+    const before = target.shield;
+    if (dmg >= target.shield) { dmg -= target.shield; target.shield = 0; }
+    else { target.shield -= dmg; dmg = 0; }
+    if (before > 0 && target.shield === 0) game.effects.push({ type:'splash', x:target.x, y:target.y, life:0.2, maxLife:0.2, color:'#cfd8dc', radius:(target.radius||10)*1.5 });
+  }
   target.hp -= dmg;
   // 烈焰法师灼烧 DoT（可叠加）：每次命中给目标挂一个独立计时栈，每栈每秒 dmgPerSec、持续 burnDur 秒
   if (attacker && attacker.applyBurn && target.hp > 0) {
     if (!target.burns) target.burns = [];
     target.burns.push({ timer: attacker.burnDur || 2.0, dmgPerSec: attacker.burnDmg || 20 });
+  }
+  // 雷霆守卫麻痹：命中敌方单位时，攻速变慢 0.4s 或打断正在攻击的单位（仅敌方单位，不影响建筑/塔）
+  if (attacker && attacker.paralyze && target.hp > 0) {
+    if (target.owner !== attacker.owner && target.type !== 'tower' && target.type !== 'king' && !target.isBuilding) {
+      applyParalyze(target);
+      game.effects.push({ type:'thunder', x:target.x, y:target.y, life:0.25, maxLife:0.25, color:'#7CD4FF' });
+    }
   }
   // 国王塔受到任何来源的伤害即激活（CR 规则：公主塔被毁 或 国王塔受击 → 苏醒）
   if (target.type === 'king') target.active = true;
@@ -840,6 +855,18 @@ function dealDamage(attacker, target, dmg) {
   }
 }
 
+// 雷霆守卫麻痹：被守卫攻击命中的敌方单位，攻速 +0.4s（持续 2s），若正在攻击则打断本次出手
+function applyParalyze(target) {
+  if (!target || target.dead || target.hp <= 0) return;
+  if (target.type === 'tower' || target.type === 'king' || target.isBuilding) return;
+  target.paralyzeTimer = 2.0;
+  if (target._atkT > 0) {           // 正在播放攻击动画：取消本次出手并延迟下次
+    target._atkT = 0;
+    target.atkCD = target.atkSpd + 0.4;
+  } else {
+    target.atkCD = Math.max(target.atkCD, target.atkSpd + 0.4);
+  }
+}
 // 灼烧 DoT 结算：遍历目标身上的 burn 栈，逐栈按 dmgPerSec 持续扣血，计时结束或目标死亡则移除（栈独立→可叠加）
 function tickBurn(u, dt) {
   if (!u.burns || !u.burns.length) return;
@@ -1313,14 +1340,14 @@ function makeUnit(owner, def, x, y) {
     slow: def.slow || false, suicide: def.suicide || false,
     color: def.color, icon: def.icon, radius: def.radius,
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
-    target: null, dead: false, stunTimer: 0, slowTimer: 0, vx: 0, vy: 0, burns: [], underground: !!(def.digTime), digTimer: def.digTime || 0, digTotal: def.digTime || 0,
+    target: null, dead: false, stunTimer: 0, slowTimer: 0, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, burns: [], underground: !!(def.digTime), digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false,
     _atkT: 0, _lunge: 0, _spin: 0
   };
 }
 
 function castSpell(owner, def, x, y) {
-  // 持续力场型法术（如飓风）：立即生成力场，持续拉拽+持续伤害，不分敌我，不影响建筑/塔
+  // 持续力场型法术（如飓风）：立即生成力场，持续拉拽+持续伤害，仅影响敌方单位，不影响建筑/塔
   if (def.field) {
     const dur = def.duration || 3.0;
     game.spellFields.push({
@@ -1398,10 +1425,13 @@ function updateSpellFields(dt) {
     f.timer -= dt;
     for (const u of game.units) {
       if (u.hp <= 0 || u.isBuilding || u.underground) continue;
+      if (u.owner === f.owner) continue;            // 飓风只影响敌方单位（按指令：仅敌方，不影响己方）
       const d = Math.hypot(u.x - f.x, u.y - f.y);
       if (d < f.radius && d > 1) {
         const dirx = (f.x - u.x) / d, diry = (f.y - u.y) / d;
-        const pull = f.pull * dt;
+        // 体积越大被卷动越弱：pull 按单位半径反比缩放（大单位被卷的距离明显更小，符合 CR 手感）
+        const sizeFactor = 12 / (12 + (u.radius || 10));
+        const pull = f.pull * sizeFactor * dt;
         u.x += dirx * pull; u.y += diry * pull;
         if (f.dmgPerSec > 0) dealDamage({owner:f.owner}, u, f.dmgPerSec * dt);
         if (!u.flying) { const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y; }
@@ -1815,6 +1845,20 @@ function buildGround(g, u, ud, r, col, baseMat, skin, dark, metal) {
     const flame = _cone(r * 0.7, r * 1.1, _mat(0xffc107, { emissive: 0xff7700, emissiveIntensity: 0.9 }), 10); flame.position.y = r * 1.5; pivot.add(flame);
     ud.floatBob = true; return;
   }
+  if (u.model === 'skguard') {
+    const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot; console.log('[BUILD]', u.name, 'pivot OK');
+    const legH = r * 0.9, bodyH = r * 1.0, headR = r * 0.5;
+    const body = _box(r*1.1, bodyH, r*0.7, baseMat); body.position.y = legH + bodyH/2; pivot.add(body); ud.body = body;
+    const head = _sph(headR, _mat(0xf2f2f2)); head.position.y = legH + bodyH + headR*0.7; pivot.add(head); ud.head = head;
+    const legGeo = new THREE.BoxGeometry(r*0.34, legH, r*0.34);
+    const legL = new THREE.Mesh(legGeo, baseMat); legL.position.set(-r*0.3, legH/2, 0); pivot.add(legL); ud.legL = legL;
+    const legR = new THREE.Mesh(legGeo, baseMat); legR.position.set(r*0.3, legH/2, 0); pivot.add(legR); ud.legR = legR;
+    const shield = new THREE.Mesh(new THREE.CylinderGeometry(r*0.72, r*0.72, r*0.25, 16), _mat(0xcfd8dc, { metalness:0.4, roughness:0.4 }));
+    shield.rotation.x = Math.PI/2; shield.position.set(r*0.55, legH + bodyH*0.72, r*0.32); pivot.add(shield);
+    const sword = _box(r*0.16, r*0.9, r*0.16, metal); sword.position.set(-r*0.55, legH + bodyH*0.72, r*0.18); pivot.add(sword); ud.armR = sword;
+    console.log('[BUILD]', u.name, 'skguard OK');
+    return;
+  }
   const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot; console.log('[BUILD]', u.name, 'pivot OK');
   const legH = r * 0.95, bodyH = r * 1.15, headR = r * 0.55;
   const bodyW = (u.model === 'giant' || u.model === 'royalgiant' || u.model === 'pekka') ? r * 1.5 :
@@ -2000,8 +2044,8 @@ function updateUnitMesh(m, u) {
   if (body) {
     if (u.deployTimer > 0) { body.material.transparent = true; body.material.opacity = 0.45 + 0.35*Math.sin(u.deployTimer*12); }
     else { body.material.transparent = false; body.material.opacity = 1; }
-    body.material.emissive = new THREE.Color(u.stunTimer > 0 ? 0xFFEB3B : 0x000000);
-    body.material.emissiveIntensity = u.stunTimer > 0 ? 0.7 : 0;
+    body.material.emissive = new THREE.Color(u.stunTimer > 0 ? 0xFFEB3B : (u.paralyzeTimer > 0 ? 0x4488FF : 0x000000));
+    body.material.emissiveIntensity = (u.stunTimer > 0 || u.paralyzeTimer > 0) ? 0.6 : 0;
   }
   const ratio = Math.max(0, u.hp / u.maxHp);
   const fg = ud.fg, barW = ud.barW;
@@ -2290,6 +2334,11 @@ function updateEffectMeshes() {
       ring.rotation.x = -Math.PI/2; ring.position.set(x, 3, z); fxGroup.add(ring);
       const core = new THREE.Mesh(new THREE.SphereGeometry(rad*0.5, 16, 12), new THREE.MeshBasicMaterial({color:0x81D4FA, transparent:true, opacity:0.25}));
       core.position.set(x, 12, z); fxGroup.add(core);
+    } else if (e.type === 'thunder') {
+      const col = new THREE.Mesh(new THREE.BoxGeometry(3, 50, 3), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#7CD4FF'), transparent:true, opacity:0.85}));
+      col.position.set(x, 26, z); fxGroup.add(col);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(6, 14, 16), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#7CD4FF'), transparent:true, opacity:pct*0.9, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
     }
     if (mesh) fxGroup.add(mesh);
   }
