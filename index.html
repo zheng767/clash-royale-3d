@@ -212,6 +212,7 @@ const unitGroup = new THREE.Group();
 const fxGroup = new THREE.Group();
 const unitMeshMap = new Map();
 let deployZoneMesh = null;
+let spellRangeMesh = null, spellRangeRing = null, spellRangeFill = null;
 let renderedGame = null;
 
 function ensureScene() {
@@ -251,6 +252,16 @@ function ensureScene() {
     deployZoneMesh.position.set(0, 1.5, 180);
     deployZoneMesh.visible = false;
     scene.add(deployZoneMesh);
+    // 法术范围圈预览：选中法术后跟随鼠标显示半径=法术半径的半透明圈
+    spellRangeMesh = new THREE.Group();
+    spellRangeRing = new THREE.Mesh(new THREE.RingGeometry(0.965, 1, 44), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+    spellRangeRing.rotation.x = -Math.PI/2;
+    spellRangeFill = new THREE.Mesh(new THREE.CircleGeometry(1, 44), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16, side: THREE.DoubleSide }));
+    spellRangeFill.rotation.x = -Math.PI/2;
+    spellRangeMesh.add(spellRangeRing); spellRangeMesh.add(spellRangeFill);
+    spellRangeMesh.position.y = 2;
+    spellRangeMesh.visible = false;
+    scene.add(spellRangeMesh);
     const st = document.createElement('div');
     st.id = 'scene-text';
     st.style.cssText = 'position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);color:#ffd700;font-weight:700;font-size:30px;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.85);pointer-events:none;z-index:5;display:none;';
@@ -2179,10 +2190,19 @@ function updateDeployZone() {
   const cardKey = game.player.hand[game.selectedCardIdx];
   const def = CARD_DEFS[cardKey];
   if (def && def.type === 'spell') {
-    deployZoneMesh.scale.set(1, 680/320, 1);
-    deployZoneMesh.position.set(0, 1.5, 0);
-    deployZoneMesh.visible = true;
+    deployZoneMesh.visible = false;
+    if (hoverWorld && def.radius) {
+      spellRangeMesh.visible = true;
+      spellRangeMesh.position.set(hoverWorld.x - CENTER_X, 2, hoverWorld.y - 340);
+      spellRangeMesh.scale.set(def.radius, def.radius, def.radius);
+      const sc = new THREE.Color(def.color || '#ffffff');
+      spellRangeRing.material.color.copy(sc);
+      spellRangeFill.material.color.copy(sc);
+    } else {
+      spellRangeMesh.visible = false;
+    }
   } else {
+    spellRangeMesh.visible = false;
     let zMin = 20, zMax = 340;
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
@@ -2347,27 +2367,57 @@ function updatePendingSpellMeshes() {
   for (const s of game.pendingSpells) {
     const pct = s.timer / s.maxTimer;
     const x = s.x - CENTER_X, z = s.y - 340;
-    const isBarrel = s.kind === 'barrel';
-    const ringColor = isBarrel ? 0xc8a06a : 0xff4444;
-    const fillColor = isBarrel ? 0xd8b27a : 0xff5028;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(s.radius*0.92, s.radius, 28), new THREE.MeshBasicMaterial({color:ringColor, transparent:true, opacity:0.6+0.4*Math.sin(s.timer*15), side:THREE.DoubleSide}));
+    // 落点预警圈颜色按法术类型区分，让人一眼认出放了什么
+    let ringColor = 0xff4444, fillColor = 0xff5028;
+    if (s.kind === 'rocket') { ringColor = 0xff3b30; fillColor = 0xff5a4d; }
+    else if (s.kind === 'fireball') { ringColor = 0xff7a1a; fillColor = 0xff8a3d; }
+    else if (s.kind === 'lightning') { ringColor = 0xfff27a; fillColor = 0xfff27a; }
+    else if (s.kind === 'arrows') { ringColor = 0x42a5f5; fillColor = 0x42a5f5; }
+    else if (s.kind === 'freeze') { ringColor = 0x81D4FA; fillColor = 0x81D4FA; }
+    else if (s.kind === 'quake') { ringColor = 0x8d6e63; fillColor = 0x8d6e63; }
+    else if (s.kind === 'barrel') { ringColor = 0xc8a06a; fillColor = 0xd8b27a; }
+    const ring = new THREE.Mesh(new THREE.RingGeometry(s.radius*0.94, s.radius, 30), new THREE.MeshBasicMaterial({ color: ringColor, transparent: true, opacity: 0.55 + 0.35*Math.sin(s.timer*16), side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
-    const fill = new THREE.Mesh(new THREE.CircleGeometry(s.radius*(1-pct)+5, 24), new THREE.MeshBasicMaterial({color:fillColor, transparent:true, opacity:0.15, side:THREE.DoubleSide}));
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(s.radius*(1-pct)+5, 26), new THREE.MeshBasicMaterial({ color: fillColor, transparent: true, opacity: 0.16, side: THREE.DoubleSide }));
     fill.rotation.x = -Math.PI/2; fill.position.set(x, 1.6, z); fxGroup.add(fill);
+    // 从天而降的飞行物：火箭/火球/闪电有可辨识的“轨迹落地”表现
+    const prog = 1 - pct; // 0→1 下落进度
+    if (s.kind === 'rocket') {
+      const by = 320 - prog * 312;
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 22, 12), new THREE.MeshBasicMaterial({ color: 0xff3b30 }));
+      body.position.set(x, by, z);
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(5.5, 12, 12), new THREE.MeshBasicMaterial({ color: 0xffd54f }));
+      nose.position.set(x, by + 16, z);
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(4.5, 16, 10), new THREE.MeshBasicMaterial({ color: 0xff8a3d, transparent: true, opacity: 0.85 }));
+      flame.position.set(x, by - 18, z); flame.rotation.x = Math.PI;
+      fxGroup.add(body); fxGroup.add(nose); fxGroup.add(flame);
+    } else if (s.kind === 'fireball') {
+      const by = 320 - prog * 312;
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(9, 14, 12), new THREE.MeshBasicMaterial({ color: 0xff7a1a }));
+      ball.position.set(x, by, z);
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(15, 14, 12), new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.3 }));
+      glow.position.set(x, by, z);
+      fxGroup.add(ball); fxGroup.add(glow);
+    } else if (s.kind === 'lightning') {
+      const by = 300 - prog * 294;
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 4.5, 46, 8), new THREE.MeshBasicMaterial({ color: 0xfff27a, transparent: true, opacity: 0.7 + 0.3*Math.random() }));
+      bolt.position.set(x, by, z);
+      const core = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2, 46, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 }));
+      core.position.set(x, by, z);
+      fxGroup.add(bolt); fxGroup.add(core);
+    }
     // 飞桶：延迟期间从投放方一侧沿抛物线飞向落点，呈现“飞行中”的3D建模效果
-    if (isBarrel) {
-      const prog = 1 - pct; // 0→1 飞行进度
-      const startZ = (s.owner === 'player') ? 320 : -320; // 投放方一侧边缘
-      const bx = x + (x - x) * prog; // 同列飞行
+    if (s.kind === 'barrel') {
+      const startZ = (s.owner === 'player') ? 320 : -320;
+      const bx = x;
       const bz = startZ + (z - startZ) * prog;
-      const by = 8 + Math.sin(prog * Math.PI) * 120; // 抛物线高度
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 18, 12), new THREE.MeshBasicMaterial({color:0x8d6e63}));
+      const by = 8 + Math.sin(prog * Math.PI) * 120;
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 18, 12), new THREE.MeshBasicMaterial({ color: 0x8d6e63 }));
       bar.position.set(bx, by, bz);
-      bar.rotation.z = (1 - pct) * 6;   // 翻滚
+      bar.rotation.z = (1 - pct) * 6;
       bar.rotation.x = -prog * 2.2;
       fxGroup.add(bar);
-      // 地面投影
-      const sh = new THREE.Mesh(new THREE.CircleGeometry(7, 16), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.22*(1-prog*0.5), side:THREE.DoubleSide}));
+      const sh = new THREE.Mesh(new THREE.CircleGeometry(7, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22*(1-prog*0.5), side: THREE.DoubleSide }));
       sh.rotation.x = -Math.PI/2; sh.position.set(bx, 1.5, bz); fxGroup.add(sh);
     }
   }
