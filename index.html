@@ -167,7 +167,7 @@ const CARD_DEFS = {
   knight:     { name:'骑士', cost:3, hp:1766, dmg:202, range:26, spd:21.25, atkSpd:1.2, tgt:'ground', count:1, color:'#5B6EE1', icon:'剑', radius:15, deployTime:1.0, model:'soldier', atk:'sword' },
   archer:     { name:'弓箭手', cost:3, hp:304, dmg:112, range:106, spd:21.25, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:11, deployTime:1.0, model:'archer', atk:'arrow' },
   goblin:     { name:'哥布林', cost:2, hp:202, dmg:120, range:11, spd:42.5, atkSpd:1.1, tgt:'ground', count:4, color:'#7CB342', icon:'哥', radius:11, deployTime:1.0, model:'goblin', atk:'stab' },
-  giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:10.6, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:21, deployTime:1.0, model:'giant', atk:'punch' },
+  giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:15.9, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:21, deployTime:1.0, model:'giant', atk:'punch' },
   bomber:     { name:'炸弹人', cost:3, hp:304, dmg:225, range:96, spd:21.25, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:11, splash:33, deployTime:1.0, model:'bomber', atk:'lob' },
   minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:21.25, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:15, deployTime:1.0, model:'minipekka', atk:'bigslash' },
   skeletons:  { name:'骷髅兵', cost:1, hp:81, dmg:81, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:3, color:'#BDBDBD', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
@@ -177,7 +177,7 @@ const CARD_DEFS = {
   barbarians: { name:'野蛮人', cost:5, hp:691, dmg:191, range:15, spd:21.25, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:1.0, model:'barbarian', atk:'sword' },
   hogrider:   { name:'野猪骑士', cost:4, hp:1697, dmg:317, range:18, spd:42.5, atkSpd:1.6, tgt:'building', count:1, color:'#F57C00', icon:'猪', radius:15, deployTime:1.0, canJumpRiver:true, model:'hogrider', atk:'hammer' },
   wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:117, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:13, splash:22, deployTime:1.0, model:'wizard', atk:'fireball' },
-  arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:243, radius:74, color:'#42A5F5', icon:'箭', delay:0.4, spellFx:'arrows' },
+  arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:243, radius:85, color:'#42A5F5', icon:'箭', delay:0.4, spellFx:'arrows' },
   pekka:      { name:'皮卡超人', cost:7, hp:3760, dmg:842, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:19, deployTime:1.0, model:'pekka', atk:'bigslash' },
   skarmy:     { name:'骷髅军团', cost:3, hp:67, dmg:67, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
   rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1484, radius:43, color:'#FF1744', icon:'炸', delay:2.0, spellFx:'rocket' },
@@ -192,7 +192,7 @@ const CARD_DEFS = {
   speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:106, spd:42.5, atkSpd:1.7, tgt:'any', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
   goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:32, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3, spellFx:'barrel' },
   // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(VeryFast)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
-  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:44.4, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:11, splash:51, deployTime:1.0, suicide:true, model:'flamesprite', atk:'magic' },
+  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:42.5, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:11, splash:51, deployTime:1.0, suicide:true, model:'flamesprite', atk:'magic' },
   healtotem: { name:'治疗图腾', cost:4, hp:480, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:17, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132, model:'totem', atk:'none' },
   frosttower: { name:'冰霜塔', cost:4, hp:700, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:15, deployTime:1.0, isBuilding:true, decay:18, slow:true, model:'frosttower', atk:'ice' }
 };
@@ -412,6 +412,7 @@ function findTarget(unit) {
     }
     for (const t of game.towers) {
       if (t.owner !== enemyOwner || t.hp <= 0) continue;
+      if (t.type === 'king' && !t.active) continue;   // 未激活的国王塔不可被锁定（CR 规则）
       const d = dist(unit, t);
       if (d < minD) { minD = d; nearest = t; }
     }
@@ -422,8 +423,8 @@ function findTarget(unit) {
   // 仅保留地面/天空基本规则（近战地面打不到飞行）。
   for (const u of game.units) {
     if (u.owner !== enemyOwner || u.dead || u.hp <= 0) continue;
-    // 近战地面单位无法锁定飞行单位；建筑与射手单位可以打空
-    if (unit.tgtType === 'ground' && u.flying && !unit.isBuilding) continue;
+    // 近战地面单位（含加农炮等地面建筑）无法锁定飞行单位
+    if (unit.tgtType === 'ground' && u.flying) continue;
     const d = dist(unit, u);
     if (d < minD && d <= sight) { minD = d; nearest = u; }
   }
@@ -431,6 +432,7 @@ function findTarget(unit) {
   // 与最近单位比距离，近者优先。公主塔只在同侧（同桥）才可被锁定。
   for (const t of game.towers) {
     if (t.owner !== enemyOwner || t.hp <= 0) continue;
+    if (t.type === 'king' && !t.active) continue;   // 未激活的国王塔不可被锁定（CR 规则）
     if (t.type === 'princess') {
       const towerLeft = t.x < CENTER_X;
       if (towerLeft !== unitLeft) continue;
@@ -447,6 +449,7 @@ function findTowerInRange(unit) {
   const unitLeft = unit.x < CENTER_X;
   for (const t of game.towers) {
     if (t.owner !== enemyOwner || t.hp <= 0) continue;
+    if (t.type === 'king' && !t.active) continue;   // 未激活的国王塔不可被锁定（CR 规则）
     if (t.type === 'princess') {
       const towerLeft = t.x < CENTER_X;
       if (towerLeft !== unitLeft) continue;
@@ -463,6 +466,7 @@ function findNearestTower(unit, enemyOwner) {
   const unitLeft = unit.x < CENTER_X;
   for (const t of game.towers) {
     if (t.owner !== enemyOwner || t.hp <= 0) continue;
+    if (t.type === 'king' && !t.active) continue;   // 未激活的国王塔不可作为移动目标（CR 规则）
     // 公主塔只选同侧的；同侧公主塔被毁后自然只剩国王塔
     if (t.type === 'princess') {
       const towerLeft = t.x < CENTER_X;
@@ -645,7 +649,7 @@ function updateUnit(unit, dt) {
           for (const u of game.units) {
             if (u.owner !== enemies || u === unit.target || u.hp <= 0) continue;
             if (dist(unit.target, u) < unit.splash) {
-              dealDamage(unit, u, unit.dmg * 0.7);
+              dealDamage(unit, u, unit.dmg);   // 溅射对范围内所有目标均为全额伤害（CR 规则）
             }
           }
         }
@@ -782,6 +786,8 @@ function separateFromTowers() {
 
 function dealDamage(attacker, target, dmg) {
   target.hp -= dmg;
+  // 国王塔受到任何来源的伤害即激活（CR 规则：公主塔被毁 或 国王塔受击 → 苏醒）
+  if (target.type === 'king') target.active = true;
   if (target.hp <= 0 && !target.dead) {
     target.dead = true;
     if (target.type === 'king' || target.type === 'princess') {
@@ -797,7 +803,7 @@ function dealDamage(attacker, target, dmg) {
 // ==================== 塔更新 ====================
 function updateTower(tower, dt) {
   if (tower.hp <= 0) return;
-  // 国王塔：初始休眠，直到本方任一公主塔被摧毁才激活（皇室战争规则）
+  // 国王塔：初始休眠，直到本方任一公主塔被摧毁、或本塔受到任何伤害才激活（皇室战争规则）
   if (tower.type === 'king' && !tower.active) {
     const princessDown = game.towers.some(p => p.owner === tower.owner && p.type === 'princess' && p.hp <= 0);
     if (princessDown) {
@@ -1288,7 +1294,7 @@ function updatePendingSpells(dt) {
         }
         for (const t of game.towers) {
           if (t.owner !== enemyOwner || t.hp <= 0) continue;
-          if (dist(s, t) < s.radius + 20) dealDamage({owner:s.owner}, t, s.dmg * 0.4);
+          if (dist(s, t) < s.radius + 20) dealDamage({owner:s.owner}, t, s.dmg * 0.35);  // 塔受法术减伤65%（只吃35%，CR 规则）
         }
       }
       // 召唤类法术（哥布林飞桶）：延迟结束后在落点生成部队
@@ -2209,8 +2215,9 @@ function gameLoop(timestamp) {
     game.elixirTimer += dt;
     let elixirRate;
     if (game.overtime) {
-      // 加时赛：第一分钟2x(1.4s)，第二分钟3x(0.93s) —— CR 标准
-      elixirRate = game.overtimeTime > 60 ? (2.8 / 3) : 1.4;
+      // 加时赛：overtimeTime 从120倒数，>60 为第一分钟。
+      // CR 标准：第一分钟 2x(1 圣水/1.4s)，第二分钟 3x(1 圣水/0.93s)
+      elixirRate = game.overtimeTime > 60 ? 1.4 : (2.8 / 3);
     } else {
       elixirRate = game.time < 60 ? 1.4 : 2.8;
     }
