@@ -251,11 +251,6 @@ function ensureScene() {
     st.style.cssText = 'position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);color:#ffd700;font-weight:700;font-size:30px;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.85);pointer-events:none;z-index:5;display:none;';
     document.getElementById('canvas-wrap').appendChild(st);
     window.__sceneText = st;
-    const dt = document.createElement('div');
-    dt.id = 'deploy-toast';
-    dt.style.cssText = 'position:absolute;bottom:154px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:6px 16px;border-radius:14px;font-size:14px;font-weight:600;white-space:nowrap;pointer-events:none;z-index:6;opacity:0;transition:opacity 0.25s;';
-    document.getElementById('canvas-wrap').appendChild(dt);
-    window.__deployToast = dt;
     renderer.render(scene, camera);
   } catch (e) {
     THREE_OK = false; console.error('Three.js init failed', e);
@@ -541,6 +536,14 @@ function clampToRiverBank(unit, newX, newY) {
   return { x: newX, y: bankY };
 }
 
+// 判断单位是否处于某座桥的桥道走廊内（用于桥上"只走纵向、排队过桥"逻辑）
+function onBridgeOf(unit) {
+  if (unit.flying || unit.canJumpRiver) return null;
+  if (Math.abs(unit.x - BRIDGE_L.x) <= BRIDGE_HALF + 4) return BRIDGE_L;
+  if (Math.abs(unit.x - BRIDGE_R.x) <= BRIDGE_HALF + 4) return BRIDGE_R;
+  return null;
+}
+
 // ==================== 单位更新 ====================
 function updateUnit(unit, dt) {
   if (unit.hp <= 0) { unit.dead = true; return; }
@@ -673,14 +676,22 @@ function updateUnit(unit, dt) {
         }
         // 绕行避让：被挡在前方时向侧面绕过去，而不是停在后面顶着
         const av = computeAvoidance(unit, dirX, dirY);
-        dirX += av.x; dirY += av.y;
-        const nlen = Math.hypot(dirX, dirY) || 1;
-        dirX /= nlen; dirY /= nlen;
+        let fdirX = dirX + av.x, fdirY = dirY + av.y;
+        const bridge = onBridgeOf(unit);
+        if (bridge) {
+          // 桥上：仅沿桥长轴(纵向)直行，禁用横向/向后避让推力，
+          // 否则会被侧推挤下河或在友军身后自锁（覆盖任意体型/任意进入点/任意前后关系）
+          fdirX = 0;
+          fdirY = (mt.y - unit.y) >= 0 ? 1 : -1;
+        } else {
+          const nlen = Math.hypot(fdirX, fdirY) || 1;
+          fdirX /= nlen; fdirY /= nlen;
+        }
         const spdNow = (unit.canCharge ? unit.curSpd : unit.spd) * (unit.slowTimer > 0 ? 0.7 : 1);
         const step = spdNow * dt;
-        unit.vx = dirX * spdNow; unit.vy = dirY * spdNow;
-        let newX = unit.x + dirX * step;
-        let newY = unit.y + dirY * step;
+        unit.vx = fdirX * spdNow; unit.vy = fdirY * spdNow;
+        let newX = unit.x + fdirX * step;
+        let newY = unit.y + fdirY * step;
         const clamped = clampToRiverBank(unit, newX, newY);
         unit.x = clamped.x;
         unit.y = clamped.y;
@@ -714,8 +725,19 @@ function resolveCollisions() {
         } else if (bFixed) {
           a.x -= nx * overlap; a.y -= ny * overlap;
         } else {
-          a.x -= nx * overlap / 2; a.y -= ny * overlap / 2;
-          b.x += nx * overlap / 2; b.y += ny * overlap / 2;
+          const ba = onBridgeOf(a), bb = onBridgeOf(b);
+          if (ba && bb && ba === bb && a.owner === b.owner) {
+            // 桥上同桥两单位：前车沿前进方向整体前推、后车只横向错开(不被向后挤)，
+            // 像火车一样整列前移，杜绝任意体型/任意前后关系下的连环卡死
+            const travel = a.owner === 'player' ? 1 : -1;
+            const front = travel > 0 ? (a.y > b.y ? a : b) : (a.y < b.y ? a : b);
+            const rear = front === a ? b : a;
+            front.y += travel * overlap;   // 前车向敌塔方向推进，消除纵向重叠
+            rear.x -= nx * overlap;        // 后车仅横向让位，保留其前进进度
+          } else {
+            a.x -= nx * overlap / 2; a.y -= ny * overlap / 2;
+            b.x += nx * overlap / 2; b.y += ny * overlap / 2;
+          }
         }
         if (!aFixed) { const c = clampToRiverBank(a, a.x, a.y); a.x = c.x; a.y = c.y; }
         if (!bFixed) { const c = clampToRiverBank(b, b.x, b.y); b.x = c.x; b.y = c.y; }
