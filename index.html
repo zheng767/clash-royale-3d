@@ -197,9 +197,9 @@ const CARD_DEFS = {
   thornguardian: { name:'荆棘守卫', cost:3, hp:1100, dmg:140, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#43A047', icon:'荆', radius:15, splash:36, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
   quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake' },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
-  miner:      { name:'矿工', cost:3, hp:1270, dmg:213, range:22, spd:30, atkSpd:1.3, tgt:'building', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, model:'miner', atk:'punch' },
+  miner:      { name:'矿工', cost:3, hp:1270, dmg:213, range:22, spd:30, atkSpd:1.3, tgt:'building', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch' },
   // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
-  fisherman:  { name:'渔夫', cost:3, hp:1075, dmg:130, range:41, spd:30, atkSpd:1.4, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, model:'fisherman', atk:'hook' }
+  fisherman:  { name:'渔夫', cost:3, hp:1075, dmg:130, range:41, spd:30, atkSpd:1.4, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:120, hookCDInit:1.5, model:'fisherman', atk:'hook' }
 };
 const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonbarrel','stormsentinel','flamemage','thornguardian','quake','miner','fisherman'];
 
@@ -393,6 +393,8 @@ function canDeploy(owner, x, y, cardKey) {
       if (pointRectDist(x, y, t.x, t.y, (t.w || 40) / 2, (t.h || 40) / 2) < r0 + margin) return false;
     }
   }
+  // 矿工等可全场部署（无视半场限制，但河面/建筑/塔重叠校验已在上文完成）——遵循 CR 法则
+  if (def && def.deployAnywhere) return true;
   if (owner === 'player') {
     if (y >= RIVER_BOT && y <= CH - 5) return true;
     const aLP = game.towers.find(t => t.id === 'aLP');
@@ -559,6 +561,7 @@ function clampToRiverBank(unit, newX, newY) {
 function updateUnit(unit, dt) {
   if (unit.hp <= 0) { unit.dead = true; return; }
   tickBurn(unit, dt);
+  if (unit.hookCD > 0) unit.hookCD -= dt;
   // 矿工挖地中：不可被锁定/攻击/碰撞，不移动不索敌，仅地下掘进倒计时（视觉由 updateDigMeshes 渲染）
   if (unit.underground) {
     unit.digTimer -= dt;
@@ -685,24 +688,31 @@ function updateUnit(unit, dt) {
           }
         }
       }
-      // 渔夫钩索：命中后拉拽（地面兵拉向自己；建筑/塔则把自己拉过去）——遵循 CR 法则
-      if (unit.atk === 'hook') {
-        const tgt = unit.target;
-        if (tgt && tgt.hp > 0 && !tgt.dead) {
-          if (tgt.type === 'king' || tgt.type === 'princess' || tgt.isBuilding) {
-            const ang = Math.atan2(tgt.y - unit.y, tgt.x - unit.x);
-            const reach = (tgt.w ? tgt.w/2 : (tgt.radius||20)) + unit.radius + 6;
-            unit.x = tgt.x - Math.cos(ang)*reach; unit.y = tgt.y - Math.sin(ang)*reach;
-          } else {
-            const ang = Math.atan2(unit.y - tgt.y, unit.x - tgt.x);
-            const reach = unit.radius + (tgt.radius||12) + 6;
-            const c = clampToRiverBank(tgt, unit.x + Math.cos(ang)*reach, unit.y + Math.sin(ang)*reach);
-            tgt.x = c.x; tgt.y = c.y;
-          }
-        }
-      }
+      // 渔夫钩索已下移：仅在「面前无近战目标」时出钩（见下方移动分支），避免持续拉拽/来回勾——遵循 CR 法则
     }
   } else {
+    // 渔夫：仅当面前没有可近战进攻的单位（目标超出近战范围、但在钩索范围内）才出钩，把远处单位拉过来；
+    //       拉过来后目标进入近战范围 → 下一帧走正常三齿攻击，不再重复勾（遵循 CR 法则：钩子不是常驻攻击）
+    if (unit.atk === 'hook' && unit.target && !unit.target.dead && unit.target.hp > 0 && (unit.hookCD || 0) <= 0) {
+      const tdist = dist(unit, unit.target);
+      const meleeR = unit.range + (unit.target.radius || 10);
+      if (tdist > meleeR && tdist <= (unit.hookRange || 120)) {
+        if (unit.target.type === 'king' || unit.target.type === 'princess' || unit.target.isBuilding) {
+          const ang = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
+          const reach = (unit.target.w ? unit.target.w/2 : (unit.target.radius||20)) + unit.radius + 6;
+          const c = clampToRiverBank(unit, unit.target.x - Math.cos(ang)*reach, unit.target.y - Math.sin(ang)*reach);
+          unit.x = c.x; unit.y = c.y;
+        } else {
+          const ang = Math.atan2(unit.y - unit.target.y, unit.x - unit.target.x);
+          const reach = unit.radius + (unit.target.radius||12) + 6;
+          const c = clampToRiverBank(unit.target, unit.x + Math.cos(ang)*reach, unit.y + Math.sin(ang)*reach);
+          unit.target.x = c.x; unit.target.y = c.y;
+        }
+        game.effects.push({ type:'hookline', sx:unit.x, sy:unit.y, tx:unit.target.x, ty:unit.target.y, life:0.22, maxLife:0.22, color:'#cfd8dc' });
+        unit.hookCD = unit.hookCDInit || 1.5;
+        unit.atkCD = Math.min(unit.atkCD, 0.3);
+      }
+    }
     // ===== 不在范围内：移动靠近目的地（含绕行避让 + 冲锋加速） =====
     const mt = getMoveTarget(unit, moveDest);
     if (mt) {
@@ -1540,19 +1550,27 @@ function updateDigMeshes() {
   for (const u of game.units) {
     if (!u.underground) continue;
     const x = u.x - CENTER_X, z = u.y - 340;
-    const prog = 1 - Math.max(0, u.digTimer) / (u.digTotal || 1);
-    const h = 6 + Math.sin(prog * Math.PI) * 6;
-    const mound = new THREE.Mesh(new THREE.ConeGeometry(u.radius * 1.25, h + 4, 14), new THREE.MeshLambertMaterial({ color: 0x8d6e63 }));
-    mound.position.set(x, (h + 4) / 2, z); fxGroup.add(mound);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(u.radius * 1.3, 1.6, 6, 20), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
-    ring.rotation.x = -Math.PI / 2; ring.position.set(x, 1.5, z); ring.rotation.z = (game.gameTime || 0) * 7; fxGroup.add(ring);
-    for (let i = 0; i < 5; i++) {
-      const a = (game.gameTime || 0) * 5 + i * 1.25 + prog * 2;
-      const rad = u.radius * (1.1 + (i % 2) * 0.4);
+    const t = game.gameTime || 0;
+    const prog = 1 - Math.max(0, u.digTimer) / (u.digTotal || 1); // 0→1 掘进进度
+    // 翻腾的泥土坑（锥体，随进度起伏，模拟挖掘）
+    const h = 5 + Math.sin(prog * Math.PI) * 7;
+    const pit = new THREE.Mesh(new THREE.ConeGeometry(u.radius * 1.5, h + 5, 16), new THREE.MeshLambertMaterial({ color: 0x8d6e63 }));
+    pit.position.set(x, (h + 5) / 2, z); fxGroup.add(pit);
+    // 旋转的翻土环
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(u.radius * 1.4, 1.8, 6, 22), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(x, 1.5, z); ring.rotation.z = t * 7; fxGroup.add(ring);
+    // 飞溅泥块（沿螺旋飞起）
+    for (let i = 0; i < 7; i++) {
+      const a = t * 5 + i * 0.9;
+      const rad = u.radius * (1.0 + (i % 2) * 0.5);
       const cx = x + Math.cos(a) * rad, cz = z + Math.sin(a) * rad;
       const ch = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshLambertMaterial({ color: 0x6d4c41 }));
-      ch.position.set(cx, 4 + Math.abs(Math.sin(a * 2)) * 9, cz); fxGroup.add(ch);
+      ch.position.set(cx, 3 + Math.abs(Math.sin(a * 2 + prog * 6)) * 11, cz); fxGroup.add(ch);
     }
+    // 地下半透明矿工剪影（旋转，表示正在掘进）
+    const ghost = new THREE.Mesh(new THREE.CylinderGeometry(u.radius * 0.7, u.radius * 0.7, u.radius * 1.8, 10),
+      new THREE.MeshBasicMaterial({ color: 0x37474f, transparent: true, opacity: 0.35 }));
+    ghost.position.set(x, 6, z); ghost.rotation.y = t * 3; fxGroup.add(ghost);
   }
 }
 function render() {
