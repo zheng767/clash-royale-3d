@@ -197,9 +197,9 @@ const CARD_DEFS = {
   thornguardian: { name:'荆棘守卫', cost:3, hp:1100, dmg:140, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#43A047', icon:'荆', radius:15, splash:36, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
   quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake' },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
-  miner:      { name:'矿工', cost:3, hp:1270, dmg:213, range:22, spd:30, atkSpd:1.3, tgt:'building', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch' },
+  miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:32, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:0.25 },
   // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
-  fisherman:  { name:'渔夫', cost:3, hp:1075, dmg:130, range:41, spd:30, atkSpd:1.4, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:120, hookCDInit:1.5, model:'fisherman', atk:'hook' }
+  fisherman:  { name:'渔夫', cost:3, hp:870, dmg:194, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:149, hookCDInit:1.3, model:'fisherman', atk:'hook' }
 };
 const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonbarrel','stormsentinel','flamemage','thornguardian','quake','miner','fisherman'];
 
@@ -565,9 +565,15 @@ function updateUnit(unit, dt) {
   // 矿工挖地中：不可被锁定/攻击/碰撞，不移动不索敌，仅地下掘进倒计时（视觉由 updateDigMeshes 渲染）
   if (unit.underground) {
     unit.digTimer -= dt;
+    const prog = 1 - Math.max(0, unit.digTimer) / (unit.digTotal || 1);
+    if (unit.digFrom && unit.digTo) {
+      unit.x = unit.digFrom.x + (unit.digTo.x - unit.digFrom.x) * prog;
+      unit.y = unit.digFrom.y + (unit.digTo.y - unit.digFrom.y) * prog;
+    }
     unit.vx = 0; unit.vy = 0;
     if (unit.digTimer <= 0) {
       unit.underground = false;
+      if (unit.digTo) { unit.x = unit.digTo.x; unit.y = unit.digTo.y; }
       game.effects.push({ type:'splash', x:unit.x, y:unit.y, life:0.3, maxLife:0.3, color:'#8d6e63', radius:unit.radius*1.8 });
     }
     return;
@@ -842,6 +848,8 @@ function separateFromTowers() {
 }
 
 function dealDamage(attacker, target, dmg) {
+  // 矿工对皇冠塔（国王塔/公主塔）只造成 25% 伤害（CR 规则：Miner 对塔伤害减免）
+  if (attacker && attacker.model === 'miner' && target && (target.type === 'king' || target.type === 'princess')) dmg *= 0.25;
   // 盾牌吸收：带盾单位先扣盾，盾破后才掉血（皇室战争·骷髅守卫机制）
   if (target.shield > 0 && dmg > 0) {
     const before = target.shield;
@@ -1348,8 +1356,11 @@ function playCard(owner, cardKey, x, y) {
 
 // 由卡牌定义创建一个单位对象（手牌部署 / 法术召唤共用）
 function makeUnit(owner, def, x, y) {
+  const isMiner = !!(def.digTime);
+  const kingX = CENTER_X, kingY = owner === 'player' ? KING_Y_P : KING_Y_AI;
+  const sx = isMiner ? kingX : x, sy = isMiner ? kingY : y;
   return {
-    owner, card: def.name, x, y,
+    owner, card: def.name, x: sx, y: sy,
     hp: def.hp, maxHp: def.hp, dmg: def.dmg, range: def.range,
     spd: def.spd, atkSpd: def.atkSpd, atkCD: 0.5,
     tgtType: def.tgt, splash: def.splash || 0, selfSplash: def.selfSplash || false,
@@ -1361,7 +1372,8 @@ function makeUnit(owner, def, x, y) {
     slow: def.slow || false, suicide: def.suicide || false,
     color: def.color, icon: def.icon, radius: def.radius,
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
-    target: null, dead: false, stunTimer: 0, slowTimer: 0, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, burns: [], underground: !!(def.digTime), digTimer: def.digTime || 0, digTotal: def.digTime || 0,
+    target: null, dead: false, stunTimer: 0, slowTimer: 0, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
+    digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false,
     _atkT: 0, _lunge: 0, _spin: 0
   };
@@ -1545,21 +1557,34 @@ function makePlane(w, d, x, z, color, y) {
   mesh.position.set(x, y || 0, z);
   return mesh;
 }
-// 矿工挖地视觉：地下掘进时在落点渲染泥土堆 + 旋转翻土环 + 飞溅泥块
+// 矿工挖地视觉：从国王塔到落点的松土轨迹（随掘进推进生长），到落点后消失 + 掘进点翻腾泥土
 function updateDigMeshes() {
   for (const u of game.units) {
-    if (!u.underground) continue;
-    const x = u.x - CENTER_X, z = u.y - 340;
+    if (!u.underground || !u.digFrom) continue;
     const t = game.gameTime || 0;
+    const x = u.x - CENTER_X, z = u.y - 340;
+    const fx = u.digFrom.x - CENTER_X, fz = u.digFrom.y - 340;
     const prog = 1 - Math.max(0, u.digTimer) / (u.digTotal || 1); // 0→1 掘进进度
-    // 翻腾的泥土坑（锥体，随进度起伏，模拟挖掘）
+    // 松土轨迹：从国王塔到当前掘进位置，已掘过的路段散布翻松泥块（随矿工前进生长）
+    const segs = 16;
+    for (let i = 0; i <= segs; i++) {
+      const tt = i / segs;
+      if (tt > prog + 0.04) continue;            // 只显示已掘进到的那段
+      const bx = fx + (x - fx) * tt, bz = fz + (z - fz) * tt;
+      const r1 = u.radius * (0.5 + 0.25 * Math.sin(i * 1.7 + t * 2));
+      const blob = new THREE.Mesh(new THREE.CylinderGeometry(r1, r1 * 1.25, 4, 12), new THREE.MeshLambertMaterial({ color: 0x6d4c41 }));
+      blob.position.set(bx, 2, bz); fxGroup.add(blob);
+      if (i % 2 === 0) {
+        const chunk = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshLambertMaterial({ color: 0x8d6e63 }));
+        chunk.position.set(bx + Math.cos(i) * 4, 3 + Math.abs(Math.sin(i + t * 3)) * 4, bz + Math.sin(i) * 4); fxGroup.add(chunk);
+      }
+    }
+    // 掘进点：翻腾的泥土坑（锥体起伏）+ 旋转翻土环 + 飞溅泥块 + 地下矿工剪影
     const h = 5 + Math.sin(prog * Math.PI) * 7;
     const pit = new THREE.Mesh(new THREE.ConeGeometry(u.radius * 1.5, h + 5, 16), new THREE.MeshLambertMaterial({ color: 0x8d6e63 }));
     pit.position.set(x, (h + 5) / 2, z); fxGroup.add(pit);
-    // 旋转的翻土环
     const ring = new THREE.Mesh(new THREE.TorusGeometry(u.radius * 1.4, 1.8, 6, 22), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
     ring.rotation.x = -Math.PI / 2; ring.position.set(x, 1.5, z); ring.rotation.z = t * 7; fxGroup.add(ring);
-    // 飞溅泥块（沿螺旋飞起）
     for (let i = 0; i < 7; i++) {
       const a = t * 5 + i * 0.9;
       const rad = u.radius * (1.0 + (i % 2) * 0.5);
@@ -1567,7 +1592,6 @@ function updateDigMeshes() {
       const ch = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshLambertMaterial({ color: 0x6d4c41 }));
       ch.position.set(cx, 3 + Math.abs(Math.sin(a * 2 + prog * 6)) * 11, cz); fxGroup.add(ch);
     }
-    // 地下半透明矿工剪影（旋转，表示正在掘进）
     const ghost = new THREE.Mesh(new THREE.CylinderGeometry(u.radius * 0.7, u.radius * 0.7, u.radius * 1.8, 10),
       new THREE.MeshBasicMaterial({ color: 0x37474f, transparent: true, opacity: 0.35 }));
     ghost.position.set(x, 6, z); ghost.rotation.y = t * 3; fxGroup.add(ghost);
@@ -1952,7 +1976,8 @@ function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
     const wgeo = _cyl(r * 0.5, r * 0.5, r * 0.4, dark, 12);
     const wl = wgeo.clone(); wl.rotation.z = Math.PI / 2; wl.position.set(-r * 0.9, r * 0.5, 0); g.add(wl);
     const wr = wgeo.clone(); wr.rotation.z = Math.PI / 2; wr.position.set(r * 0.9, r * 0.5, 0); g.add(wr);
-    const barrel = _cyl(r * 0.22, r * 0.28, r * 1.2, metal, 12); barrel.rotation.x = Math.PI / 2 - 0.3; barrel.position.set(0, 8 + r * 0.7, r * 0.7); g.add(barrel); ud.barrel = barrel; barrel.userData.baseZ = barrel.position.z;
+    const barrelPivot = new THREE.Group(); g.add(barrelPivot); ud.barrelPivot = barrelPivot;
+    const barrel = _cyl(r * 0.22, r * 0.28, r * 1.2, metal, 12); barrel.rotation.x = Math.PI / 2 - 0.3; barrel.position.set(0, 8 + r * 0.7, r * 0.7); barrelPivot.add(barrel); ud.barrel = barrel;
   } else if (u.model === 'tesla') {
     const pole = _cyl(r * 0.25, r * 0.3, r * 2.0, metal, 10); pole.position.y = 8 + r; g.add(pole); ud.body = pole;
     const coil = new THREE.Mesh(new THREE.TorusGeometry(r * 0.5, r * 0.12, 8, 16), _mat(0x03A9F4, { emissive: 0x03A9F4, emissiveIntensity: 0.7 })); coil.rotation.x = Math.PI / 2; coil.position.y = 8 + r * 1.6; g.add(coil); ud.coil = coil;
@@ -2047,6 +2072,13 @@ function updateUnitMesh(m, u) {
   if (ud.coil) ud.coil.rotation.z = t * 1.5;
   if (ud.crystal && u.atk === 'none') { const s = 1 + Math.sin(t * 3) * 0.12; ud.crystal.scale.set(s, s, s); }
   if (ud.crystal && u.model === 'frosttower') ud.crystal.rotation.y = t * 1.2;
+  // 加农炮炮口随目标旋转（基座固定，仅炮管转向当前攻击目标）
+  if (ud.barrelPivot) {
+    if (u.target) {
+      const dx = u.target.x - u.x, dy = u.target.y - u.y;
+      if (dx || dy) ud.barrelPivot.rotation.y = Math.atan2(dx, dy);
+    }
+  }
   // ===== 攻击动画（按 atk 分类型）=====
   if (ud.pivot) ud.pivot.position.z = 0;   // 每帧先归位，避免位移累积
   if (u._atkT > 0) {
