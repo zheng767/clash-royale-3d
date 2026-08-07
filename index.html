@@ -224,7 +224,7 @@ const CARD_DEFS = {
   tesla:      { name:'电磁塔', cost:4, hp:1152, dmg:220, range:117, spd:0, atkSpd:1.1, tgt:'any', count:1, color:'#03A9F4', icon:'磁', radius:15, deployTime:1.0, isBuilding:true, decay:25, model:'tesla', atk:'beam' },
   minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:53, spd:21.25, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'亡', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
   babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:161, range:74, spd:21.25, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:17, splash:32, flying:true, deployTime:1.0, model:'babydragon', atk:'breath' },
-  speargoblin: { name:'吹箭哥布林', cost:2, hp:92, dmg:41, range:106, spd:31.875, atkSpd:1.1, tgt:'ground', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
+  speargoblin: { name:'哥布林投矛手', cost:2, hp:92, dmg:41, range:106, spd:31.875, atkSpd:1.1, tgt:'ground', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
   goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:32, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3, spellFx:'barrel' },
   // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(VeryFast)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
   flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:42.5, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:11, splash:51, deployTime:1.0, suicide:true, model:'flamesprite', atk:'magic' },
@@ -238,7 +238,7 @@ const CARD_DEFS = {
   skeletonballoon: { name:'骷髅气球', cost:3, hp:532, dmg:0, range:18, spd:31.875, atkSpd:1.0, tgt:'building', count:1, color:'#E0E0E0', icon:'骷球', radius:13, flying:true, deployTime:1.0, isBalloon:true, deathDmg:145, deathRadius:42, spawnCard:'skeletons', spawnCount:7, model:'balloon', atk:'none' },
   prince:     { name:'王子', cost:5, hp:1920, dmg:391, range:34, spd:21.25, atkSpd:1.4, tgt:'ground', count:1, color:'#FBC02D', icon:'王', radius:15, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'prince', atk:'lance' },
   icewizard:  { name:'小邴', cost:3, hp:688, dmg:89, range:117, spd:21.25, atkSpd:1.7, tgt:'any', count:1, color:'#4FC3F7', icon:'邴', radius:13, splash:24, deployTime:1.0, slow:true, slowPct:0.30, slowDur:2.5, spawnDamage:84, spawnSlow:true, model:'icewizard', atk:'ice' },
-  vines:      { name:'藤蔓法术', cost:2, type:'spell', dmg:60, radius:64, color:'#2E7D32', icon:'藤', delay:0.4, spellFx:'vines', root:2.0, groundOnly:false, rootTop:2 },
+  vines:      { name:'藤蔓法术', cost:2, type:'spell', dmg:184, radius:64, color:'#2E7D32', icon:'藤', delay:0.4, spellFx:'vines', root:2.0, groundOnly:false, rootTop:2 },
   // ===== 自创卡（平衡微调，对齐 CR 同类）=====
   stormsentinel: { name:'雷霆守卫', cost:3, hp:216, dmg:166, range:21, spd:41, atkSpd:1.2, tgt:'ground', count:2, color:'#ECEFF1', icon:'盾骷', radius:9, deployTime:1.0, shield:119, paralyze:true, model:'skguard', atk:'stab' },
   flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
@@ -248,9 +248,13 @@ const CARD_DEFS = {
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
   miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:31.875, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:0.25 },
   // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
-  fisherman:  { name:'渔夫', cost:3, hp:870, dmg:194, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:149, hookCDInit:1.3, model:'fisherman', atk:'hook' }
+  fisherman:  { name:'渔夫', cost:3, hp:870, dmg:194, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:149, hookCDInit:1.3, model:'fisherman', atk:'hook' },
+  // ===== 原版新增：复仇滚木 / 吹箭哥布林 / 骷髅帝王（CR 锦标赛 L11 数值，效果严格还原）=====
+  log:        { name:'复仇滚木', cost:2, type:'spell', dmg:267, radius:40, color:'#8D6E63', icon:'滚', delay:0.3, spellFx:'log', groundOnly:true, lane:true, bandH:30, knockback:42, towerDmgMult:0.35 },
+  dartgoblin: { name:'吹箭哥布林', cost:3, hp:180, dmg:59, range:106, spd:42.5, atkSpd:0.7, tgt:'any', count:1, color:'#AFB42B', icon:'镖', radius:11, deployTime:1.0, model:'dartgoblin', atk:'blow' },
+  skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:2, skill2Cost:3 }
 };
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -1576,7 +1580,7 @@ function playCard(owner, cardKey, x, y) {
           if (e.owner !== foe || e.dead || e.hp <= 0) continue;
           if (dist({x, y}, e) < r) { dealDamage({owner}, e, def.spawnDamage); if (def.spawnSlow) e.slowTimer = def.slowDur || 1.5; }
         }
-        game.effects.push({ type:'vines', x, y, life:0.4, maxLife:0.4, radius:r, color:'#9fe8ff' });
+        game.effects.push({ type:'ring', x, y, life:0.4, maxLife:0.4, radius:r, color:'#9fe8ff' });
       }
     }
     game.effects.push({ type:'deploy', x, y, life:0.3, maxLife:0.3, radius:25, color:def.color });
@@ -1605,7 +1609,7 @@ function makeUnit(owner, def, x, y) {
     target: null, dead: false, stunTimer: 0, slowTimer: 0, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
-    isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0,
+    isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
     isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
     hookWindup: 0, rootTimer: 0,
     _atkT: 0, _lunge: 0, _spin: 0
@@ -1642,11 +1646,34 @@ function balloonDeath(b) {
   }
   game.effects.push({ type:'explosion', x:b.x, y:b.y, life:0.5, maxLife:0.5, radius:30, color:'#E0E0E0' });
 }
-// 英雄“天”技能：玩家手动释放（仅玩家英雄）
-function heroSkill1() {                 // 1 技能（2 费）：定身最近敌方单位 1.5s + 劈棍（增伤 100%）
+// 英雄技能按 heroType 分发（天 / 骷髅帝王 各自实现）
+const HERO_SKILLS = {
+  tian:         { 1: heroSkill_tian_1,   2: heroSkill_tian_2 },
+  skeletonking: { 1: (h) => heroSkill_skeletonking(h, false), 2: (h) => heroSkill_skeletonking(h, true) }
+};
+function heroSkill1() {                 // 通用分发：1 技能
   const h = game.player.hero;
   if (!h || h.dead || h.hp <= 0) return;
   if (game.player.elixir < h.skill1Cost) return;
+  const fn = (HERO_SKILLS[h.heroType] || HERO_SKILLS.tian)[1];
+  if (!fn) return;
+  game.player.elixir -= h.skill1Cost;
+  fn(h);
+  game.effects.push({ type:'skillflash', x:h.x, y:h.y, life:0.4, maxLife:0.4, radius:h.radius*2.2, color:'#ECEFF1' });
+}
+function heroSkill2() {                 // 通用分发：2 技能
+  const h = game.player.hero;
+  if (!h || h.dead || h.hp <= 0) return;
+  if (game.player.elixir < h.skill2Cost) return;
+  const fn = (HERO_SKILLS[h.heroType] || HERO_SKILLS.tian)[2];
+  if (!fn) return;
+  game.player.elixir -= h.skill2Cost;
+  fn(h);
+  game.effects.push({ type:'skillflash', x:h.x, y:h.y, life:0.4, maxLife:0.4, radius:h.radius*2.2, color:'#ECEFF1' });
+}
+// ===== 天 技能 =====
+function heroSkill_tian_1() {           // 1 技能（2 费）：定身最近敌方单位 1.5s + 劈棍（增伤 100%）
+  const h = game.player.hero;
   const foe = 'ai';
   let best = null, minD = Infinity;
   for (const u of game.units) {
@@ -1655,17 +1682,13 @@ function heroSkill1() {                 // 1 技能（2 费）：定身最近敌
     if (d < minD) { minD = d; best = u; }
   }
   if (!best) return;
-  game.player.elixir -= h.skill1Cost;
   best.stunTimer = Math.max(best.stunTimer || 0, 1.5);          // 定身 1.5s
   dealDamage(h, best, Math.round(h.dmg * 2));                   // 劈棍：增伤 100%
   game.effects.push({ type:'staffstrike', x:best.x, y:best.y, life:0.5, maxLife:0.5, color:'#FFD54F', radius:best.radius*2.2 });
   game.effects.push({ type:'ring', x:best.x, y:best.y, life:0.5, maxLife:0.5, color:'#FFD54F', radius:best.radius*2.4 });
 }
-function heroSkill2() {                 // 2 技能（3 费）：召唤 3 个分身（同血、伤害-20%、4s 后消散、不能释放技能）
+function heroSkill_tian_2() {           // 2 技能（3 费）：召唤 3 个分身（同血、伤害-20%、4s 后消散、不能释放技能）
   const h = game.player.hero;
-  if (!h || h.dead || h.hp <= 0) return;
-  if (game.player.elixir < h.skill2Cost) return;
-  game.player.elixir -= h.skill2Cost;
   for (let k = 0; k < 3; k++) {
     const ang = (k / 3) * Math.PI * 2;
     const ox = Math.cos(ang) * (h.radius + 14);
@@ -1679,6 +1702,28 @@ function heroSkill2() {                 // 2 技能（3 费）：召唤 3 个分
     game.units.push(c);
   }
   game.effects.push({ type:'deploy', x:h.x, y:h.y, life:0.3, maxLife:0.3, radius:30, color:'#FFD54F' });
+}
+// ===== 骷髅帝王 技能：亡魂召唤（Soul Summoning，CR 原版机制）=====
+function heroSkill_skeletonking(h, big) {
+  const foe = (h.owner === 'player') ? 'ai' : 'player';
+  const n = big ? 6 : 3;                 // 召唤骷髅兵数量（CR 骷髅蛮兵，以骷髅兵近似）
+  const dmg = big ? 360 : 180;           // 范围爆发伤害
+  const rad = big ? 95 : 72;
+  for (const u of game.units) {          // 范围伤害（敌方单位）
+    if (u.owner !== foe || u.dead || u.hp <= 0) continue;
+    if (dist(h, u) < rad) dealDamage(h, u, dmg);
+  }
+  for (const t of game.towers) {         // 范围伤害（敌方塔，吃减伤）
+    if (t.owner !== foe || t.hp <= 0) continue;
+    if (dist(h, t) < rad + 20) dealDamage(h, t, dmg * 0.35);
+  }
+  for (let k = 0; k < n; k++) {          // 召唤骷髅兵环绕自身
+    const ang = (k / n) * Math.PI * 2;
+    const ox = Math.cos(ang) * (h.radius + 18) + (Math.random()-0.5)*6;
+    const oy = Math.sin(ang) * (h.radius + 18) + (Math.random()-0.5)*6;
+    game.units.push(makeUnit(h.owner, CARD_DEFS.skeletons, h.x + ox, h.y + oy));
+  }
+  game.effects.push({ type:'soulsummon', x:h.x, y:h.y, life:0.6, maxLife:0.6, radius:rad, color:'#ECEFF1' });
 }
 function castSpell(owner, def, x, y) {
   // 持续力场型法术（如飓风）：立即生成力场，持续拉拽+持续伤害；按 CR 机制影响范围内**双方**地面/空中单位（不分敌我），不作用于建筑/塔
@@ -1700,6 +1745,7 @@ function castSpell(owner, def, x, y) {
     stun: def.stun || 0, kind: def.spellFx || 'fireball',
     groundOnly: def.groundOnly || false,          // 修复：此前漏传，导致震荡术会误伤飞行单位
     topTargets: def.topTargets || 0, towerDmgMult: def.towerDmgMult || 0.35, root: def.root || 0,
+    lane: def.lane || false, bandH: def.bandH || 28, knockback: def.knockback || 0,
     spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
     quakeTicks: def.quakeTicks || 0, quakeTickInterval: def.quakeTickInterval || 0, quakeDuration: def.quakeDuration || 0,
     sx: kx, sy: ky,                                // 发射起点（国王塔）
@@ -1764,10 +1810,18 @@ function updatePendingSpells(dt) {
             if (u.hp <= 0) continue;
             if (u.underground) continue;
             if (s.groundOnly && u.flying) continue;
-            if (dist(s, u) < s.radius) {
+            // 复仇滚木：横向车道（覆盖全场宽度），命中判定为 |y - s.y| < bandH
+            const hit = s.lane ? (Math.abs(u.y - s.y) < s.bandH) : (dist(s, u) < s.radius);
+            if (hit) {
               inRange.push(u);
               dealDamage({owner:s.owner}, u, s.dmg);   // 伤害对范围内所有单位（含空中）生效
               if (s.stun > 0) u.stunTimer = s.stun;
+              // 复仇滚木：击退地面单位（沿滚动方向，玩家向上/AI 向下）
+              if (s.knockback && !u.flying && !u.isBuilding) {
+                const dir = (s.owner === 'player') ? -1 : 1;
+                u.y += dir * s.knockback;
+                const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y;
+              }
             }
           }
           // 定身：仅锁定范围内“血量剩余值最大”的两个单位（含空中），持续 root 秒
@@ -1778,7 +1832,8 @@ function updatePendingSpells(dt) {
           // 塔同样无差别命中（皇室战争：法术可命中范围内任何塔，含己方）
           for (const t of game.towers) {
             if (t.hp <= 0) continue;
-            if (dist(s, t) < s.radius + 20) dealDamage({owner:s.owner}, t, s.dmg * (s.towerDmgMult || 0.35));
+            const hitT = s.lane ? (Math.abs(t.y - s.y) < s.bandH + 20) : (dist(s, t) < s.radius + 20);
+            if (hitT) dealDamage({owner:s.owner}, t, s.dmg * (s.towerDmgMult || 0.35));
           }
         }
       }
@@ -2286,6 +2341,15 @@ function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, sk
       const snout = _box(headR * 0.5, headR * 0.42, headR * 0.6, _mat(0xf0c78f)); snout.position.set(0, hy - headR * 0.12, headR * 0.7); parent.add(snout);
       for (const sx of [-1, 1]) { const eye = _sph(headR * 0.17, _mat(0xff3b30, { emissive: 0xff3b30, emissiveIntensity: 0.7 })); eye.position.set(sx * headR * 0.35, hy + headR * 0.15, headR * 0.68); parent.add(eye); }
       break; }
+    case 'dartgoblin': {
+      for (const sx of [-1, 1]) { const ear = _cone(headR * 0.4, headR * 0.95, _mat(0xAFB42B), 6); ear.position.set(sx * headR * 0.9, hy + headR * 0.3, 0); parent.add(ear); }
+      const eye = _sph(headR * 0.16, _mat(0x111111)); eye.position.set(0, hy + headR * 0.1, headR * 0.85); parent.add(eye); break; }
+    case 'skeletonking': {
+      // 骷髅脸 + 金色王冠（CR 骷髅帝王）
+      for (const sx of [-1, 1]) { const eye = _sph(headR * 0.2, _mat(0x111111)); eye.position.set(sx * headR * 0.35, hy + headR * 0.1, headR * 0.85); parent.add(eye); }
+      const crown = _cyl(headR * 0.7, headR * 0.7, headR * 0.35, _mat(0xFFD700, { metalness: 0.7, roughness: 0.3 }), 10); crown.position.y = hy + headR * 0.7; parent.add(crown);
+      for (let k = 0; k < 6; k++) { const sp = _cone(headR * 0.13, headR * 0.4, _mat(0xFFE082, { emissive: 0xFFD54F, emissiveIntensity: 0.4 }), 6); const a = k / 6 * Math.PI * 2; sp.position.set(Math.cos(a) * headR * 0.6, hy + headR * 1.0, Math.sin(a) * headR * 0.6); parent.add(sp); }
+      break; }
     default: break;
   }
 }
@@ -2326,6 +2390,15 @@ function addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW,
     case 'speargoblin': {
       const w = new THREE.Group(); const h = _cyl(r * 0.06, r * 0.06, r * 1.6, _mat(0x8d6e63), 6); h.position.y = r * 0.8; w.add(h);
       const tip = _cone(r * 0.16, r * 0.35, metal, 6); tip.position.y = r * 1.6; w.add(tip); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.18); ud.weaponR = w; break; }
+    case 'dartgoblin': {
+      // 吹箭哥布林：吹箭筒（blowpipe）
+      const w = new THREE.Group(); const h = _cyl(r * 0.05, r * 0.05, r * 1.5, _mat(0x6d4f43), 6); h.position.y = r * 0.75; w.add(h);
+      const tip = _cone(r * 0.1, r * 0.2, metal, 6); tip.position.y = r * 1.5; w.add(tip); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.2); ud.weaponR = w; break; }
+    case 'skeletonking': {
+      // 骷髅帝王：巨型骨剑 + 残破披风
+      const w = _blade(r, _mat(0xECEFF1, { metalness: 0.2, roughness: 0.6 }), r * 1.6, r * 0.3); ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.28); ud.weaponR = w;
+      const cape = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.8, r * 2.0), new THREE.MeshStandardMaterial({ color: 0x263238, side: THREE.DoubleSide, roughness: 0.9 }));
+      cape.position.set(0, legH + bodyH * 0.45, -r * 0.5); cape.rotation.x = -0.32; pivot.add(cape); ud.cape = cape; break; }
     case 'miner': {
       const w = new THREE.Group();
       const h = _cyl(r * 0.06, r * 0.06, r * 1.2, _mat(0x6d4f43), 6); h.position.y = r * 0.6; w.add(h);
@@ -2536,6 +2609,13 @@ function addUnitCommon(g, u, r) {
   g.userData.fg = fg; g.userData.barW = barW;
   const label = makeLabel(u.icon || u.name.charAt(0), u.owner === 'player' ? '#b8ffd0' : '#ffc2c2');
   label.position.set(0, -14, 0); g.add(label);
+  // 藤蔓定身缠绕可视化（默认隐藏，rootTimer>0 时显示，表现被藤蔓捆绑）
+  const vineWrap = new THREE.Group();
+  for (let k = 0; k < 3; k++) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.95, 2.4, 6, 18), new THREE.MeshBasicMaterial({ color: 0x2E7D32, transparent: true, opacity: 0.9 }));
+    ring.rotation.x = Math.PI / 2 + k * 0.5; ring.position.y = r * 0.7 + k * r * 0.55; vineWrap.add(ring);
+  }
+  vineWrap.visible = false; g.add(vineWrap); g.userData.vineWrap = vineWrap;
   if (u.healAura && u.healRadius) {
     const healFill = new THREE.Mesh(new THREE.CircleGeometry(u.healRadius, 48), new THREE.MeshBasicMaterial({color:0x33e0c0, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
     healFill.rotation.x = -Math.PI/2; healFill.position.y = 1.4; g.add(healFill);
@@ -2547,6 +2627,7 @@ function addUnitCommon(g, u, r) {
 function updateUnitMesh(m, u) {
   if (u.underground) { m.visible = false; return; }
   m.visible = true;
+  if (ud.vineWrap) ud.vineWrap.visible = (u.rootTimer > 0);   // 被藤蔓定身时显示缠绕
   const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
   if (u._posLog !== 1) { u._posLog = 1; console.log('[POS]', u.name, '→ world(', (u.x-CENTER_X).toFixed(1), hov, (u.y-340).toFixed(1), ') logic(', u.x.toFixed(1), u.y.toFixed(1), ')'); }
@@ -2974,14 +3055,58 @@ function updateEffectMeshes() {
       const w2 = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.1, rad*p2 - 5), Math.max(0.2, rad*p2), 40), new THREE.MeshBasicMaterial({color:0x8d6e63, transparent:true, opacity:pct*0.6, side:THREE.DoubleSide, depthWrite:false}));
       w2.rotation.x = -Math.PI/2; w2.position.set(x, 2.8, z); fxGroup.add(w2);
     } else if (e.type === 'vines') {
-      const rad = (e.radius || 60) * (1 - pct * 0.3);
-      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#2E7D32'), transparent:true, opacity:pct*0.8, side:THREE.DoubleSide}));
-      ring.rotation.x = -Math.PI/2; ring.position.set(x, 3, z); fxGroup.add(ring);
-      for (let k = 0; k < 6; k++) {
-        const ang = k/6 * Math.PI*2 + (1-pct)*2.5;
-        const vh = (e.radius||60) * 0.5 * (0.6 + 0.4*((k*17%10)/10));
-        const v = new THREE.Mesh(new THREE.BoxGeometry(2.5, vh, 2.5), new THREE.MeshBasicMaterial({color:0x2E7D32, transparent:true, opacity:pct*0.7}));
-        v.position.set(x + Math.cos(ang)*rad*0.5, 6, z + Math.sin(ang)*rad*0.5); v.rotation.y = ang; fxGroup.add(v);
+      // 藤蔓法术：地上生出藤蔓、向上抽枝卷曲，并绕出捆绑环（表现把单位/建筑捆住）
+      const rad = (e.radius || 60) * (1 - pct * 0.25);
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(rad, 32), new THREE.MeshBasicMaterial({ color: 0x1b5e20, transparent: true, opacity: pct * 0.5, side: THREE.DoubleSide, depthWrite: false }));
+      disc.rotation.x = -Math.PI / 2; disc.position.set(x, 1.5, z); fxGroup.add(disc);
+      const strands = 10;
+      for (let k = 0; k < strands; k++) {
+        const ang = k / strands * Math.PI * 2 + (1 - pct) * 1.5;
+        const hgt = rad * (0.5 + 0.5 * ((k * 29 % 10) / 10)) * (0.6 + 0.4 * (1 - pct));
+        for (let seg = 0; seg < 3; seg++) {
+          const segLen = hgt / 3;
+          const rr = rad * (0.35 + 0.5 * seg / 3) * (0.4 + 0.6 * pct);
+          const tend = new THREE.Mesh(new THREE.BoxGeometry(2.5, segLen, 2.5), new THREE.MeshBasicMaterial({ color: seg % 2 ? 0x2E7D32 : 0x388E3C, transparent: true, opacity: pct * 0.85 }));
+          tend.position.set(x + Math.cos(ang) * rr, 4 + seg * segLen + Math.sin(pct * 6 + k) * 2, z + Math.sin(ang) * rr);
+          tend.rotation.z = Math.cos(ang) * 0.4; tend.rotation.x = Math.sin(ang) * 0.4;
+          fxGroup.add(tend);
+        }
+      }
+      for (let k = 0; k < 2; k++) {            // 缠绕环（捆绑感）
+        const rr = rad * (0.5 + k * 0.25);
+        const loop = new THREE.Mesh(new THREE.TorusGeometry(rr, 2.2, 6, 24), new THREE.MeshBasicMaterial({ color: 0x43A047, transparent: true, opacity: pct * 0.7 }));
+        loop.rotation.x = -Math.PI / 2 + (k ? 0.3 : -0.3); loop.position.set(x, 6 + k * 4, z); fxGroup.add(loop);
+      }
+    } else if (e.type === 'log') {
+      // 复仇滚木：横躺的木头沿车道滚过，带木纹环与扬尘
+      const w = 400, len = 30;
+      const logMesh = new THREE.Mesh(new THREE.CylinderGeometry(len / 2, len / 2, w, 14), new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.95 }));
+      logMesh.rotation.z = Math.PI / 2; logMesh.position.set(x, len * 0.6, z);
+      logMesh.rotation.x = (1 - pct) * -18; fxGroup.add(logMesh);
+      for (let k = -1; k <= 1; k++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(len / 2, 2.4, 6, 16), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
+        ring.position.set(x + k * w * 0.3, len * 0.6, z); ring.rotation.y = Math.PI / 2; fxGroup.add(ring);
+      }
+      if (pct > 0.2) {
+        for (let k = 0; k < 6; k++) {
+          const puff = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshBasicMaterial({ color: 0xd7ccc8, transparent: true, opacity: pct * 0.6 }));
+          puff.position.set(x + (Math.random() - 0.5) * w * 0.8, len * 0.6 + Math.random() * 6, z + (Math.random() - 0.5) * len); fxGroup.add(puff);
+        }
+      }
+    } else if (e.type === 'skillflash') {
+      const rad = (e.radius || 40) * (1 + (1 - pct) * 0.8);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.7, rad, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#ECEFF1'), transparent: true, opacity: pct * 0.8, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(x, 4, z); fxGroup.add(ring);
+    } else if (e.type === 'soulsummon') {
+      // 骷髅帝王亡魂召唤：地面扩散环 + 升起的魂魄小球
+      const rad = (e.radius || 80) * pct;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.6, rad, 28), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#ECEFF1'), transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(x, 2, z); fxGroup.add(ring);
+      for (let k = 0; k < 8; k++) {
+        const ang = k / 8 * Math.PI * 2;
+        const rr = rad * 0.7;
+        const sk = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 6), new THREE.MeshBasicMaterial({ color: 0xECEFF1, transparent: true, opacity: 0.8 * (1 - pct) }));
+        sk.position.set(x + Math.cos(ang) * rr, 6 + (1 - pct) * 20, z + Math.sin(ang) * rr); fxGroup.add(sk);
       }
     } else if (e.type === 'staffstrike') {
       const rad = (e.radius || 30) * (1 - pct);
