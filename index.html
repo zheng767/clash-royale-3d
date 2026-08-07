@@ -144,7 +144,7 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
    <div class="deck-panel">
     <div class="deck-header">
       <h2>⚔️ 组建你的卡组</h2>
-      <div class="sub">从 44 张卡牌中挑选 8 张，点击下方卡牌即可加入</div>
+      <div class="sub">从 45 张卡牌中挑选 8 张，点击下方卡牌即可加入</div>
       <div class="diff-select" id="deck-diff-select">
         <button data-diff="easy">简单</button>
         <button data-diff="normal" class="active">普通</button>
@@ -252,9 +252,10 @@ const CARD_DEFS = {
   // ===== 原版新增：复仇滚木 / 吹箭哥布林 / 骷髅帝王（CR 锦标赛 L11 数值，效果严格还原）=====
   log:        { name:'复仇滚木', cost:2, type:'spell', dmg:267, radius:40, color:'#8D6E63', icon:'滚', delay:0.3, spellFx:'log', groundOnly:true, lane:true, bandH:30, knockback:42, towerDmgMult:0.35 },
   dartgoblin: { name:'吹箭哥布林', cost:3, hp:180, dmg:59, range:106, spd:42.5, atkSpd:0.7, tgt:'any', count:1, color:'#AFB42B', icon:'镖', radius:11, deployTime:1.0, model:'dartgoblin', atk:'blow' },
-  skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:2, skill2Cost:3 }
+  skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:2, skill2Cost:3 },
+  tianci:     { name:'天赐', inGameName:'赐', cost:4, hp:1344, dmg:172, range:22, spd:21.25, atkSpd:1.7, tgt:'any', count:1, flying:true, color:'#FFF3B0', icon:'赐', radius:14, deployTime:1.0, isHero:true, heroType:'tianci', model:'tianci', atk:'angel', skill1Cost:4, skill2Cost:0 }
 };
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -1007,6 +1008,11 @@ function separateFromTowers() {
 function dealDamage(attacker, target, dmg) {
   // 矿工对皇冠塔（国王塔/公主塔）只造成 25% 伤害（CR 规则：Miner 对塔伤害减免）
   if (attacker && attacker.model === 'miner' && target && (target.type === 'king' || target.type === 'princess')) dmg *= 0.25;
+  // 天赐「天恩护盾」：被增益方友方单位（不含塔）受伤减伤
+  if (target && target.owner && game[target.owner] && game[target.owner].teamDR && game[target.owner].teamDR.timer > 0
+      && target.type !== 'princess' && target.type !== 'king') {
+    dmg *= (1 - game[target.owner].teamDR.mult);
+  }
   // 盾牌吸收：带盾单位先扣盾，盾破后才掉血（皇室战争·骷髅守卫机制）
   if (target.shield > 0 && dmg > 0) {
     const before = target.shield;
@@ -1648,8 +1654,9 @@ function balloonDeath(b) {
 }
 // 英雄技能按 heroType 分发（天 / 骷髅帝王 各自实现）
 const HERO_SKILLS = {
-  tian:         { 1: heroSkill_tian_1,   2: heroSkill_tian_2 },
-  skeletonking: { 1: (h) => heroSkill_skeletonking(h, false), 2: (h) => heroSkill_skeletonking(h, true) }
+  tian:         { name:'天', 1: heroSkill_tian_1,   2: heroSkill_tian_2, s1name:'定身', s1cost:2, s2name:'分身', s2cost:3 },
+  skeletonking: { name:'骷髅帝王', 1: (h) => heroSkill_skeletonking(h, false), 2: (h) => heroSkill_skeletonking(h, true), s1name:'召魂', s1cost:2, s2name:'亡魂', s2cost:3 },
+  tianci:       { name:'天赐', 1: heroSkill_tianci_1, 2: null, s1name:'天恩护盾', s1cost:4, s2name:null, s2cost:0 }
 };
 function heroSkill1() {                 // 通用分发：1 技能
   const h = game.player.hero;
@@ -1724,6 +1731,19 @@ function heroSkill_skeletonking(h, big) {
     game.units.push(makeUnit(h.owner, CARD_DEFS.skeletons, h.x + ox, h.y + oy));
   }
   game.effects.push({ type:'soulsummon', x:h.x, y:h.y, life:0.6, maxLife:0.6, radius:rad, color:'#ECEFF1' });
+}
+// ===== 天赐 技能：天恩护盾（自定义 4 费）=====
+function heroSkill_tianci_1(h) {
+  // 天恩护盾（4 费）：4 秒内全场友方单位减伤 35%（不含公主塔/国王塔）
+  const side = h.owner;
+  if (!game[side].teamDR) game[side].teamDR = { timer: 0, mult: 0 };
+  game[side].teamDR.timer = 4.0;
+  game[side].teamDR.mult = 0.35;
+  // 视觉效果：金色护盾光幕覆盖全场 + 友军身上闪光
+  game.effects.push({ type:'teamshield', x: CENTER_X, y: 340, life:4.0, maxLife:4.0, radius:420, color:'#FFE082' });
+  for (const u of game.units) {
+    if (u.owner === side && u.hp > 0) game.effects.push({ type:'shieldflash', x:u.x, y:u.y, life:0.6, maxLife:0.6, radius:u.radius*2.2, color:'#FFE082' });
+  }
 }
 function castSpell(owner, def, x, y) {
   // 持续力场型法术（如飓风）：立即生成力场，持续拉拽+持续伤害；按 CR 机制影响范围内**双方**地面/空中单位（不分敌我），不作用于建筑/塔
@@ -2350,6 +2370,13 @@ function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, sk
       const crown = _cyl(headR * 0.7, headR * 0.7, headR * 0.35, _mat(0xFFD700, { metalness: 0.7, roughness: 0.3 }), 10); crown.position.y = hy + headR * 0.7; parent.add(crown);
       for (let k = 0; k < 6; k++) { const sp = _cone(headR * 0.13, headR * 0.4, _mat(0xFFE082, { emissive: 0xFFD54F, emissiveIntensity: 0.4 }), 6); const a = k / 6 * Math.PI * 2; sp.position.set(Math.cos(a) * headR * 0.6, hy + headR * 1.0, Math.sin(a) * headR * 0.6); parent.add(sp); }
       break; }
+    case 'tianci': {
+      // 天赐：金色光环（halo）+ 柔和面容 + 微光
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(headR * 1.0, headR * 0.12, 8, 20), new THREE.MeshBasicMaterial({ color: 0xFFE082 }));
+      halo.position.y = hy + headR * 1.2; halo.rotation.x = Math.PI / 2 * 0.85; parent.add(halo);
+      const glow = new THREE.PointLight(0xFFF3B0, 0.7, 70); glow.position.y = hy + headR * 0.5; parent.add(glow);
+      for (const sx of [-1, 1]) { const eye = _sph(headR * 0.14, _mat(0x222222)); eye.position.set(sx * headR * 0.32, hy + headR * 0.1, headR * 0.85); parent.add(eye); }
+      break; }
     default: break;
   }
 }
@@ -2422,6 +2449,11 @@ function addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW,
       ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.25); ud.weaponR = w;
       const cape = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.7, r * 1.9), new THREE.MeshStandardMaterial({ color: 0xd32f2f, side: THREE.DoubleSide, roughness: 0.85 }));
       cape.position.set(0, legH + bodyH * 0.45, -r * 0.5); cape.rotation.x = -0.32; pivot.add(cape); ud.cape = cape; break; }
+    case 'tianci': {
+      // 天赐：左手治疗法杖（发光宝珠）
+      const w = new THREE.Group(); const h = _cyl(r * 0.06, r * 0.06, r * 1.5, _mat(0xFFE082, { metalness: 0.6, roughness: 0.3 }), 8); h.position.y = r * 0.75; w.add(h);
+      const orb = _sph(r * 0.3, _mat(0xFFFFFF, { emissive: 0xFFE082, emissiveIntensity: 0.8 })); orb.position.y = r * 1.5; w.add(orb);
+      ud.armL.add(w); w.position.set(0, -bodyH * 0.1, r * 0.25); ud.weaponL = w; ud.staffOrb = orb; break; }
     default: break;
   }
 }
@@ -2542,6 +2574,29 @@ function buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal) {
     const sk = _sph(r * 0.42, _mat(0xf2f2f2)); sk.position.y = r * 0.45; pivot.add(sk);
     for (const sx of [-1, 1]) { const eye = _sph(r * 0.1, _mat(0x111111)); eye.position.set(sx * r * 0.17, r * 0.5, r * 0.38); pivot.add(eye); }
     ud.floatBob = true;
+  } else if (u.model === 'tianci') {
+    // 天赐（近战天使，CR 天使数值；飞行）：白色长袍人形 + 羽翼
+    const legH = r * 0.95, bodyH = r * 1.15, headR = r * 0.55;
+    const torsoR = r * 0.53;
+    const robe = _mat(0xFFF3B0, { roughness: 0.65 });
+    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(torsoR, bodyH * 0.5, 6, 14), robe);
+    torso.position.y = legH + bodyH * 0.5; pivot.add(torso); ud.body = torso;
+    const belt = new THREE.Mesh(new THREE.TorusGeometry(torsoR * 0.98, r * 0.08, 6, 16), dark); belt.rotation.x = Math.PI / 2; belt.position.y = legH + bodyH * 0.16; pivot.add(belt);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(headR * 0.42, headR * 0.5, headR * 0.5, 8), _mat(0xffe0bd)); neck.position.y = legH + bodyH + headR * 0.05; pivot.add(neck);
+    const head = _sph(headR, _mat(0xffe0bd)); head.position.y = legH + bodyH + headR * 0.7; pivot.add(head); ud.head = head;
+    addHeadDetail(u, pivot, head, headR, legH, bodyH, col, dark, metal, skin);
+    const legGeo = new THREE.CapsuleGeometry(r * 0.2, legH * 0.5, 4, 8);
+    const legL = new THREE.Mesh(legGeo, robe); legL.position.set(-r * 0.34, legH * 0.5, 0); pivot.add(legL); ud.legL = legL;
+    const legR = new THREE.Mesh(legGeo, robe); legR.position.set(r * 0.34, legH * 0.5, 0); pivot.add(legR); ud.legR = legR;
+    const armGeo = new THREE.CapsuleGeometry(r * 0.16, bodyH * 0.55, 4, 8);
+    const armL = new THREE.Mesh(armGeo, robe); armL.position.set(-r * 0.62, legH + bodyH * 0.55, 0); pivot.add(armL); ud.armL = armL;
+    const armR = new THREE.Mesh(armGeo, robe); armR.position.set(r * 0.62, legH + bodyH * 0.55, 0); pivot.add(armR); ud.armR = armR;
+    // 羽翼（用于 updateUnitMesh 扇翅动画）
+    const wmat = new THREE.MeshStandardMaterial({ color: 0xFFF8E1, side: THREE.DoubleSide, roughness: 0.7, emissive: 0xFFF3B0, emissiveIntensity: 0.15 });
+    const wl = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.7, r * 1.2), wmat); wl.position.set(-r * 0.9, legH + bodyH * 0.55, -r * 0.2); wl.rotation.y = 0.6; pivot.add(wl);
+    const wr = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.7, r * 1.2), wmat); wr.position.set(r * 0.9, legH + bodyH * 0.55, -r * 0.2); wr.rotation.y = -0.6; pivot.add(wr);
+    ud.wings = [wl, wr];
+    addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, r * 1.15, legH, bodyH);
   }
 }
 function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
@@ -2616,6 +2671,9 @@ function addUnitCommon(g, u, r) {
     ring.rotation.x = Math.PI / 2 + k * 0.5; ring.position.y = r * 0.7 + k * r * 0.55; vineWrap.add(ring);
   }
   vineWrap.visible = false; g.add(vineWrap); g.userData.vineWrap = vineWrap;
+  // 天恩护盾减伤光环（默认隐藏，teamDR 生效时显示，表现友方单位被护盾保护）
+  const drAura = new THREE.Mesh(new THREE.RingGeometry(r * 1.15, r * 1.45, 20), new THREE.MeshBasicMaterial({ color: 0xFFE082, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+  drAura.rotation.x = -Math.PI / 2; drAura.position.y = 1.5; drAura.visible = false; g.add(drAura); g.userData.drAura = drAura;
   if (u.healAura && u.healRadius) {
     const healFill = new THREE.Mesh(new THREE.CircleGeometry(u.healRadius, 48), new THREE.MeshBasicMaterial({color:0x33e0c0, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
     healFill.rotation.x = -Math.PI/2; healFill.position.y = 1.4; g.add(healFill);
@@ -2628,6 +2686,7 @@ function updateUnitMesh(m, u) {
   if (u.underground) { m.visible = false; return; }
   m.visible = true;
   if (ud.vineWrap) ud.vineWrap.visible = (u.rootTimer > 0);   // 被藤蔓定身时显示缠绕
+  if (ud.drAura) ud.drAura.visible = !!(game[u.owner] && game[u.owner].teamDR && game[u.owner].teamDR.timer > 0);   // 天恩护盾生效时光环显示
   const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
   if (u._posLog !== 1) { u._posLog = 1; console.log('[POS]', u.name, '→ world(', (u.x-CENTER_X).toFixed(1), hov, (u.y-340).toFixed(1), ') logic(', u.x.toFixed(1), u.y.toFixed(1), ')'); }
@@ -3108,6 +3167,23 @@ function updateEffectMeshes() {
         const sk = new THREE.Mesh(new THREE.SphereGeometry(3, 8, 6), new THREE.MeshBasicMaterial({ color: 0xECEFF1, transparent: true, opacity: 0.8 * (1 - pct) }));
         sk.position.set(x + Math.cos(ang) * rr, 6 + (1 - pct) * 20, z + Math.sin(ang) * rr); fxGroup.add(sk);
       }
+    } else if (e.type === 'teamshield') {
+      // 天恩护盾：覆盖全场的金色护盾光幕（持续 4s，渐隐 + 轻微脉动）
+      const rad = (e.radius || 420) * (0.6 + 0.4 * (1 - pct));
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(rad, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#FFE082'), transparent: true, opacity: 0.05 + 0.04 * Math.sin(e.life * 6), side: THREE.DoubleSide, depthWrite: false }));
+      dome.position.set(x, 0, z); fxGroup.add(dome);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.97, rad, 48),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#FFE082'), transparent: true, opacity: pct * 0.5, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(x, 2, z); fxGroup.add(ring);
+    } else if (e.type === 'shieldflash') {
+      // 友军身上闪光（施法瞬间）
+      const rad = (e.radius || 30) * (1 - pct);
+      const s = new THREE.Mesh(new THREE.SphereGeometry(rad * 0.6, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#FFE082'), transparent: true, opacity: pct * 0.7 }));
+      s.position.set(x, 14, z); fxGroup.add(s);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.5, rad, 18),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#FFE082'), transparent: true, opacity: pct * 0.8, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(x, 4, z); fxGroup.add(ring);
     } else if (e.type === 'staffstrike') {
       const rad = (e.radius || 30) * (1 - pct);
       const beam = new THREE.Mesh(new THREE.BoxGeometry(rad*1.4, 52, 4), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#FFD54F'), transparent:true, opacity:pct*0.85}));
@@ -3386,6 +3462,11 @@ function gameLoop(timestamp) {
       if (game.player.elixir < game.player.maxElixir) game.player.elixir++;
       if (game.ai.elixir < game.ai.maxElixir) game.ai.elixir++;
     }
+    // 天恩护盾计时（每秒递减，到 0 停止减伤）
+    for (const sd of ['player', 'ai']) {
+      const dr = game[sd].teamDR;
+      if (dr && dr.timer > 0) { dr.timer -= dt; if (dr.timer < 0) dr.timer = 0; }
+    }
     for (const u of game.units) updateUnit(u, dt);
     resolveCollisions();
     separateFromTowers();   // 地面单位贴边绕过塔模型，避免卡进塔里
@@ -3438,7 +3519,7 @@ function initHand() {
     const card = document.createElement('div');
     card.className = 'card';
     card.dataset.idx = idx;
-    card.innerHTML = `<div class="card-icon" style="background:${def.color}">${def.icon}</div><div class="card-name">${def.name}</div><div class="card-cost">${def.cost}</div>`;
+    card.innerHTML = `<div class="card-icon" style="background:${def.color}">${def.icon}</div><div class="card-name">${def.inGameName || def.name}</div><div class="card-cost">${def.cost}</div>`;
     card.onclick = () => selectCard(idx);
     handDiv.appendChild(card);
   });
@@ -3472,12 +3553,18 @@ function updateSkillBar() {
   if (!alive) { bar.classList.add('hidden'); return; }
   bar.classList.remove('hidden');
   const s1 = document.getElementById('skill1'), s2 = document.getElementById('skill2');
+  const meta = (HERO_SKILLS[hero.heroType] || HERO_SKILLS.tian);
+  // 动态填充技能名 + 费用（按英雄类型）
+  if (meta.s1name) s1.innerHTML = `${meta.s1name}<span class="sk-cost">${hero.skill1Cost || meta.s1cost}</span><span class="sk-key">1</span>`;
+  const hasS2 = hero.skill2Cost > 0 && meta.s2name;
+  if (hasS2) { s2.style.display = ''; s2.innerHTML = `${meta.s2name}<span class="sk-cost">${hero.skill2Cost}</span><span class="sk-key">2</span>`; }
+  else { s2.style.display = 'none'; }
   const e1 = game.player.elixir >= (hero.skill1Cost || 2);
-  const e2 = game.player.elixir >= (hero.skill2Cost || 3);
+  const e2 = hasS2 && game.player.elixir >= hero.skill2Cost;
   s1.classList.toggle('disabled', !e1);
-  s2.classList.toggle('disabled', !e2);
+  if (hasS2) s2.classList.toggle('disabled', !e2);
   s1.classList.toggle('ready', e1);
-  s2.classList.toggle('ready', e2);
+  if (hasS2) s2.classList.toggle('ready', e2);
 }
 
 function selectCard(idx) {
@@ -3507,7 +3594,7 @@ const dragEl = document.getElementById('drag-indicator');
 function showDragIndicator(cardKey, wx, wy) {
   const def = CARD_DEFS[cardKey];
   if (!def || !dragEl) return;
-  dragEl.innerHTML = `<div class="di-icon" style="background:${def.color}">${def.icon}</div><div class="di-cost">${def.cost}</div><div class="di-name">${def.name}</div>`;
+  dragEl.innerHTML = `<div class="di-icon" style="background:${def.color}">${def.icon}</div><div class="di-cost">${def.cost}</div><div class="di-name">${def.inGameName || def.name}</div>`;
   dragEl.classList.remove('hidden','valid','invalid');
   positionDragIndicator(wx, wy);
 }
@@ -3730,7 +3817,7 @@ document.getElementById('restart-btn').onclick = () => {
 
 // 英雄技能按钮：点击 / 数字键 1、2 释放（仅在玩家英雄存活时有效）
 function trySkill1() { const el = document.getElementById('skill1'); if (el && !el.classList.contains('disabled')) heroSkill1(); }
-function trySkill2() { const el = document.getElementById('skill2'); if (el && !el.classList.contains('disabled')) heroSkill2(); }
+function trySkill2() { const el = document.getElementById('skill2'); const h = game.player.hero; if (!h || !(h.skill2Cost > 0)) return; if (el && !el.classList.contains('disabled')) heroSkill2(); }
 document.getElementById('skill1').onclick = trySkill1;
 document.getElementById('skill2').onclick = trySkill2;
 window.addEventListener('keydown', (e) => {
