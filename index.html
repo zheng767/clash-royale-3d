@@ -41,27 +41,57 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
 .difficulty-btns button{padding:8px 16px;font-size:13px;border-radius:6px;border:1px solid #444;background:#2a2a4e;color:#ccc;cursor:pointer}
 .difficulty-btns button.active{background:#d633ff;color:#fff;border-color:#d633ff}
 /* 选牌界面 */
-#deck-select{position:absolute;inset:0;background:rgba(10,10,20,0.85);display:flex;align-items:center;justify-content:center;z-index:200;overflow-y:auto;padding:14px}
-.deck-panel{background:#1a1a2e;border:2px solid #3a3a5e;border-radius:14px;padding:16px 14px;width:100%;display:flex;flex-direction:column;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-#deck-select h2{color:#ffd700;font-size:22px;margin-bottom:4px}
-#deck-select .sub{color:#888;font-size:12px;margin-bottom:12px}
-#deck-counter{font-size:14px;color:#d633ff;font-weight:700;margin-bottom:10px}
-#deck-counter span{color:#fff}
-.deck-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;width:100%}
-.deck-card{width:100%;height:104px;border-radius:8px;background:#2a2a4e;border:2px solid #333;cursor:pointer;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4px;transition:all 0.15s}
-.deck-card:hover{transform:translateY(-3px)}
-.deck-card.selected{border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.5)}
-.deck-card .card-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:700}
-.deck-card .card-cost{background:linear-gradient(135deg,#d633ff,#9933ff);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;position:absolute;top:-4px;right:-4px;border:2px solid #1a1a2e;z-index:2}
-.deck-card .card-name{font-size:9px;color:#ccc;text-align:center;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,0.8)}
-.deck-card .check-mark{position:absolute;top:4px;left:4px;width:18px;height:18px;border-radius:50%;background:#2ecc71;color:#fff;font-size:12px;display:none;align-items:center;justify-content:center;font-weight:700;z-index:3}
-.deck-card.selected .check-mark{display:flex}
-#deck-confirm{margin-top:14px;padding:10px 36px;font-size:15px;border:none;border-radius:8px;background:linear-gradient(135deg,#d633ff,#9933ff);color:#fff;cursor:pointer;font-weight:600;opacity:0.4;pointer-events:none;transition:opacity 0.2s}
-#deck-confirm.ready{opacity:1;pointer-events:auto}
-#deck-confirm:hover{opacity:0.9}
+#deck-select{position:absolute;inset:0;background:radial-gradient(circle at 50% 25%,rgba(70,35,110,0.92),rgba(8,8,18,0.97));display:flex;align-items:center;justify-content:center;z-index:200;padding:14px}
+.deck-panel{background:linear-gradient(160deg,#1c1c34,#121224);border:2px solid #4a3a7e;border-radius:18px;width:100%;max-width:460px;max-height:96%;display:flex;flex-direction:column;box-shadow:0 14px 50px rgba(0,0,0,0.75);overflow:hidden}
+.deck-header{padding:18px 18px 14px;text-align:center;background:linear-gradient(180deg,rgba(214,51,255,0.14),rgba(214,51,255,0));border-bottom:1px solid rgba(255,255,255,0.07)}
+#deck-select h2{color:#ffd700;font-size:23px;margin-bottom:5px;text-shadow:0 0 14px rgba(255,215,0,0.35);letter-spacing:1px}
+#deck-select .sub{color:#9aa0b5;font-size:12px;margin-bottom:13px}
+.deck-progress{padding:13px 18px;background:rgba(0,0,0,0.28)}
+#deck-counter{font-size:15px;color:#d633ff;font-weight:700;margin-bottom:9px;text-align:center;letter-spacing:0.5px}
+#deck-counter span{color:#fff;font-size:19px}
+.progress-track{height:9px;background:#2a2a4e;border-radius:6px;overflow:hidden;margin-bottom:7px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.5)}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#d633ff,#ffd54f);border-radius:6px;transition:width 0.25s ease}
+#deck-hint{font-size:12px;color:#9aa0b5;text-align:center}
+#deck-hint.full{color:#2ecc71;font-weight:600}
+.deck-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;padding:13px 18px;overflow-y:auto;flex:1;align-content:start}
+.deck-grid::-webkit-scrollbar{width:7px}
+.deck-grid::-webkit-scrollbar-thumb{background:#4a3a7e;border-radius:4px}
+.deck-card{width:100%;height:104px;border-radius:10px;background:#2a2a4e;border:2px solid #3a3a5e;cursor:pointer;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:5px;transition:transform 0.15s,border-color 0.15s,box-shadow 0.15s}
+.deck-card:hover{transform:translateY(-3px);border-color:#7c5cc7;box-shadow:0 6px 16px rgba(0,0,0,0.5)}
+.deck-card.selected{border-color:#ffd700;box-shadow:0 0 14px rgba(255,215,0,0.55);background:#332b1f}
+.deck-card .card-icon{position:absolute;top:48%;left:50%;transform:translate(-50%,-60%);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+.deck-card .card-cost{background:linear-gradient(135deg,#d633ff,#9933ff);color:#fff;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;position:absolute;top:-5px;right:-5px;border:2px solid #1a1a2e;z-index:2}
+.deck-card .card-name{font-size:9px;color:#dfe0ee;text-align:center;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,0.85)}
+.deck-card .check-mark{position:absolute;top:5px;left:5px;width:19px;height:19px;border-radius:50%;background:#2ecc71;color:#fff;font-size:12px;display:none;align-items:center;justify-content:center;font-weight:700;z-index:3}
+.deck-card.selected .check-mark{display:flex;animation:popcheck 0.25s ease}
+@keyframes popcheck{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+.deck-footer{padding:13px 18px;display:flex;gap:10px;justify-content:center;align-items:center;background:rgba(0,0,0,0.28);border-top:1px solid rgba(255,255,255,0.07)}
+.deck-aux{padding:10px 16px;font-size:13px;border:1px solid #555;border-radius:9px;background:#2a2a4e;color:#ccc;cursor:pointer;transition:all 0.15s}
+.deck-aux:hover{border-color:#ffd700;color:#fff}
+#deck-confirm{flex:1;max-width:200px;padding:11px 0;font-size:15px;border:none;border-radius:9px;background:linear-gradient(135deg,#d633ff,#9933ff);color:#fff;cursor:pointer;font-weight:600;opacity:0.4;pointer-events:none;transition:opacity 0.2s,box-shadow 0.2s}
+#deck-confirm.ready{opacity:1;pointer-events:auto;box-shadow:0 0 16px rgba(214,51,255,0.6)}
+#deck-confirm.ready:hover{opacity:0.9;box-shadow:0 0 22px rgba(214,51,255,0.85)}
 .diff-select{display:flex;gap:8px;margin-bottom:10px}
 .diff-select button{padding:6px 14px;font-size:12px;border-radius:6px;border:1px solid #444;background:#2a2a4e;color:#ccc;cursor:pointer}
     .diff-select button.active{background:#d633ff;color:#fff;border-color:#d633ff}
+/* 英雄技能按钮：位于卡牌排列区上方右侧 */
+#skill-bar{position:absolute;bottom:160px;right:8px;display:flex;gap:6px;z-index:60}
+#skill-bar.hidden{display:none}
+.skill-btn{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#FFD54F,#FFA000);border:2px solid #FFE082;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;font-size:19px;color:#3a2a00;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.5);transition:transform 0.1s,opacity 0.15s;user-select:none;-webkit-user-select:none}
+.skill-btn:active{transform:scale(0.92)}
+.skill-btn .sk-cost{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#d633ff,#9933ff);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;border:1px solid #1a1a2e}
+.skill-btn .sk-key{position:absolute;bottom:-3px;left:3px;font-size:8px;color:#3a2a00;opacity:0.7}
+.skill-btn.disabled{opacity:0.4;filter:grayscale(0.65);cursor:not-allowed}
+.skill-btn.ready{animation:skillpulse 1.2s ease-in-out infinite}
+@keyframes skillpulse{0%,100%{box-shadow:0 2px 8px rgba(0,0,0,0.5)}50%{box-shadow:0 0 14px rgba(255,213,79,0.9)}}
+/* 拖拽瞄准指示器：跟随手指/鼠标的半透明卡牌 */
+#drag-indicator{position:absolute;pointer-events:none;z-index:70;width:52px;height:68px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.12s}
+#drag-indicator.hidden{display:none}
+#drag-indicator .di-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:700;flex-shrink:0}
+#drag-indicator .di-cost{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#d633ff,#9933ff);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid #1a1a2e}
+#drag-indicator .di-name{font-size:9px;color:#eee;text-align:center;margin-top:2px;text-shadow:0 1px 3px rgba(0,0,0,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48px}
+#drag-indicator.valid{box-shadow:0 0 14px rgba(46,204,113,0.7),0 4px 12px rgba(0,0,0,0.5)}
+#drag-indicator.invalid{box-shadow:0 0 14px rgba(231,76,60,0.7),0 4px 12px rgba(0,0,0,0.5);opacity:0.65}
 </style>
   <script>
 /**
@@ -95,6 +125,11 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
       <div class="card-icon" id="next-card-icon"></div>
     </div>
   </div>
+  <div id="skill-bar" class="hidden">
+    <div class="skill-btn" id="skill1">定<span class="sk-cost">2</span><span class="sk-key">1</span></div>
+    <div class="skill-btn" id="skill2">影<span class="sk-cost">3</span><span class="sk-key">2</span></div>
+  </div>
+  <div id="drag-indicator" class="hidden"></div>
   <div id="overlay">
     <h2 id="result-text">胜利!</h2>
     <p id="result-detail"></p>
@@ -107,16 +142,26 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
   </div>
   <div id="deck-select">
    <div class="deck-panel">
-    <h2>选择你的卡组</h2>
-    <div class="sub">从 25 张卡牌中选 8 张组建你的牌组</div>
-    <div class="diff-select" id="deck-diff-select">
-      <button data-diff="easy">简单</button>
-      <button data-diff="normal" class="active">普通</button>
-      <button data-diff="hard">困难</button>
+    <div class="deck-header">
+      <h2>⚔️ 组建你的卡组</h2>
+      <div class="sub">从 44 张卡牌中挑选 8 张，点击下方卡牌即可加入</div>
+      <div class="diff-select" id="deck-diff-select">
+        <button data-diff="easy">简单</button>
+        <button data-diff="normal" class="active">普通</button>
+        <button data-diff="hard">困难</button>
+      </div>
     </div>
-    <div id="deck-counter">已选 <span id="deck-count">0</span> / 8</div>
+    <div class="deck-progress">
+      <div id="deck-counter">已选 <span id="deck-count">0</span> / 8</div>
+      <div class="progress-track"><div class="progress-fill" id="deck-progress-fill"></div></div>
+      <div id="deck-hint">还需选择 8 张</div>
+    </div>
     <div class="deck-grid" id="deck-grid"></div>
-    <button id="deck-confirm">开始战斗</button>
+    <div class="deck-footer">
+      <button id="deck-random" class="deck-aux">🎲 随机</button>
+      <button id="deck-clear" class="deck-aux">清空</button>
+      <button id="deck-confirm">开始战斗</button>
+    </div>
    </div>
   </div>
 </div>
@@ -158,50 +203,54 @@ const CARD_DEFS = {
   archer:     { name:'弓箭手', cost:3, hp:304, dmg:112, range:106, spd:21.25, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:11, deployTime:1.0, model:'archer', atk:'arrow' },
   goblin:     { name:'哥布林', cost:2, hp:202, dmg:120, range:11, spd:42.5, atkSpd:1.1, tgt:'ground', count:4, color:'#7CB342', icon:'哥', radius:11, deployTime:1.0, model:'goblin', atk:'stab' },
   giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:15.9, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:21, deployTime:1.0, model:'giant', atk:'punch' },
-  bomber:     { name:'炸弹人', cost:3, hp:304, dmg:225, range:96, spd:21.25, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:11, splash:33, deployTime:1.0, model:'bomber', atk:'lob' },
-  minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:21.25, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:15, deployTime:1.0, model:'minipekka', atk:'bigslash' },
+  bomber:     { name:'炸弹人', cost:2, hp:304, dmg:225, range:96, spd:21.25, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:11, splash:33, deployTime:1.0, model:'bomber', atk:'lob' },
+  minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:31.875, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:15, deployTime:1.0, model:'minipekka', atk:'bigslash' },
   skeletons:  { name:'骷髅兵', cost:1, hp:81, dmg:81, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:3, color:'#BDBDBD', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
   fireball:   { name:'火球术', cost:4, type:'spell', dmg:688, radius:53, color:'#FF6B35', icon:'火', delay:1.0, spellFx:'fireball' },
   musketeer:  { name:'火枪手', cost:4, hp:721, dmg:217, range:128, spd:21.25, atkSpd:1.0, tgt:'any', count:1, color:'#E91E63', icon:'枪', radius:15, deployTime:1.0, model:'soldier', atk:'shot' },
   valkyrie:   { name:'女武神', cost:4, hp:1907, dmg:266, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#FF6F00', icon:'武', radius:15, splash:44, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
   barbarians: { name:'野蛮人', cost:5, hp:691, dmg:191, range:15, spd:21.25, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:1.0, model:'barbarian', atk:'sword' },
   hogrider:   { name:'野猪骑士', cost:4, hp:1697, dmg:317, range:18, spd:42.5, atkSpd:1.6, tgt:'building', count:1, color:'#F57C00', icon:'猪', radius:15, deployTime:1.0, canJumpRiver:true, model:'hogrider', atk:'hammer' },
-  wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:117, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:13, splash:22, deployTime:1.0, model:'wizard', atk:'fireball' },
+  wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:117, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:13, splash:32, deployTime:1.0, model:'wizard', atk:'fireball' },
   arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:243, radius:85, color:'#42A5F5', icon:'箭', delay:0.4, spellFx:'arrows' },
-  pekka:      { name:'皮卡超人', cost:7, hp:3760, dmg:842, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:19, deployTime:1.0, model:'pekka', atk:'bigslash' },
-  skarmy:     { name:'骷髅军团', cost:3, hp:67, dmg:67, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
+  pekka:      { name:'皮卡超人', cost:7, hp:4160, dmg:816, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:19, deployTime:1.0, model:'pekka', atk:'bigslash' },
+  skarmy:     { name:'骷髅军团', cost:3, hp:81, dmg:81, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
   rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1484, radius:43, color:'#FF1744', icon:'炸', delay:2.0, spellFx:'rocket' },
   royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:106, spd:15.9, atkSpd:1.7, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:19, deployTime:1.0, model:'royalgiant', atk:'shot' },
-  lightning:  { name:'雷电法术', cost:2, type:'spell', dmg:1057, radius:74, color:'#FFEB3B', icon:'雷', delay:1.2, stun:0.5, spellFx:'lightning' },
-  darkprince: { name:'黑暗王子', cost:4, hp:1240, dmg:248, range:26, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:15, splash:22, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, model:'darkprince', atk:'spin' },
-  princess:   { name:'公主', cost:3, hp:216, dmg:140, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:9, splash:22, deployTime:1.0, model:'princess', atk:'arrow_long' },
+  lightning:  { name:'雷电法术', cost:6, type:'spell', dmg:1057, radius:74, color:'#FFEB3B', icon:'雷', delay:1.0, stun:0.5, spellFx:'lightning', topTargets:3, towerDmgMult:0.30 },
+  darkprince: { name:'黑暗王子', cost:4, hp:1200, dmg:266, range:26, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:15, splash:24, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'darkprince', atk:'spin' },
+  princess:   { name:'公主', cost:3, hp:216, dmg:168, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:9, splash:43, deployTime:1.0, model:'princess', atk:'arrow_long' },
   cannon:     { name:'加农炮', cost:3, hp:824, dmg:212, range:117, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#607D8B', icon:'炮', radius:17, deployTime:1.0, isBuilding:true, decay:30, model:'cannon', atk:'shot' },
   tesla:      { name:'电磁塔', cost:4, hp:1152, dmg:220, range:117, spd:0, atkSpd:1.1, tgt:'any', count:1, color:'#03A9F4', icon:'磁', radius:15, deployTime:1.0, isBuilding:true, decay:25, model:'tesla', atk:'beam' },
-  minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:34, spd:42.5, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'灵', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
-  babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:168, range:74, spd:21.25, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:17, splash:22, flying:true, deployTime:1.0, model:'babydragon', atk:'breath' },
-  speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:106, spd:42.5, atkSpd:1.7, tgt:'any', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
+  minions:    { name:'亡灵', cost:3, hp:195, dmg:95, range:42, spd:21.25, atkSpd:1.0, tgt:'any', count:3, color:'#37474F', icon:'亡', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
+  babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:161, range:74, spd:21.25, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:17, splash:32, flying:true, deployTime:1.0, model:'babydragon', atk:'breath' },
+  speargoblin: { name:'吹箭哥布林', cost:2, hp:92, dmg:41, range:106, spd:31.875, atkSpd:1.1, tgt:'ground', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
   goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:32, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3, spellFx:'barrel' },
   // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(VeryFast)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
   flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:42.5, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:11, splash:51, deployTime:1.0, suicide:true, model:'flamesprite', atk:'magic' },
   healtotem: { name:'治疗图腾', cost:4, hp:850, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:17, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132, model:'totem', atk:'none' },
   frosttower: { name:'冰霜塔', cost:4, hp:912, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:15, deployTime:1.0, isBuilding:true, decay:18, slow:true, model:'frosttower', atk:'ice' },
   // ===== 原版新增（CR 锦标赛 L11 数值，效果严格还原）=====
-  hurricane:   { name:'飓风法术', cost:3, type:'spell', field:true, duration:4.0, radius:106, dmg:200, pull:90, color:'#4DD0E1', icon:'飓', spellFx:'hurricane' },
+  hurricane:   { name:'飓风法术', cost:3, type:'spell', field:true, duration:4.0, radius:117, dmg:80, pull:90, color:'#4DD0E1', icon:'飓', spellFx:'hurricane' },
   zap:        { name:'电击法术', cost:2, type:'spell', dmg:155, radius:53, stun:1.0, color:'#FFEB3B', icon:'电', delay:0.4, spellFx:'lightning' },
   freeze:     { name:'冰冻法术', cost:4, type:'spell', dmg:159, radius:64, stun:4.0, color:'#81D4FA', icon:'冻', delay:0.6, spellFx:'freeze' },
-  minionhorde:{ name:'亡灵大军', cost:5, hp:230, dmg:107, range:34, spd:42.5, atkSpd:1.2, tgt:'any', count:6, color:'#37474F', icon:'群', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
-  skeletonbarrel: { name:'骷髅飞桶', cost:2, type:'spell', radius:32, color:'#E0E0E0', icon:'骷桶', delay:1.1, spawnCard:'skeletons', spawnCount:4, spellFx:'barrel' },
+  minionhorde:{ name:'亡灵大军', cost:5, hp:195, dmg:95, range:42, spd:21.25, atkSpd:1.0, tgt:'any', count:6, color:'#37474F', icon:'亡', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
+  skeletonballoon: { name:'骷髅气球', cost:3, hp:532, dmg:0, range:18, spd:31.875, atkSpd:1.0, tgt:'building', count:1, color:'#E0E0E0', icon:'骷球', radius:13, flying:true, deployTime:1.0, isBalloon:true, deathDmg:133, deathRadius:42, spawnCard:'skeletons', spawnCount:7, model:'balloon', atk:'none' },
+  prince:     { name:'王子', cost:5, hp:1920, dmg:391, range:34, spd:21.25, atkSpd:1.4, tgt:'ground', count:1, color:'#FBC02D', icon:'王', radius:15, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'prince', atk:'lance' },
+  icewizard:  { name:'小邴', cost:3, hp:688, dmg:89, range:117, spd:21.25, atkSpd:1.7, tgt:'any', count:1, color:'#4FC3F7', icon:'邴', radius:13, splash:24, deployTime:1.0, slow:true, slowPct:0.30, slowDur:2.5, spawnDamage:84, spawnSlow:true, model:'icewizard', atk:'ice' },
+  vines:      { name:'藤蔓法术', cost:2, type:'spell', dmg:60, radius:64, color:'#2E7D32', icon:'藤', delay:0.4, spellFx:'vines', root:2.0, groundOnly:false, rootTop:2 },
   // ===== 自创卡（平衡微调，对齐 CR 同类）=====
   stormsentinel: { name:'雷霆守卫', cost:3, hp:216, dmg:166, range:21, spd:41, atkSpd:1.2, tgt:'ground', count:2, color:'#ECEFF1', icon:'盾骷', radius:9, deployTime:1.0, shield:119, paralyze:true, model:'skguard', atk:'stab' },
   flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
-  thornguardian: { name:'荆棘守卫', cost:3, hp:1100, dmg:140, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#43A047', icon:'荆', radius:15, splash:36, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
-  quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake' },
+  hero_tian:  { name:'天', cost:5, hp:1500, dmg:312, range:24, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#FFD54F', icon:'天', radius:16, deployTime:1.0, isHero:true, model:'wukong', atk:'staff', skill1Cost:2, skill2Cost:3 },
+  haosihan:   { name:'郝思涵', cost:5, hp:376, dmg:106, range:26, spd:31.875, atkSpd:1.6, tgt:'building', count:4, color:'#FF9E40', icon:'free', radius:14, deployTime:1.0, canJumpRiver:true, model:'royalhog', atk:'stab' },
+  quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake', quakeDuration:2.4, quakeTickInterval:0.8, quakeTicks:3 },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
-  miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:32, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:0.25 },
+  miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:31.875, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:0.25 },
   // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
   fisherman:  { name:'渔夫', cost:3, hp:870, dmg:194, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:149, hookCDInit:1.3, model:'fisherman', atk:'hook' }
 };
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonbarrel','stormsentinel','flamemage','thornguardian','quake','miner','fisherman'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -213,6 +262,7 @@ const fxGroup = new THREE.Group();
 const unitMeshMap = new Map();
 let deployZoneMesh = null;
 let spellRangeMesh = null, spellRangeRing = null, spellRangeFill = null;
+let spellRangeTicks = null, spellRangePulse = null, spellRangeCross = null;
 let renderedGame = null;
 
 function ensureScene() {
@@ -252,13 +302,39 @@ function ensureScene() {
     deployZoneMesh.position.set(0, 1.5, 180);
     deployZoneMesh.visible = false;
     scene.add(deployZoneMesh);
-    // 法术范围圈预览：选中法术后跟随鼠标显示半径=法术半径的半透明圈
+    // 法术范围圈预览（CR 释放前调）：选中法术后跟随鼠标实时显示打击范围
+    // 结构：填充盘 + 主外环 + 旋转刻度弧 + 内脉冲环 + 中心准星，几何体按半径 1 建，用 scale 撑到法术半径
     spellRangeMesh = new THREE.Group();
-    spellRangeRing = new THREE.Mesh(new THREE.RingGeometry(0.965, 1, 44), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
-    spellRangeRing.rotation.x = -Math.PI/2;
-    spellRangeFill = new THREE.Mesh(new THREE.CircleGeometry(1, 44), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16, side: THREE.DoubleSide }));
-    spellRangeFill.rotation.x = -Math.PI/2;
-    spellRangeMesh.add(spellRangeRing); spellRangeMesh.add(spellRangeFill);
+    spellRangeFill = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite:false }));
+    spellRangeFill.rotation.x = -Math.PI/2; spellRangeFill.position.y = 0.2;
+    spellRangeRing = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite:false }));
+    spellRangeRing.rotation.x = -Math.PI/2; spellRangeRing.position.y = 0.6;
+    // 旋转刻度：4 段弧，缓慢自转，做出“瞄准锁定”的机械感
+    spellRangeTicks = new THREE.Group();
+    for (let k = 0; k < 4; k++) {
+      const seg = new THREE.Mesh(
+        new THREE.RingGeometry(0.80, 0.885, 14, 1, k * Math.PI/2 - 0.34, 0.68),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite:false })
+      );
+      seg.rotation.x = -Math.PI/2; spellRangeTicks.add(seg);
+    }
+    spellRangeTicks.position.y = 0.6;
+    // 内脉冲环：由内向外扩散循环，提示这是“会砸下来的范围”
+    spellRangePulse = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 40), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite:false }));
+    spellRangePulse.rotation.x = -Math.PI/2; spellRangePulse.position.y = 0.4;
+    // 中心准星：十字 + 中心点
+    spellRangeCross = new THREE.Group();
+    const barGeo = new THREE.PlaneGeometry(0.30, 0.028);
+    for (let k = 0; k < 2; k++) {
+      const bar = new THREE.Mesh(barGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite:false }));
+      bar.rotation.x = -Math.PI/2; bar.rotation.z = k * Math.PI/2;
+      spellRangeCross.add(bar);
+    }
+    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.035, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite:false }));
+    dot.rotation.x = -Math.PI/2; spellRangeCross.add(dot);
+    spellRangeCross.position.y = 0.8;
+    spellRangeMesh.add(spellRangeFill); spellRangeMesh.add(spellRangeRing);
+    spellRangeMesh.add(spellRangeTicks); spellRangeMesh.add(spellRangePulse); spellRangeMesh.add(spellRangeCross);
     spellRangeMesh.position.y = 2;
     spellRangeMesh.visible = false;
     scene.add(spellRangeMesh);
@@ -337,6 +413,7 @@ function createGame(difficulty, playerDeckCards) {
     pendingSpells: [],
     spellFields: [],
     selectedCardIdx: null,
+    dragAim: { active:false, cardKey:null, x:0, y:0, valid:false },   // 拖拽瞄准状态（手机端：按下预览→松手确认）
     elixirTimer: 0,
     lastTime: 0,
     gameTime: 0
@@ -559,9 +636,15 @@ function clampToRiverBank(unit, newX, newY) {
 
 // ==================== 单位更新 ====================
 function updateUnit(unit, dt) {
-  if (unit.hp <= 0) { unit.dead = true; return; }
+  if (unit.hp <= 0) { if (unit.isBalloon) balloonDeath(unit); unit.dead = true; return; }
+  if (unit.isClone) {
+    unit.cloneTimer -= dt;
+    if (unit.cloneTimer <= 0) { unit.dead = true; game.effects.push({ type:'clonedie', x:unit.x, y:unit.y, life:0.3, maxLife:0.3, color:unit.color }); return; }
+  }
   tickBurn(unit, dt);
   if (unit.hookCD > 0) unit.hookCD -= dt;
+  // 渔夫前摇安全重置：目标在出钩前失踪则取消前摇，避免卡死
+  if (unit.atk === 'hook' && unit.hookWindup > 0 && (!unit.target || unit.target.dead || unit.target.hp <= 0)) unit.hookWindup = 0;
   // 矿工挖地中：不可被锁定/攻击/碰撞，不移动不索敌，仅地下掘进倒计时（视觉由 updateDigMeshes 渲染）
   if (unit.underground) {
     unit.digTimer -= dt;
@@ -598,9 +681,11 @@ function updateUnit(unit, dt) {
     unit.stunTimer -= dt;
     return;
   }
-  // 减速（冰霜塔）：缓慢恢复
+  // 减速（冰霜塔/寒冰法师）：缓慢恢复
   if (unit.slowTimer > 0) unit.slowTimer -= dt;
   if (unit.paralyzeTimer > 0) unit.paralyzeTimer -= dt;
+  // 藤蔓定身：无法移动，但可在射程内攻击
+  if (unit.rootTimer > 0) unit.rootTimer -= dt;
   // 实时速度（px/秒），供 AI 法术预判落点使用；每帧默认清零，移动时再写入
   unit.vx = 0; unit.vy = 0;
   // 治疗图腾：每帧治疗半径内的友军（不含自己），不超过其最大血量
@@ -639,15 +724,18 @@ function updateUnit(unit, dt) {
   if (!moveDest) return;
   const d = dist(unit, moveDest);
   const effectiveRange = unit.range + (moveDest.w ? moveDest.w/2 : moveDest.radius || 10);
+  // 骷髅气球：飞到建筑/塔射程内即“坠毁”，死亡伤害 + 投出骷髅兵（CR 机制）
+  if (unit.isBalloon && unit.target && d <= effectiveRange) { balloonDeath(unit); return; }
   if (unit.dmg > 0 && unit.target && d <= effectiveRange) {
     // ===== 有锁定目标、在攻击范围内、且已到达对岸：停下攻击 =====
     unit.atkCD -= dt;
     if (unit.atkCD <= 0) {
-      unit.atkCD = unit.atkSpd + (unit.paralyzeTimer > 0 ? 0.4 : 0);
+      unit.atkCD = unit.atkSpd + (unit.paralyzeTimer > 0 ? 0.4 : 0) + (unit.slowTimer > 0 ? unit.atkSpd * 0.3 : 0);
       let dmg = unit.dmg;
       if (unit.canCharge && unit.charged) {
         dmg = Math.round(dmg * unit.chargeBonus);
         unit.charged = false;
+        unit.chargeTimer = 0;          // 冲锋被打完后需重新蓄力（再次奔跑才有下次冲锋）
         unit.curSpd = unit.spd;
         game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.25, maxLife:0.25, color:'#ffffff' });
       }
@@ -655,13 +743,14 @@ function updateUnit(unit, dt) {
       unit._atkT = 0.30;
       spawnAttackFx(unit, unit.target);
       dealDamage(unit, unit.target, dmg);
+      if (unit.slow) unit.target.slowTimer = unit.slowDur || 1.5;
       game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.2, maxLife:0.2, color:unit.color });
-      // 冰霜塔：命中后给目标及范围内敌人施加减速
-      if (unit.slow) {
+      // 冰霜塔（自创）：命中后给射程内所有敌方单位减速（范围光环）
+      if (unit.model === 'frosttower') {
         const enemyOwner = unit.owner === 'player' ? 'ai' : 'player';
         for (const u of game.units) {
-          if (u.owner !== enemyOwner || u.dead || u.hp <= 0 || u.flying) continue;
-          if (dist(unit, u) <= unit.range + (u.radius || 10)) u.slowTimer = 1.5;
+          if (u.owner !== enemyOwner || u.dead || u.hp <= 0) continue;
+          if (dist(unit, u) <= unit.range + (u.radius || 10)) u.slowTimer = unit.slowDur || 1.5;
         }
       }
       // 自爆单位（烈焰精灵）：造成范围伤害后自身消亡
@@ -679,6 +768,7 @@ function updateUnit(unit, dt) {
             if (unit.tgtType === 'ground' && u.flying) continue; // 地面单位溅射不波及空中（CR 规则）
             if (dist(unit, u) < unit.splash) {
               dealDamage(unit, u, unit.dmg);
+              if (unit.slow) u.slowTimer = unit.slowDur || 1.5;
             }
           }
           // 自身为中心的旋风特效
@@ -690,6 +780,7 @@ function updateUnit(unit, dt) {
             if (unit.tgtType === 'ground' && u.flying) continue; // 地面单位溅射不波及空中（CR 规则）
             if (dist(unit.target, u) < unit.splash) {
               dealDamage(unit, u, unit.dmg);   // 溅射对范围内所有目标均为全额伤害（CR 规则）
+              if (unit.slow) u.slowTimer = unit.slowDur || 1.5;
             }
           }
         }
@@ -697,26 +788,43 @@ function updateUnit(unit, dt) {
       // 渔夫钩索已下移：仅在「面前无近战目标」时出钩（见下方移动分支），避免持续拉拽/来回勾——遵循 CR 法则
     }
   } else {
+    // 藤蔓定身：被定身的单位无法移动，但仍可在射程内正常攻击（攻击已在上方 if 分支处理）
+    if (unit.rootTimer > 0) { unit.atkCD = Math.min(unit.atkCD, 0.3); return; }
     // 渔夫：仅当面前没有可近战进攻的单位（目标超出近战范围、但在钩索范围内）才出钩，把远处单位拉过来；
-    //       拉过来后目标进入近战范围 → 下一帧走正常三齿攻击，不再重复勾（遵循 CR 法则：钩子不是常驻攻击）
+    //       出钩前有 0.45s 甩钩前摇（原地摆臂蓄力），前摇结束才真正出钩——遵循 CR 钩索表现
+    //       拉过来后目标进入近战范围 → 下一帧走正常三齿攻击，不再重复勾（钩子不是常驻攻击）
     if (unit.atk === 'hook' && unit.target && !unit.target.dead && unit.target.hp > 0 && (unit.hookCD || 0) <= 0) {
       const tdist = dist(unit, unit.target);
       const meleeR = unit.range + (unit.target.radius || 10);
       if (tdist > meleeR && tdist <= (unit.hookRange || 120)) {
-        if (unit.target.type === 'king' || unit.target.type === 'princess' || unit.target.isBuilding) {
-          const ang = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
-          const reach = (unit.target.w ? unit.target.w/2 : (unit.target.radius||20)) + unit.radius + 6;
-          const c = clampToRiverBank(unit, unit.target.x - Math.cos(ang)*reach, unit.target.y - Math.sin(ang)*reach);
-          unit.x = c.x; unit.y = c.y;
+        if (unit.hookWindup > 0) {
+          // 前摇进行中：原地蓄力摆臂，不移动
+          unit.hookWindup -= dt;
+          unit._swing = 1.0;
+          if (unit.hookWindup <= 0) {
+            // 真正出钩：将目标（或自己，对塔/建筑）拉到面前
+            if (unit.target.type === 'king' || unit.target.type === 'princess' || unit.target.isBuilding) {
+              const ang = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
+              const reach = (unit.target.w ? unit.target.w/2 : (unit.target.radius||20)) + unit.radius + 6;
+              const c = clampToRiverBank(unit, unit.target.x - Math.cos(ang)*reach, unit.target.y - Math.sin(ang)*reach);
+              unit.x = c.x; unit.y = c.y;
+            } else {
+              const ang = Math.atan2(unit.y - unit.target.y, unit.x - unit.target.x);
+              const reach = unit.radius + (unit.target.radius||12) + 6;
+              const c = clampToRiverBank(unit.target, unit.x + Math.cos(ang)*reach, unit.y + Math.sin(ang)*reach);
+              unit.target.x = c.x; unit.target.y = c.y;
+            }
+            game.effects.push({ type:'hookline', sx:unit.x, sy:unit.y, tx:unit.target.x, ty:unit.target.y, life:0.22, maxLife:0.22, color:'#cfd8dc' });
+            unit.hookCD = unit.hookCDInit || 1.5;
+            unit.atkCD = Math.min(unit.atkCD, 0.3);
+          }
+          return;
         } else {
-          const ang = Math.atan2(unit.y - unit.target.y, unit.x - unit.target.x);
-          const reach = unit.radius + (unit.target.radius||12) + 6;
-          const c = clampToRiverBank(unit.target, unit.x + Math.cos(ang)*reach, unit.y + Math.sin(ang)*reach);
-          unit.target.x = c.x; unit.target.y = c.y;
+          // 进入甩钩前摇
+          unit.hookWindup = 0.45;
+          game.effects.push({ type:'hookwindup', x:unit.x, y:unit.y, life:0.3, maxLife:0.3, color:'#ffd54f', radius:unit.radius*1.8 });
+          return;
         }
-        game.effects.push({ type:'hookline', sx:unit.x, sy:unit.y, tx:unit.target.x, ty:unit.target.y, life:0.22, maxLife:0.22, color:'#cfd8dc' });
-        unit.hookCD = unit.hookCDInit || 1.5;
-        unit.atkCD = Math.min(unit.atkCD, 0.3);
       }
     }
     // ===== 不在范围内：移动靠近目的地（含绕行避让 + 冲锋加速） =====
@@ -726,10 +834,26 @@ function updateUnit(unit, dt) {
       const len = Math.hypot(dx, dy);
       if (len > 1) {
         let dirX = dx / len, dirY = dy / len;
-        // 冲锋加速（黑暗王子）：移动时逐渐提速，冲起来后才算蓄力
+        // ===== 冲锋过程（王子 / 黑暗王子）：先以常速奔跑蓄力，蓄满后才加速冲刺 =====
         if (unit.canCharge) {
-          unit.curSpd = Math.min(unit.chargeMaxSpd, unit.curSpd + unit.chargeAccel * dt);
-          if (unit.curSpd > unit.spd + 5) unit.charged = true;
+          if (!unit.charged) {
+            // 蓄力前摇：以常速积累冲锋（身体微微后仰蓄势），蓄满瞬间闪光提示
+            unit.chargeTimer += dt;
+            unit.curSpd = unit.spd;
+            if (unit.chargeTimer >= (unit.chargeWindup || 0.5)) {
+              unit.charged = true;
+              unit.curSpd = unit.spd;   // 从常速重新开始加速冲刺
+              game.effects.push({ type:'chargeflash', x:unit.x, y:unit.y, life:0.25, maxLife:0.25, radius:unit.radius*2.2, color:'#FFE082' });
+            }
+          } else {
+            // 已蓄满：加速冲刺，并周期性扬尘（明显可见的冲锋过程）
+            unit.curSpd = Math.min(unit.chargeMaxSpd, unit.curSpd + unit.chargeAccel * dt);
+            unit._chargeDustT = (unit._chargeDustT || 0) + dt;
+            if (unit._chargeDustT > 0.10) {
+              unit._chargeDustT = 0;
+              game.effects.push({ type:'chargedust', x:unit.x, y:unit.y, life:0.32, maxLife:0.32, radius:unit.radius, color:'#d7ccc8' });
+            }
+          }
         }
         // 绕行避让：被挡在前方时向侧面滑过去(只侧向、不往后推)，与皇室战争单位互相绕行的表现一致
         const av = computeAvoidance(unit, dirX, dirY);
@@ -750,14 +874,18 @@ function updateUnit(unit, dt) {
   }
 }
 
-// 硬碰撞解算：每帧对所有地面单位做一次"位置硬分离"，彻底杜绝重叠（含单位↔建筑、建筑↔建筑）
+// 硬碰撞解算：每帧对所有地面单位做"位置硬分离"，彻底杜绝重叠（含单位↔建筑、单位↔塔、塔↔塔）
 // 建筑(spd:0)固定不动，只把移动单位推出去；飞行单位在另一空间层，不参与地面推挤
 function resolveCollisions() {
   const arr = game.units.filter(u => !u.dead && u.hp > 0 && !u.flying && !u.underground);
-  for (let iter = 0; iter < 3; iter++) {
+  // 把存活塔也当作碰撞体加入（塔固定不动，单位被推开）
+  const towers = game.towers.filter(t => t.hp > 0);
+  for (let iter = 0; iter < 5; iter++) {   // 增加到5轮迭代，密集人群也能充分分开
+    // 单位 ↔ 单位
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
         const a = arr[i], b = arr[j];
+        if (a.owner === b.owner) continue;   // 皇室战争：友军之间不互相阻挡，可重叠穿过，绝不互推（彻底消除己方单位互卡）
         const minD = a.radius + b.radius;
         let dx = b.x - a.x, dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
@@ -783,6 +911,25 @@ function resolveCollisions() {
         if (!bFixed) { const c = clampToRiverBank(b, b.x, b.y); b.x = c.x; b.y = c.y; }
       }
     }
+    // 单位 ↔ 塔（塔固定，只把"敌军"推出去；自己的塔不挡自己的单位）
+    for (const u of arr) {
+      if (u.spd === 0) continue;   // 自身是建筑的单位不参与（建筑↔塔已在部署时校验）
+      for (const t of towers) {
+        if (u.owner === t.owner) continue;   // 皇室战争：友军单位可穿过己方塔，不被己方塔阻挡
+        const tR = Math.max(t.w, t.h) / 2 + 4;   // 塔的碰撞半径（加一点缓冲）
+        let dx = u.x - t.x, dy = u.y - t.y;
+        let d = Math.hypot(dx, dy);
+        const minD = u.radius + tR;
+        if (d >= minD) continue;
+        if (d < 0.0001) { dx = 1; dy = 0; d = 1; }
+        const nx = dx / d, ny = dy / d;
+        const overlap = minD - d + 1;   // +1 额外推力确保不贴边卡住
+        u.x += nx * overlap;
+        u.y += ny * overlap;
+        const c = clampToRiverBank(u, u.x, u.y);
+        u.x = c.x; u.y = c.y;
+      }
+    }
   }
 }
 
@@ -795,6 +942,7 @@ function computeAvoidance(unit, dirX, dirY) {
   for (const o of game.units) {
     if (o === unit || o.dead || o.hp <= 0) continue;
     if (o.flying) continue;
+    if (o.owner === unit.owner) continue;   // 皇室战争：友军不互相避让，直接穿过重叠（不绕行不互推）
     if (unit.target && o === unit.target) continue;   // 自己的攻击目标不避让，直接上去打
     const ox = o.x - unit.x, oy = o.y - unit.y;
     const d = Math.hypot(ox, oy);
@@ -810,9 +958,10 @@ function computeAvoidance(unit, dirX, dirY) {
     ax += tx * 1.5 * strength;
     ay += ty * 1.5 * strength;
   }
-  // 塔作为绕行障碍：贴边绕过（正在攻击的那座塔除外，否则会卡在塔前打不到）
+  // 塔作为绕行障碍：仅敌方塔贴边绕过（自己的塔不绕行；正在攻击的那座塔除外，否则会卡在塔前打不到）
   for (const t of game.towers) {
     if (t.hp <= 0 || t === unit.target) continue;
+    if (t.owner === unit.owner) continue;   // 皇室战争：自己的塔不挡自己的单位，无需绕行
     const ox = t.x - unit.x, oy = t.y - unit.y;
     const d = Math.hypot(ox, oy);
     const rsum = unit.radius + Math.max(t.w, t.h) / 2;
@@ -835,6 +984,7 @@ function separateFromTowers() {
     if (u.target && (u.target.type === 'king' || u.target.type === 'princess')) continue; // 正在攻击该塔：已在射程外停下，无需推
     for (const t of game.towers) {
       if (t.hp <= 0) continue;
+      if (t.owner === u.owner) continue;   // 皇室战争：自己的塔不挡自己的单位（友军单位直接穿过己方塔）
       const hw = t.w / 2 + u.radius, hh = t.h / 2 + u.radius;
       const dx = u.x - t.x, dy = u.y - t.y;
       if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
@@ -953,6 +1103,14 @@ function updateEffects(dt) {
 function leadTarget(u, delay) {
   const vx = u.vx || 0, vy = u.vy || 0;
   return { x: u.x + vx * delay, y: u.y + vy * delay };
+}
+// AI 防御建筑落点：河流↔两座公主塔构成的“中央口袋”（护双路+国王塔），
+// x 居中、按威胁路轻微偏置；y 落在河与公主塔之间（≈214），让单座建筑覆盖两座桥
+function aiBuildingSpot(threatSide) {
+  const bias = threatSide === 'left' ? -20 : threatSide === 'right' ? 20 : 0;
+  const x = CENTER_X + bias;
+  const y = PRINCESS_Y_AI + (RIVER_TOP - PRINCESS_Y_AI) * 0.42; // ≈214，河与塔之间
+  return { x, y };
 }
 function updateAI(dt) {
   const ai = game.ai;
@@ -1167,16 +1325,42 @@ function updateAI(dt) {
 
   // ===== 2. 防守决策 =====
   const enemyUnits = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < 360);
-  // ===== 2.0 引诱/拉扯：敌方坦克(巨人/野猪/皇家巨人/皮卡)过河后，用加农炮/电磁塔在侧位拉扯，保护皇家塔 =====
+  // ===== 2.0 引诱/拉扯 + 对空 + 预判布防：用加农炮/电磁塔放在“河流↔两公主塔”中央口袋 =====
+  //   · 敌方坦克(巨人/野猪/皇家巨人/皮卡)过河 → 立刻拉扯，把坦克从公主塔引向中央口袋
+  //   · 敌方飞行单位过河 → 电磁塔(对空)中央布防，单塔护双路
+  //   · 预判对手将进攻(玩家高圣水+我方半场已有敌方单位) → 提前布防，避免被动
   const enemyTanks = enemyUnits.filter(u => ['giant','hogrider','royalgiant','pekka'].includes(u.card));
-  if (enemyTanks.length > 0) {
-    const pullCard = ai.hand.find(c => (c === 'cannon' || c === 'tesla') && ai.elixir >= CARD_DEFS[c].cost);
-    if (pullCard) {
-      const tank = enemyTanks[0];
-      const side = tank.x < CENTER_X ? 'left' : 'right';
-      // C位：己方半场靠河、偏向该侧，把坦克从公主塔引开（皇室战争“引诱”核心技巧）
-      const bx = (side === 'left' ? PRINCESS_X_L : PRINCESS_X_R) + (side === 'left' ? 42 : -42);
-      if (playCard('ai', pullCard, bx, 270 + Math.random()*20)) return;
+  const enemyAirThreat = enemyUnits.filter(u => u.flying);
+  const aiHasBuilding = game.units.some(u => u.owner === 'ai' && u.hp > 0 && u.isBuilding);
+  const cannonCard = ai.hand.find(c => c === 'cannon' && ai.elixir >= CARD_DEFS[c].cost);
+  const teslaCard  = ai.hand.find(c => c === 'tesla'  && ai.elixir >= CARD_DEFS[c].cost);
+  if (!aiHasBuilding) {
+    const threatSide = enemyUnits.length
+      ? (enemyUnits.reduce((s,u) => s+u.x,0)/enemyUnits.length < CENTER_X ? 'left' : 'right')
+      : (ai.attackLane || 'left');
+    let trigger = false, card = null;
+    if (enemyTanks.length > 0) { trigger = true; card = cannonCard || teslaCard; }            // 地面坦克：加农炮优先(便宜)
+    else if (enemyAirThreat.length > 0) { trigger = true; card = teslaCard; }                 // 对空只需电磁塔
+    else if (game.player.elixir >= 9 && enemyUnits.length >= 1) { trigger = true; card = cannonCard || teslaCard; } // 预判：提前布防
+    if (trigger && card) {
+      const spot = aiBuildingSpot(threatSide);
+      if (playCard('ai', card, spot.x, spot.y)) return;
+    }
+  }
+  // ===== 2.05 桥头拦截：野猪/王子/巨人等快攻单位已压到桥头、我方又无防御建筑时，
+  //        在桥头用肉盾/群体单位堵路，靠“身体阻挡”拖延其推进（皇室战争经典 Stop 技巧）
+  const fastWC = enemyUnits.filter(u => ['hogrider','prince','royalgiant','giant'].includes(u.card) && u.y < RIVER_TOP + 45);
+  if (fastWC.length > 0 && !aiHasBuilding) {
+    const wc = fastWC[0];
+    const laneX2 = wc.x < CENTER_X ? PRINCESS_X_L : PRINCESS_X_R;
+    const blocker = ai.hand.find(c => {
+      const d = CARD_DEFS[c];
+      return d && d.type !== 'spell' && ai.elixir >= d.cost &&
+        (d.hp >= 600 || d.count >= 2 || ['knight','valkyrie','barbarians','minipekka','pekka','goblin','skeletons','stormsentinel','icewizard'].includes(c));
+    });
+    if (blocker) {
+      playCard('ai', blocker, laneX2, RIVER_TOP - 16 + Math.random()*10);   // 堵在己方半场桥头
+      return;
     }
   }
   if (enemyUnits.length > 0) {
@@ -1238,8 +1422,10 @@ function updateAI(dt) {
   }
 
   // ===== 3. 进攻决策 =====
+  // 圣水优劣自适应：领先则更主动、落后则更谨慎（皇室战争“圣水差”意识）
+  const elixirLead = ai.elixir - game.player.elixir;
   // ===== 3.0 防守反击(counter-push)：若己方存活单位已压过河道进到玩家半场，说明防守成功，
-  //        顺势在后排补一张输出/坦克，把防守转为进攻（皇室战争核心：立足防守、趁势反击）
+  //        顺势补一张卡把防守转为进攻（皇室战争核心：立足防守、趁势反击）
   const aiBoard = game.units.filter(u => u.owner === 'ai' && u.hp > 0 && u.y > RIVER_BOT - 20 && u.y < PRINCESS_Y_P + 40);
   const aiPushPower = aiBoard.reduce((s,u) => s + u.hp, 0);
   if (aiPushPower > 250) {
@@ -1247,14 +1433,41 @@ function updateAI(dt) {
     if (cp.length > 0) {
       const pushLane = aiBoard.reduce((s,u) => s + u.x, 0) / aiBoard.length < CENTER_X ? 'left' : 'right';
       const px = pushLane === 'left' ? PRINCESS_X_L : PRINCESS_X_R;
-      const reinforce = cp.find(c => ['musketeer','wizard','babydragon','minions','archer','darkprince','valkyrie','minipekka','knight','bomber','speargoblin'].includes(c)) || cp[0];
-      playCard('ai', reinforce, px + (Math.random()-0.5)*20, 120 + Math.random()*20);
+      // 优先补一个坦克顶在前面当反击核心；否则补远程/高伤输出在后排
+      const tank = cp.find(c => ['giant','hogrider','royalgiant','pekka'].includes(c));
+      const reinforce = tank
+        || cp.find(c => ['musketeer','wizard','babydragon','minions','archer','darkprince','valkyrie','minipekka','knight','bomber','speargoblin','icewizard','fisherman'].includes(c))
+        || cp[0];
+      const ry = tank ? 150 + Math.random()*20 : 118 + Math.random()*25;  // 坦克靠前顶线，输出在后排
+      playCard('ai', reinforce, px + (Math.random()-0.5)*25, ry);
       return;
+    }
+  }
+  // ===== 3.1 进攻中用法术开路：我方推进单位已过河，玩家用集群/后排拦截时，用法术清掉防守 =====
+  const aiPush = game.units.filter(u => u.owner === 'ai' && u.hp > 0 && u.y > RIVER_BOT && u.y < PRINCESS_Y_P);
+  if (aiPush.length > 0) {
+    const lead = aiPush.reduce((a,b) => a.hp > b.hp ? a : b);
+    const defenders = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y > RIVER_BOT && dist(u, lead) < 140);
+    if (defenders.length >= 2) {
+      const cx = defenders.reduce((s,u) => s+u.x, 0)/defenders.length;
+      const cy = defenders.reduce((s,u) => s+u.y, 0)/defenders.length;
+      const defVal = defenders.reduce((s,u) => s+u.hp, 0);
+      // 高血集群用大伤害法术，低血群用小法术；预判落点前推
+      const bigSpell = ai.hand.find(c => ['rocket','lightning','fireball'].includes(c) && ai.elixir >= CARD_DEFS[c].cost);
+      const smallSpell = ai.hand.find(c => ['arrows','zap','fireball'].includes(c) && ai.elixir >= CARD_DEFS[c].cost);
+      const sk = defVal > 700 ? bigSpell : smallSpell;
+      if (sk) {
+        const p = leadTarget({x:cx, y:cy, vx:0, vy:0}, CARD_DEFS[sk].delay || 0.6);
+        playCard('ai', sk, p.x, p.y);
+        return;
+      }
     }
   }
   let atkThreshold = game.difficulty === 'easy' ? 8 : game.difficulty === 'hard' ? 5 : 6;
   atkThreshold = Math.max(3, atkThreshold - skill * 2.5);   // 训练越高越主动进攻
   if (game.overtime) atkThreshold = Math.max(3, atkThreshold - 2);
+  if (elixirLead > 2) atkThreshold = Math.max(3, atkThreshold - 1);        // 圣水领先：更敢进攻
+  else if (elixirLead < -3) atkThreshold = Math.min(10, atkThreshold + 2); // 圣水落后：先憋一手保守防守
   if (ai.elixir >= atkThreshold) {
     const playable = ai.hand.filter(c => {
       const def = CARD_DEFS[c];
@@ -1263,6 +1476,8 @@ function updateAI(dt) {
     if (playable.length === 0) return;
 
     const laneX = ai.attackLane === 'left' ? PRINCESS_X_L : PRINCESS_X_R;
+    // 进攻部署点前移到“公主塔线附近”（原在国王塔后过深），推进更快、更早压到桥
+    const atkY = PRINCESS_Y_AI + 16 + Math.random()*30;   // ≈154~184，河与塔之间偏前
 
     // 策略A：有巨人/野猪/皇家巨人在手且圣水充裕，先出攻城单位
     const giantInHand = playable.find(c => c === 'giant');
@@ -1271,22 +1486,22 @@ function updateAI(dt) {
     const pekkaInHand = playable.find(c => c === 'pekka');
     const hasGiantOnField = game.units.some(u => u.owner === 'ai' && u.hp > 0 && u.card === 'giant');
     if (giantInHand && ai.elixir >= 7 && !hasGiantOnField) {
-      playCard('ai', 'giant', laneX, 95 + Math.random()*20);
+      playCard('ai', 'giant', laneX, atkY);
       return;
     }
     // 皮卡超人：圣水充裕时作为超级进攻核心
     if (pekkaInHand && ai.elixir >= 9) {
-      playCard('ai', 'pekka', laneX + (Math.random()-0.5)*20, 95 + Math.random()*15);
+      playCard('ai', 'pekka', laneX + (Math.random()-0.5)*20, atkY);
       return;
     }
     // 皇家巨人：远程打建筑，站在后方输出
     if (rgInHand && ai.elixir >= 7) {
-      playCard('ai', 'royalgiant', laneX + (Math.random()-0.5)*20, 95 + Math.random()*15);
+      playCard('ai', 'royalgiant', laneX + (Math.random()-0.5)*20, atkY);
       return;
     }
     // 圣水不够出巨人但有野猪，快速突袭
     if (!giantInHand && !rgInHand && hogInHand && ai.elixir >= 5) {
-      playCard('ai', 'hogrider', laneX + (Math.random()-0.5)*20, 100 + Math.random()*20);
+      playCard('ai', 'hogrider', laneX + (Math.random()-0.5)*20, atkY);
       return;
     }
 
@@ -1301,7 +1516,7 @@ function updateAI(dt) {
                    || playable.find(c => c === 'darkprince')
                    || playable.find(c => c === 'minipekka');
       if (support) {
-        playCard('ai', support, laneX + (Math.random()-0.5)*30, 100 + Math.random()*20);
+        playCard('ai', support, laneX + (Math.random()-0.5)*30, atkY - 8);   // 支援稍靠后，跟在坦克后面
         return;
       }
     }
@@ -1310,12 +1525,12 @@ function updateAI(dt) {
     const cheapUnit = playable.find(c => CARD_DEFS[c].cost <= 2);
     const heavyUnit = playable.find(c => CARD_DEFS[c].cost >= 4);
     if (ai.elixir >= 8 && heavyUnit) {
-      playCard('ai', heavyUnit, laneX + (Math.random()-0.5)*30, 100 + Math.random()*20);
+      playCard('ai', heavyUnit, laneX + (Math.random()-0.5)*30, atkY);
     } else if (cheapUnit) {
-      playCard('ai', cheapUnit, laneX + (Math.random()-0.5)*30, 100 + Math.random()*20);
+      playCard('ai', cheapUnit, laneX + (Math.random()-0.5)*30, atkY);
     } else {
       const card = playable[Math.floor(Math.random() * playable.length)];
-      playCard('ai', card, laneX + (Math.random()-0.5)*30, 100 + Math.random()*20);
+      playCard('ai', card, laneX + (Math.random()-0.5)*30, atkY);
     }
   }
 }
@@ -1347,7 +1562,19 @@ function playCard(owner, cardKey, x, y) {
         game.units.push(makeUnit(owner, def, x+ox, y+oy));
       }
     } else {
-      game.units.push(makeUnit(owner, def, x, y));
+      const u = makeUnit(owner, def, x, y);
+      game.units.push(u);
+      if (def.isHero && owner === 'player') game.player.hero = u;
+      // 寒冰法师落地伤害 + 减速（CR：spawn damage with slow）
+      if (def.spawnDamage) {
+        const foe = owner === 'player' ? 'ai' : 'player';
+        const r = def.range || 117;
+        for (const e of game.units) {
+          if (e.owner !== foe || e.dead || e.hp <= 0) continue;
+          if (dist({x, y}, e) < r) { dealDamage({owner}, e, def.spawnDamage); if (def.spawnSlow) e.slowTimer = def.slowDur || 1.5; }
+        }
+        game.effects.push({ type:'vines', x, y, life:0.4, maxLife:0.4, radius:r, color:'#9fe8ff' });
+      }
     }
     game.effects.push({ type:'deploy', x, y, life:0.3, maxLife:0.3, radius:25, color:def.color });
   }
@@ -1374,13 +1601,84 @@ function makeUnit(owner, def, x, y) {
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
     target: null, dead: false, stunTimer: 0, slowTimer: 0, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
-    curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false,
+    curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
+    isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0,
+    isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
+    hookWindup: 0, rootTimer: 0,
     _atkT: 0, _lunge: 0, _spin: 0
   };
 }
 
+// 骷髅气球坠毁：死亡伤害（对附近敌方建筑/塔）+ 投出骷髅兵，然后消失（CR 机制）
+function balloonDeath(b) {
+  if (b.dead && b._balloonDone) return;
+  b._balloonDone = true; b.dead = true;
+  const foe = b.owner === 'player' ? 'ai' : 'player';
+  if (b.deathDmg) {
+    for (const t of game.towers) {
+      if (t.owner !== foe || t.hp <= 0) continue;
+      if (dist(b, t) < (b.deathRadius || 42)) dealDamage({owner:b.owner}, t, b.deathDmg);
+    }
+    for (const u of game.units) {
+      if (u.owner !== foe || u.dead || u.hp <= 0 || !u.isBuilding) continue;
+      if (dist(b, u) < (b.deathRadius || 42)) dealDamage({owner:b.owner}, u, b.deathDmg);
+    }
+  }
+  if (b.spawnCard) {
+    const sdef = CARD_DEFS[b.spawnCard];
+    if (sdef) {
+      const n = b.spawnCount, spread = Math.min(28, 8 + n * 2.5);
+      for (let k = 0; k < n; k++) {
+        const ang = (k / n) * Math.PI * 2;
+        const ox = Math.cos(ang) * spread + (Math.random()-0.5)*5;
+        const oy = Math.sin(ang) * spread + (Math.random()-0.5)*5;
+        game.units.push(makeUnit(b.owner, sdef, b.x + ox, b.y + oy));
+      }
+      game.effects.push({ type:'deploy', x:b.x, y:b.y, life:0.3, maxLife:0.3, radius:25, color:sdef.color });
+    }
+  }
+  game.effects.push({ type:'explosion', x:b.x, y:b.y, life:0.5, maxLife:0.5, radius:30, color:'#E0E0E0' });
+}
+// 英雄“天”技能：玩家手动释放（仅玩家英雄）
+function heroSkill1() {                 // 1 技能（2 费）：定身最近敌方单位 1.5s + 劈棍（增伤 100%）
+  const h = game.player.hero;
+  if (!h || h.dead || h.hp <= 0) return;
+  if (game.player.elixir < h.skill1Cost) return;
+  const foe = 'ai';
+  let best = null, minD = Infinity;
+  for (const u of game.units) {
+    if (u.owner !== foe || u.dead || u.hp <= 0) continue;
+    const d = dist(h, u);
+    if (d < minD) { minD = d; best = u; }
+  }
+  if (!best) return;
+  game.player.elixir -= h.skill1Cost;
+  best.stunTimer = Math.max(best.stunTimer || 0, 1.5);          // 定身 1.5s
+  dealDamage(h, best, Math.round(h.dmg * 2));                   // 劈棍：增伤 100%
+  game.effects.push({ type:'staffstrike', x:best.x, y:best.y, life:0.5, maxLife:0.5, color:'#FFD54F', radius:best.radius*2.2 });
+  game.effects.push({ type:'ring', x:best.x, y:best.y, life:0.5, maxLife:0.5, color:'#FFD54F', radius:best.radius*2.4 });
+}
+function heroSkill2() {                 // 2 技能（3 费）：召唤 3 个分身（同血、伤害-20%、2s 后消散、不能释放技能）
+  const h = game.player.hero;
+  if (!h || h.dead || h.hp <= 0) return;
+  if (game.player.elixir < h.skill2Cost) return;
+  game.player.elixir -= h.skill2Cost;
+  for (let k = 0; k < 3; k++) {
+    const ang = (k / 3) * Math.PI * 2;
+    const ox = Math.cos(ang) * (h.radius + 14);
+    const oy = Math.sin(ang) * (h.radius + 14);
+    const c = makeUnit(h.owner, CARD_DEFS.hero_tian, h.x + ox, h.y + oy);
+    c.isClone = true; c.cloneTimer = 2.0;
+    c.dmg = Math.round(h.dmg * 0.8);     // 分身伤害 -20%
+    c.maxHp = h.maxHp; c.hp = h.maxHp;   // 同血
+    c.card = h.card + '·分身';
+    c.isHero = false;
+    game.units.push(c);
+  }
+  game.effects.push({ type:'deploy', x:h.x, y:h.y, life:0.3, maxLife:0.3, radius:30, color:'#FFD54F' });
+}
 function castSpell(owner, def, x, y) {
-  // 持续力场型法术（如飓风）：立即生成力场，持续拉拽+持续伤害，仅影响敌方单位，不影响建筑/塔
+  // 持续力场型法术（如飓风）：立即生成力场，持续拉拽+持续伤害；按 CR 机制影响范围内**双方**地面/空中单位（不分敌我），不作用于建筑/塔
   if (def.field) {
     const dur = def.duration || 3.0;
     game.spellFields.push({
@@ -1392,10 +1690,17 @@ function castSpell(owner, def, x, y) {
   }
   // 前摇：先放置施法标记，延迟后爆炸 / 召唤
   const delay = def.delay || 1.0;
+  // 投射类法术的发射点 = 施法方国王塔（火球/万箭/火箭/飞桶从这里飞出去）
+  const kx = CENTER_X, ky = (owner === 'player') ? KING_Y_P : KING_Y_AI;
   game.pendingSpells.push({
     owner, x, y, radius: def.radius, dmg: def.dmg, color: def.color,
     stun: def.stun || 0, kind: def.spellFx || 'fireball',
+    groundOnly: def.groundOnly || false,          // 修复：此前漏传，导致震荡术会误伤飞行单位
+    topTargets: def.topTargets || 0, towerDmgMult: def.towerDmgMult || 0.35, root: def.root || 0,
     spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
+    quakeTicks: def.quakeTicks || 0, quakeTickInterval: def.quakeTickInterval || 0, quakeDuration: def.quakeDuration || 0,
+    sx: kx, sy: ky,                                // 发射起点（国王塔）
+    seed: Math.random() * 1000,                    // 每次施放的随机种子，避免多发轨迹完全重合
     timer: delay, maxTimer: delay
   });
 }
@@ -1412,24 +1717,63 @@ function updatePendingSpells(dt) {
       else if (s.kind === 'barrel') { fxType = 'barrel'; }
       else if (s.kind === 'rocket') { fxType = 'fireball'; fxColor = '#ff3b30'; }
       else if (s.kind === 'freeze') { fxType = 'freeze'; fxColor = '#81D4FA'; }
-      else if (s.kind === 'quake') { fxType = 'fireball'; fxColor = '#8d6e63'; }
+      else if (s.kind === 'quake') { fxType = 'quakeimpact'; fxColor = '#8d6e63'; }
+      else if (s.kind === 'vines') { fxType = 'vines'; fxColor = '#2E7D32'; }
       game.effects.push({ type: fxType, x: s.x, y: s.y, life: 0.5, maxLife: 0.5, radius: s.radius, color: fxColor });
+      // 震荡术：落地后不做一次性伤害，而是生成持续 2.4s 的震荡区，每 0.8s 震一次（共 3 跳，总伤 = dmg）
+      if (s.quakeTicks > 0) {
+        game.spellFields.push({
+          kind: 'quake', owner: s.owner, x: s.x, y: s.y, radius: s.radius, color: s.color,
+          tickDmg: (s.dmg || 0) / s.quakeTicks, tickInterval: s.quakeTickInterval || 0.8,
+          ticksLeft: s.quakeTicks, tickTimer: 0, stun: s.stun || 0,
+          timer: s.quakeDuration || 2.4, maxTimer: s.quakeDuration || 2.4
+        });
+        game.pendingSpells.splice(i, 1);
+        continue;
+      }
       // 仅对有伤害值的法术结算伤害（哥布林飞桶等纯召唤法术无 dmg，跳过以免 NaN 污染血量）
       if (typeof s.dmg === 'number') {
         const enemyOwner = s.owner === 'player' ? 'ai' : 'player';
-        for (const u of game.units) {
-          if (u.owner !== enemyOwner || u.hp <= 0) continue;
-          if (s.groundOnly && u.flying) continue;
-          if (u.underground) continue;
-          if (dist(s, u) < s.radius) {
-            dealDamage({owner:s.owner}, u, s.dmg);
-            // 雷电麻痹：被命中的单位眩晕
-            if (s.stun > 0) u.stunTimer = s.stun;
+        // 雷电：只打范围内血量最高的 N 个目标（含建筑/塔），每个眩晕；塔吃 towerDmgMult 减伤（CR 规则）
+        if (s.topTargets) {
+          const cands = [];
+          for (const u of game.units) {
+            if (u.owner !== enemyOwner || u.hp <= 0) continue;
+            if (u.underground) continue;
+            if (dist(s, u) < s.radius) cands.push(u);
           }
-        }
-        for (const t of game.towers) {
-          if (t.owner !== enemyOwner || t.hp <= 0) continue;
-          if (dist(s, t) < s.radius + 20) dealDamage({owner:s.owner}, t, s.dmg * 0.35);  // 塔受法术减伤65%（只吃35%，CR 规则）
+          for (const t of game.towers) {
+            if (t.owner !== enemyOwner || t.hp <= 0) continue;
+            if (dist(s, t) < s.radius + 20) cands.push(t);
+          }
+          cands.sort((a, b) => b.hp - a.hp);
+          for (const tgt of cands.slice(0, s.topTargets)) {
+            const mult = (tgt.type === 'king' || tgt.type === 'princess') ? (s.towerDmgMult || 0.30) : 1;
+            dealDamage({owner:s.owner}, tgt, s.dmg * mult);
+            if (s.stun > 0) tgt.stunTimer = s.stun;
+          }
+        } else {
+          // 收集范围内所有敌方单位（藤蔓 groundOnly=false → 含空中单位；震荡术等地面类仍豁免飞行）
+          const inRange = [];
+          for (const u of game.units) {
+            if (u.owner !== enemyOwner || u.hp <= 0) continue;
+            if (u.underground) continue;
+            if (s.groundOnly && u.flying) continue;
+            if (dist(s, u) < s.radius) {
+              inRange.push(u);
+              dealDamage({owner:s.owner}, u, s.dmg);   // 伤害对范围内所有单位（含空中）生效
+              if (s.stun > 0) u.stunTimer = s.stun;
+            }
+          }
+          // 定身：仅锁定范围内“血量剩余值最大”的两个单位（含空中），持续 root 秒
+          if (s.root > 0 && inRange.length) {
+            inRange.sort((a, b) => b.hp - a.hp);
+            for (const tgt of inRange.slice(0, (s.rootTop || 2))) tgt.rootTimer = s.root;
+          }
+          for (const t of game.towers) {
+            if (t.owner !== enemyOwner || t.hp <= 0) continue;
+            if (dist(s, t) < s.radius + 20) dealDamage({owner:s.owner}, t, s.dmg * (s.towerDmgMult || 0.35));
+          }
         }
       }
       // 召唤类法术（哥布林飞桶）：延迟结束后在落点生成部队
@@ -1456,9 +1800,33 @@ function updateSpellFields(dt) {
   for (let i = game.spellFields.length - 1; i >= 0; i--) {
     const f = game.spellFields[i];
     f.timer -= dt;
+    // ===== 震荡术：2.4s 内每 0.8s 震一次（落地立刻第一跳），共 3 跳，仅打地面，命中眩晕 0.5s，塔吃 35% =====
+    if (f.kind === 'quake') {
+      f.tickTimer -= dt;
+      if (f.ticksLeft > 0 && f.tickTimer <= 0) {
+        f.ticksLeft--;
+        f.tickTimer += f.tickInterval;
+        const foe = f.owner === 'player' ? 'ai' : 'player';
+        for (const u of game.units) {
+          if (u.owner !== foe || u.hp <= 0) continue;
+          if (u.flying || u.underground) continue;          // 只震地面单位
+          if (Math.hypot(u.x - f.x, u.y - f.y) < f.radius) {
+            dealDamage({owner:f.owner}, u, f.tickDmg);
+            if (f.stun > 0) u.stunTimer = Math.max(u.stunTimer || 0, f.stun);
+          }
+        }
+        for (const t of game.towers) {
+          if (t.owner !== foe || t.hp <= 0) continue;
+          if (Math.hypot(t.x - f.x, t.y - f.y) < f.radius + 20) dealDamage({owner:f.owner}, t, f.tickDmg * 0.35);
+        }
+        game.effects.push({ type:'quakewave', x:f.x, y:f.y, life:0.55, maxLife:0.55, radius:f.radius, color:f.color });
+      }
+      if (f.timer <= 0) game.spellFields.splice(i, 1);
+      continue;
+    }
     for (const u of game.units) {
       if (u.hp <= 0 || u.isBuilding || u.underground) continue;
-      if (u.owner === f.owner) continue;            // 飓风只影响敌方单位（按指令：仅敌方，不影响己方）
+      // 飓风按 CR 机制：拉拽/伤害范围内**双方**所有地面与空中单位（不分敌我），只不作用于建筑/塔
       const d = Math.hypot(u.x - f.x, u.y - f.y);
       if (d < f.radius && d > 1) {
         const dirx = (f.x - u.x) / d, diry = (f.y - u.y) / d;
@@ -1468,6 +1836,7 @@ function updateSpellFields(dt) {
         u.x += dirx * pull; u.y += diry * pull;
         if (f.dmgPerSec > 0) dealDamage({owner:f.owner}, u, f.dmgPerSec * dt);
         if (!u.flying) { const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y; }
+        u.target = null;   // 飓风最高优先级：无条件强制打断原锁定，下一帧由 findTarget 改锁最近敌方目标（含建筑，如国王塔）
       }
     }
     if (f.timer <= 0) game.spellFields.splice(i, 1);
@@ -1478,6 +1847,40 @@ function updateSpellFieldMeshes() {
   for (const f of game.spellFields) {
     const x = f.x - CENTER_X, z = f.y - 340;
     const pct = f.timer / f.maxTimer;
+    // ===== 震荡区：龟裂地面 + 随节拍鼓动的边界 + 扬尘碎石 =====
+    if (f.kind === 'quake') {
+      const el = f.maxTimer - f.timer;
+      const beat = f.tickInterval > 0 ? ((el % f.tickInterval) / f.tickInterval) : 0;  // 0=刚震完
+      const shake = Math.exp(-beat * 6);   // 每跳后的余震衰减
+      // 地面裂开的暗色底盘
+      const base = new THREE.Mesh(new THREE.CircleGeometry(f.radius, 40), new THREE.MeshBasicMaterial({color:0x4e342e, transparent:true, opacity:0.24 + 0.16*shake, side:THREE.DoubleSide, depthWrite:false}));
+      base.rotation.x = -Math.PI/2; base.position.set(x, 1.2, z); fxGroup.add(base);
+      // 边界环：每跳瞬间发亮变粗
+      const bw = f.radius * (0.055 + 0.045*shake);
+      const edge = new THREE.Mesh(new THREE.RingGeometry(f.radius - bw, f.radius, 44), new THREE.MeshBasicMaterial({color:0xa1887f, transparent:true, opacity:0.5 + 0.45*shake, side:THREE.DoubleSide, depthWrite:false}));
+      edge.rotation.x = -Math.PI/2; edge.position.set(x, 2.2, z); fxGroup.add(edge);
+      // 放射状裂纹（8 条，长度随余震轻微伸缩）
+      for (let k = 0; k < 8; k++) {
+        const ang = k * Math.PI/4 + (f.x + f.y) * 0.01;
+        const len = f.radius * (0.5 + 0.35*((k*37%10)/10)) * (0.9 + 0.15*shake);
+        const crack = new THREE.Mesh(new THREE.PlaneGeometry(len, 2.4 + 1.6*shake), new THREE.MeshBasicMaterial({color:0x3e2723, transparent:true, opacity:0.55, side:THREE.DoubleSide, depthWrite:false}));
+        crack.rotation.x = -Math.PI/2; crack.rotation.z = -ang;
+        crack.position.set(x + Math.cos(ang)*len/2, 1.6, z + Math.sin(ang)*len/2);
+        fxGroup.add(crack);
+      }
+      // 扬尘碎石：每跳后从地面弹起
+      if (shake > 0.08) {
+        for (let k = 0; k < 10; k++) {
+          const ang = (k/10) * Math.PI*2 + el*2.2;
+          const rr = f.radius * (0.25 + 0.7*((k*53%10)/10));
+          const hop = Math.sin(beat*Math.PI) * (10 + (k%4)*5);
+          const st = new THREE.Mesh(new THREE.BoxGeometry(3.5, 3.5, 3.5), new THREE.MeshBasicMaterial({color:0x6d4c41, transparent:true, opacity:0.75*shake}));
+          st.position.set(x + Math.cos(ang)*rr, 3 + hop, z + Math.sin(ang)*rr);
+          st.rotation.set(el*4+k, el*3, el*2); fxGroup.add(st);
+        }
+      }
+      continue;
+    }
     const ring = new THREE.Mesh(new THREE.RingGeometry(f.radius*0.85, f.radius, 32), new THREE.MeshBasicMaterial({color:0x4DD0E1, transparent:true, opacity:0.5, side:THREE.DoubleSide}));
     ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
     const swirl = new THREE.Mesh(new THREE.TorusGeometry(f.radius*0.5*(0.6+0.4*(1-pct)), 2, 8, 24), new THREE.MeshBasicMaterial({color:0x4DD0E1, transparent:true, opacity:0.7}));
@@ -1521,13 +1924,35 @@ function checkWin() {
     }
   }
 
-  if (winner && game.state === 'playing') {
-    game.state = 'gameOver';
-    game.winner = winner;
-    if (!game._recorded) {
-      game._recorded = true;
-      game._aiSkillAfter = recordAIGameResult(winner);   // 训练：每局结束都写入持久化数据
+  // 国王塔被摧毁：比赛直接结束，失败方公主塔一并爆掉（皇室战争：破国王塔即胜）
+  if ((aKing.hp <= 0 || pKing.hp <= 0) && !game._kingExploded) {
+    game._kingExploded = true;
+    const loserOwner = winner === 'player' ? 'ai' : 'player';
+    for (const t of game.towers) {
+      if (t.owner === loserOwner && t.type === 'princess' && t.hp > 0) {
+        t.hp = 0;
+        game.effects.push({ type:'explosion', x:t.x, y:t.y, life:0.6, maxLife:0.6, radius:42, color:'#ff8a3d' });
+      }
     }
+    game.endTimer = 1.1;   // 推迟 1.1s 结束，让爆炸动画播完再弹结算
+  }
+
+  if (winner && game.state === 'playing') {
+    if (game.endTimer > 0) {
+      game.endTimer -= (game._dt || 0.016);
+      if (game.endTimer <= 0) finalizeGameOver(winner);
+    } else {
+      finalizeGameOver(winner);
+    }
+  }
+}
+
+function finalizeGameOver(winner) {
+  game.state = 'gameOver';
+  game.winner = winner;
+  if (!game._recorded) {
+    game._recorded = true;
+    game._aiSkillAfter = recordAIGameResult(winner);   // 训练：每局结束都写入持久化数据
   }
 }
 
@@ -1839,6 +2264,22 @@ function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, sk
     case 'fisherman':
       { const cap = _box(headR * 1.7, headR * 0.5, headR * 1.7, _mat(0xff7043)); cap.position.y = hy + headR * 0.55; parent.add(cap);
         const brim = _box(headR * 2.3, headR * 0.16, headR * 1.0, _mat(0xff7043)); brim.position.set(0, hy + headR * 0.3, headR * 0.7); parent.add(brim); break; }
+    case 'prince': {
+      const crown = _cyl(headR * 0.6, headR * 0.55, headR * 0.35, _mat(0xFFD700, { metalness: 0.6, roughness: 0.3 }), 10); crown.position.y = hy + headR * 0.75; parent.add(crown);
+      for (let k = 0; k < 5; k++) { const sp = _cone(headR * 0.12, headR * 0.45, _mat(0xFFE082, { emissive: 0xFFD54F, emissiveIntensity: 0.4 }), 6); const a = k / 5 * Math.PI * 2; sp.position.set(Math.cos(a) * headR * 0.55, hy + headR * 1.05, Math.sin(a) * headR * 0.55); parent.add(sp); }
+      break; }
+    case 'icewizard': {
+      const hood = _cone(headR * 1.4, headR * 2.2, _mat(0x4FC3F7), 12); hood.position.y = hy + headR * 0.4; parent.add(hood);
+      const brim = _box(headR * 2.0, headR * 0.2, headR * 2.0, _mat(0x0288D1)); brim.position.y = hy + headR * 0.1; parent.add(brim);
+      const beard = _box(headR * 0.95, headR * 0.9, headR * 0.95, _mat(0xE1F5FE)); beard.position.y = hy - headR * 0.5; parent.add(beard);
+      break; }
+    case 'wukong': {
+      // 凤翅紫金冠 + 猴脸（高级渲染）
+      const circlet = _cyl(headR * 0.72, headR * 0.72, headR * 0.3, _mat(0xFFD700, { metalness: 0.7, roughness: 0.25 }), 12); circlet.position.y = hy + headR * 0.55; parent.add(circlet);
+      for (const sx of [-1, 1]) { const feather = _box(headR * 0.16, headR * 1.8, headR * 0.5, _mat(0xFFD54F, { metalness: 0.5, roughness: 0.3 })); feather.position.set(sx * headR * 0.55, hy + headR * 1.25, 0); feather.rotation.z = sx * 0.32; parent.add(feather); }
+      const snout = _box(headR * 0.5, headR * 0.42, headR * 0.6, _mat(0xf0c78f)); snout.position.set(0, hy - headR * 0.12, headR * 0.7); parent.add(snout);
+      for (const sx of [-1, 1]) { const eye = _sph(headR * 0.17, _mat(0xff3b30, { emissive: 0xff3b30, emissiveIntensity: 0.7 })); eye.position.set(sx * headR * 0.35, hy + headR * 0.15, headR * 0.68); parent.add(eye); }
+      break; }
     default: break;
   }
 }
@@ -1888,6 +2329,20 @@ function addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW,
     case 'fisherman': {
       const rod = _cyl(r * 0.05, r * 0.05, r * 2.6, _mat(0x6d4f43), 6); rod.rotation.z = Math.PI / 2 - 0.55; rod.position.set(0, -bodyH * 0.1, r * 0.55); ud.armR.add(rod); ud.weaponR = rod;
       const line2 = _cyl(r * 0.02, r * 0.02, r * 0.5, _mat(0xeeeeee), 6); line2.rotation.z = Math.PI / 2 - 0.55; line2.position.set(0, -bodyH * 0.1, r * 1.9); ud.armR.add(line2); break; }
+    case 'prince': {
+      const w = new THREE.Group(); const h = _cyl(r * 0.05, r * 0.05, r * 1.9, metal, 8); h.position.y = r * 0.95; w.add(h);
+      const tip = _cone(r * 0.16, r * 0.5, _mat(0xFFE082, { emissive: 0xFFD54F, emissiveIntensity: 0.5 }), 8); tip.position.y = r * 1.9; w.add(tip);
+      ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.3); ud.weaponR = w; break; }
+    case 'icewizard': {
+      const w = new THREE.Group(); const h = _cyl(r * 0.07, r * 0.08, r * 1.4, _mat(0x3949ab), 8); h.position.y = r * 0.7; w.add(h);
+      const orb = _sph(r * 0.34, _mat(0x9fe8ff, { emissive: 0x4fc3f7, emissiveIntensity: 0.9, transparent: true, opacity: 0.92 })); orb.position.y = r * 1.45; w.add(orb);
+      ud.armR.add(w); w.position.set(0, -bodyH * 0.1, r * 0.2); ud.weaponR = w; ud.crystal = orb; break; }
+    case 'wukong': {
+      const w = new THREE.Group(); const h = _cyl(r * 0.1, r * 0.1, r * 2.3, _mat(0xFFD54F, { metalness: 0.7, roughness: 0.25 }), 10); h.rotation.z = Math.PI / 2; h.position.y = r * 0.2; w.add(h);
+      for (const sx of [-1, 1]) { const band = _cyl(r * 0.13, r * 0.13, r * 0.18, _mat(0x8d6e63), 10); band.rotation.z = Math.PI / 2; band.position.set(sx * r * 0.95, r * 0.2, 0); w.add(band); }
+      ud.armR.add(w); w.position.set(0, -bodyH * 0.42, r * 0.25); ud.weaponR = w;
+      const cape = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.7, r * 1.9), new THREE.MeshStandardMaterial({ color: 0xd32f2f, side: THREE.DoubleSide, roughness: 0.85 }));
+      cape.position.set(0, legH + bodyH * 0.45, -r * 0.5); cape.rotation.x = -0.32; pivot.add(cape); ud.cape = cape; break; }
     default: break;
   }
 }
@@ -1912,35 +2367,64 @@ function buildGround(g, u, ud, r, col, baseMat, skin, dark, metal) {
     console.log('[BUILD]', u.name, 'skguard OK');
     return;
   }
-  const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot; console.log('[BUILD]', u.name, 'pivot OK');
+  if (u.model === 'royalhog') {
+    // 郝思涵（皇家野猪机制）：猪造型——浅棕粉、獠牙、项圈；苗条版，整体比英雄明显小一圈
+    const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
+    const hr = r * 0.5;   // 在 0.6 基础上再缩小一档
+    const pigCol = 0xE8A87C, pigDark = 0xcf8a5e;
+    const pm = _mat(pigCol, { roughness: 0.6 });
+    const body = _sph(hr * 1.2, pm); body.scale.set(1.0, 0.82, 1.4); body.position.y = hr * 1.05; pivot.add(body); ud.body = body;  // 收窄腰身，更苗条
+    const head = _sph(hr * 0.72, pm); head.position.set(0, hr * 1.2, hr * 1.4); pivot.add(head); ud.head = head;
+    for (const sx of [-1, 1]) { const ear = _cone(hr * 0.26, hr * 0.46, pm, 6); ear.position.set(sx * hr * 0.44, hr * 1.66, hr * 1.26); ear.rotation.z = sx * 0.42; pivot.add(ear); }
+    const snout = _sph(hr * 0.36, _mat(pigDark)); snout.scale.set(0.95, 0.78, 0.82); snout.position.set(0, hr * 1.05, hr * 1.98); pivot.add(snout);
+    for (const sx of [-1, 1]) { const nost = _sph(hr * 0.08, _mat(0x222222)); nost.position.set(sx * hr * 0.14, hr * 1.05, hr * 2.2); pivot.add(nost); }
+    for (const sx of [-1, 1]) { const tusk = _cone(hr * 0.07, hr * 0.4, _mat(0xfff4e0), 6); tusk.position.set(sx * hr * 0.22, hr * 0.78, hr * 1.98); tusk.rotation.x = -0.7; pivot.add(tusk); }
+    for (const sx of [-1, 1]) { const eye = _sph(hr * 0.1, _mat(0x111111)); eye.position.set(sx * hr * 0.38, hr * 1.34, hr * 1.64); pivot.add(eye); }
+    const legL = new THREE.Group(), legR = new THREE.Group();
+    for (const [grp, sx] of [[legL, -1], [legR, 1]]) for (const sz of [-1, 1]) {
+      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(hr * 0.14, hr * 0.52, 4, 8), pm);  // 腿更细
+      leg.position.set(sx * hr * 0.54, hr * 0.44, sz * hr * 0.92); grp.add(leg);
+    }
+    pivot.add(legL); pivot.add(legR); ud.legL = legL; ud.legR = legR;
+    const tail = new THREE.Mesh(new THREE.TorusGeometry(hr * 0.2, hr * 0.06, 6, 10), pm); tail.position.set(0, hr * 1.05, -hr * 1.85); tail.rotation.y = Math.PI / 2; pivot.add(tail);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(hr * 0.78, hr * 0.1, 8, 16), _mat(u.color, { roughness: 0.5 })); collar.rotation.x = Math.PI / 2; collar.position.set(0, hr * 1.0, hr * 0.8); pivot.add(collar);
+    return;
+  }
+  const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
   const legH = r * 0.95, bodyH = r * 1.15, headR = r * 0.55;
   const bodyW = (u.model === 'giant' || u.model === 'royalgiant' || u.model === 'pekka') ? r * 1.5 :
                 (u.model === 'barbarian') ? r * 1.35 : r * 1.15;
-  const body = _box(bodyW, bodyH, r * 0.75, baseMat); body.position.y = legH + bodyH / 2; pivot.add(body); ud.body = body; console.log('[BUILD]', u.name, 'body OK');
+  // 躯干（胶囊体，更圆润高级）
+  const torsoR = bodyW * 0.46;
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(torsoR, bodyH * 0.5, 6, 14), baseMat);
+  torso.position.y = legH + bodyH * 0.5; pivot.add(torso); ud.body = torso;
+  // 腰带（深色环，增加层次）
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(torsoR * 0.98, r * 0.08, 6, 16), dark);
+  belt.rotation.x = Math.PI / 2; belt.position.y = legH + bodyH * 0.16; pivot.add(belt);
   const headCol = (u.model === 'skeleton' || u.model === 'skarmy') ? 0xf2f2f2 :
                   (u.model === 'goblin' || u.model === 'speargoblin') ? 0x8bc34a :
                   (u.model === 'minipekka' || u.model === 'pekka') ? 0x9aa0a8 : 0xffe0bd;
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(headR * 0.42, headR * 0.5, headR * 0.5, 8), _mat(headCol, { roughness: 0.6 }));
+  neck.position.y = legH + bodyH + headR * 0.05; pivot.add(neck);
   const head = (u.model === 'minipekka' || u.model === 'pekka') ? _box(headR * 1.5, headR * 1.5, headR * 1.5, metal) : _sph(headR, _mat(headCol));
-  head.position.y = legH + bodyH + (u.model === 'minipekka' || u.model === 'pekka' ? headR * 0.9 : headR * 0.7);
-  pivot.add(head); ud.head = head; console.log('[BUILD]', u.name, 'head OK');
-  addHeadDetail(u, pivot, head, headR, legH, bodyH, col, dark, metal, skin); console.log('[BUILD]', u.name, 'headDetail OK');
-  const legGeo = new THREE.BoxGeometry(r * 0.38, legH, r * 0.38);
-  const legL = new THREE.Mesh(legGeo, baseMat); legL.position.set(-r * 0.32, legH / 2, 0); pivot.add(legL); ud.legL = legL;
-  const legR = new THREE.Mesh(legGeo, baseMat); legR.position.set(r * 0.32, legH / 2, 0); pivot.add(legR); ud.legR = legR; console.log('[BUILD]', u.name, 'legs OK');
-  const armGeo = new THREE.BoxGeometry(r * 0.28, bodyH * 0.85, r * 0.28);
-  const armL = new THREE.Mesh(armGeo, baseMat); armL.position.set(-bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armL); ud.armL = armL;
-  const armR = new THREE.Mesh(armGeo, baseMat); armR.position.set(bodyW * 0.62, legH + bodyH * 0.62, 0); pivot.add(armR); ud.armR = armR; console.log('[BUILD]', u.name, 'arms OK');
+  head.position.y = legH + bodyH + headR * 0.7; pivot.add(head); ud.head = head;
+  addHeadDetail(u, pivot, head, headR, legH, bodyH, col, dark, metal, skin);
+  // 四肢（胶囊，更圆润）
+  const legGeo = new THREE.CapsuleGeometry(r * 0.2, legH * 0.5, 4, 8);
+  const legL = new THREE.Mesh(legGeo, baseMat); legL.position.set(-r * 0.34, legH * 0.5, 0); pivot.add(legL); ud.legL = legL;
+  const legR = new THREE.Mesh(legGeo, baseMat); legR.position.set(r * 0.34, legH * 0.5, 0); pivot.add(legR); ud.legR = legR;
+  const armGeo = new THREE.CapsuleGeometry(r * 0.16, bodyH * 0.55, 4, 8);
+  const armL = new THREE.Mesh(armGeo, baseMat); armL.position.set(-bodyW * 0.62, legH + bodyH * 0.55, 0); pivot.add(armL); ud.armL = armL;
+  const armR = new THREE.Mesh(armGeo, baseMat); armR.position.set(bodyW * 0.62, legH + bodyH * 0.55, 0); pivot.add(armR); ud.armR = armR;
   if (u.model === 'hogrider') {
     const hog = new THREE.Group();
     const hbody = _box(r * 1.5, r * 0.9, r * 2.0, _mat(0x8d6e63)); hbody.position.y = r * 0.7; hog.add(hbody);
     const hhead = _box(r * 0.7, r * 0.7, r * 0.7, _mat(0x8d6e63)); hhead.position.set(0, r * 0.9, r * 1.1); hog.add(hhead);
     for (const sx of [-1, 1]) { const t = _cone(r * 0.1, r * 0.4, _mat(0xffffff), 6); t.position.set(sx * r * 0.2, r * 0.7, r * 1.45); hog.add(t); }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const leg = _box(r * 0.25, r * 0.7, r * 0.25, _mat(0x6d4f43)); leg.position.set(sx * r * 0.6, r * 0.35, sz * r * 0.8); hog.add(leg); }
-    g.add(hog); ud.hog = hog; ud.riderLift = r * 0.55; console.log('[BUILD]', u.name, 'hog OK');
+    g.add(hog); ud.hog = hog; ud.riderLift = r * 0.55;
   }
-  console.log('[BUILD]', u.name, 'call addWeaponProps');
   addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW, legH, bodyH);
-  console.log('[BUILD]', u.name, 'weaponProps OK - buildGround COMPLETE');
 }
 function buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal) {
   const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
@@ -1967,6 +2451,18 @@ function buildFlyer(g, u, ud, r, col, baseMat, skin, dark, metal) {
     const wr = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.8, r * 1.0), wmat); wr.position.set(r * 1.0, r * 0.3, 0); wr.rotation.y = -0.6; pivot.add(wr);
     ud.wings = [wl, wr];
     const tail = _cone(r * 0.3, r * 1.0, _mat(0x57a05a), 6); tail.rotation.x = Math.PI / 2; tail.position.set(0, r * 0.0, -r * 1.0); pivot.add(tail);
+  } else if (u.model === 'balloon') {
+    // 骷髅气球：热气球队形 + 铁篮 + 骷髅驾驶员
+    const env = _sph(r * 1.3, _mat(0xECEFF1)); env.scale.set(1, 1.15, 1); env.position.y = r * 1.7; pivot.add(env); ud.body = env;
+    const stripe = _box(r * 0.16, r * 2.8, r * 2.8, _mat(0xB0BEC5)); stripe.position.y = r * 1.7; pivot.add(stripe);
+    const basket = _box(r * 0.85, r * 0.7, r * 0.85, _mat(0x6d4f43)); basket.position.y = r * 0.45; pivot.add(basket); ud.basket = basket;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const rope = _cyl(r * 0.035, r * 0.035, r * 1.3, _mat(0x9e9e9e), 6);
+      rope.position.set(sx * r * 0.5, r * 1.05, sz * r * 0.5); rope.rotation.x = sx * sz * 0.3; pivot.add(rope);
+    }
+    const sk = _sph(r * 0.42, _mat(0xf2f2f2)); sk.position.y = r * 0.45; pivot.add(sk);
+    for (const sx of [-1, 1]) { const eye = _sph(r * 0.1, _mat(0x111111)); eye.position.set(sx * r * 0.17, r * 0.5, r * 0.38); pivot.add(eye); }
+    ud.floatBob = true;
   }
 }
 function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
@@ -2057,8 +2553,9 @@ function updateUnitMesh(m, u) {
   // 走路动画（有腿的人形）
   if (ud.legL) {
     const sw = moving ? Math.sin(ph) * 0.55 : 0;
-    ud.legL.rotation.x = sw; ud.legR.rotation.x = -sw;
-    ud.armL.rotation.x = -sw * 0.8; ud.armR.rotation.x = sw * 0.8;
+    ud.legL.rotation.x = sw; if (ud.legR) ud.legR.rotation.x = -sw;
+    if (ud.armL) ud.armL.rotation.x = -sw * 0.8;
+    if (ud.armR) ud.armR.rotation.x = sw * 0.8;
     const bob = moving ? Math.abs(Math.sin(ph)) * (ud.r * 0.16) : 0;
     ud.pivot.position.y = (ud.riderLift || 0) + bob;
   } else if (ud.floatBob) {
@@ -2100,13 +2597,16 @@ function updateUnitMesh(m, u) {
       if (dx || dy) ud.pivot.rotation.y = Math.atan2(dx, dy);
     }
   }
-  // 部署闪烁 / 眩晕发光
+  // 部署闪烁 / 眩晕发光 / 冲锋前倾
   const body = ud.body;
   if (body) {
+    if (ud._bodyZ0 === undefined) ud._bodyZ0 = body.position.z;
     if (u.deployTimer > 0) { body.material.transparent = true; body.material.opacity = 0.45 + 0.35*Math.sin(u.deployTimer*12); }
     else { body.material.transparent = false; body.material.opacity = 1; }
-    body.material.emissive = new THREE.Color(u.stunTimer > 0 ? 0xFFEB3B : (u.paralyzeTimer > 0 ? 0x4488FF : 0x000000));
-    body.material.emissiveIntensity = (u.stunTimer > 0 || u.paralyzeTimer > 0) ? 0.6 : 0;
+    const charging = u.charged && u.canCharge;
+    body.position.z = ud._bodyZ0 + (charging ? (ud.r * 0.5) : 0);   // 冲锋时身体前倾（明显可见的蓄力→冲刺过程）
+    body.material.emissive = new THREE.Color(u.stunTimer > 0 ? 0xFFEB3B : (u.paralyzeTimer > 0 ? 0x4488FF : (charging ? 0xFFD54F : 0x000000)));
+    body.material.emissiveIntensity = (u.stunTimer > 0 || u.paralyzeTimer > 0) ? 0.6 : (charging ? 0.5 : 0);
   }
   const ratio = Math.max(0, u.hp / u.maxHp);
   const fg = ud.fg, barW = ud.barW;
@@ -2148,6 +2648,16 @@ function animateAttack(ud, u, p) {
       break; }
     case 'spear': {
       const a = p < 0.35 ? -0.4 * (p / 0.35) : (p < 0.6 ? -0.4 + (p - 0.35) / 0.25 * 1.4 : -0.4 + 1.4 * (1 - (p - 0.6) / 0.4));
+      if (ud.armR) ud.armR.rotation.x = a;
+      if (pivot) pivot.position.z = lunge * R * 0.4;
+      break; }
+    case 'lance': {
+      const a = p < 0.3 ? -0.5 * (p / 0.3) : (p < 0.62 ? -0.5 + (p - 0.3) / 0.32 * 1.9 : -0.5 + 1.9 * (1 - (p - 0.62) / 0.38));
+      if (ud.armR) ud.armR.rotation.x = a;
+      if (pivot) pivot.position.z = lunge * R * 0.5;
+      break; }
+    case 'staff': {
+      const a = p < 0.5 ? -2.5 * (p / 0.5) : -2.5 + (p - 0.5) / 0.5 * 3.1;
       if (ud.armR) ud.armR.rotation.x = a;
       if (pivot) pivot.position.z = lunge * R * 0.4;
       break; }
@@ -2204,6 +2714,12 @@ function spawnAttackFx(u, tgt) {
     case 'arrow': case 'arrow_long':
       game.effects.push({ type: 'arrow', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.18, maxLife: 0.18, color: u.color });
       break;
+    case 'lance':
+      game.effects.push({ type: 'slash', x: u.x, y: u.y, ang, life: 0.18, maxLife: 0.18, color: u.color });
+      break;
+    case 'staff':
+      game.effects.push({ type: 'slash', x: u.x, y: u.y, ang, life: 0.20, maxLife: 0.20, color: u.color });
+      break;
     case 'shot':
       game.effects.push({ type: 'bolt', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.16, maxLife: 0.16, color: (u.model === 'cannon' || u.model === 'royalgiant') ? '#9aa3ad' : u.color });
       break;
@@ -2236,18 +2752,40 @@ function spawnAttackFx(u, tgt) {
 }
 function updateDeployZone() {
   if (!deployZoneMesh) return;
-  if (game.selectedCardIdx === null) { deployZoneMesh.visible = false; return; }
+  if (game.selectedCardIdx === null) { deployZoneMesh.visible = false; if (spellRangeMesh) spellRangeMesh.visible = false; return; }
   const cardKey = game.player.hand[game.selectedCardIdx];
   const def = CARD_DEFS[cardKey];
   if (def && def.type === 'spell') {
     deployZoneMesh.visible = false;
-    if (hoverWorld && def.radius) {
+    // 两种飞桶是“投掷召唤”而非范围打击，CR 里也不显示打击圈 → 排除
+    const showRange = def.spellFx !== 'barrel' && !!def.radius;
+    // 瞄准模式优先用 dragAim 坐标（拖拽中的实时位置），否则用 hoverWorld
+    const aim = (game.dragAim && game.dragAim.active) ? game.dragAim : null;
+    const pos = aim || hoverWorld;
+    if (showRange && pos && isFinite(pos.x) && isFinite(pos.y)) {
+      const t = performance.now() / 1000;
       spellRangeMesh.visible = true;
-      spellRangeMesh.position.set(hoverWorld.x - CENTER_X, 2, hoverWorld.y - 340);
+      spellRangeMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340);
       spellRangeMesh.scale.set(def.radius, def.radius, def.radius);
-      const sc = new THREE.Color(def.color || '#ffffff');
+      const inField = pos.x >= 0 && pos.x <= CW && pos.y >= 0 && pos.y <= CH;
+      const sc = new THREE.Color(inField ? (def.color || '#ffffff') : '#ff3b30');
       spellRangeRing.material.color.copy(sc);
       spellRangeFill.material.color.copy(sc);
+      spellRangePulse.material.color.copy(sc);
+      for (const c of spellRangeTicks.children) c.material.color.copy(sc);
+      for (const c of spellRangeCross.children) c.material.color.copy(sc);
+      // 外环呼吸 + 刻度自转 + 内环由内向外扩散，做出 CR 释放前调的“瞄准”观感
+      spellRangeRing.material.opacity = 0.72 + 0.28 * Math.sin(t * 6.0);
+      spellRangeFill.material.opacity = inField ? 0.14 + 0.05 * Math.sin(t * 6.0) : 0.26;
+      spellRangeTicks.rotation.y = -t * 0.9;
+      const ph = (t * 0.85) % 1;
+      const ps = 0.18 + ph * 0.82;
+      spellRangePulse.scale.set(ps, ps, 1);
+      spellRangePulse.material.opacity = 0.55 * (1 - ph);
+      // 震荡术是多段持续打击：准星随每 0.8s 一跳的节奏收缩，提示“会震 3 下”
+      const beat = def.quakeTicks ? (1 - ((t % (def.quakeTickInterval || 0.8)) / (def.quakeTickInterval || 0.8))) : 1;
+      const cs = def.quakeTicks ? (0.75 + 0.45 * beat) : 1;
+      spellRangeCross.scale.set(cs, cs, cs);
     } else {
       spellRangeMesh.visible = false;
     }
@@ -2409,6 +2947,71 @@ function updateEffectMeshes() {
       col.position.set(x, 26, z); fxGroup.add(col);
       const ring = new THREE.Mesh(new THREE.RingGeometry(6, 14, 16), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#7CD4FF'), transparent:true, opacity:pct*0.9, side:THREE.DoubleSide}));
       ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
+    } else if (e.type === 'quakeimpact') {
+      // 震荡术落地：石块砸地砸出的冲击环 + 飞溅碎块
+      const rad = e.radius || 85, p = 1 - pct;
+      const shock = new THREE.Mesh(new THREE.RingGeometry(rad*p*0.85, rad*p, 36), new THREE.MeshBasicMaterial({color:0x8d6e63, transparent:true, opacity:pct*0.9, side:THREE.DoubleSide, depthWrite:false}));
+      shock.rotation.x = -Math.PI/2; shock.position.set(x, 3, z); fxGroup.add(shock);
+      for (let k = 0; k < 12; k++) {
+        const ang = (k/12)*Math.PI*2;
+        const rr = rad * p * 0.75;
+        const deb = new THREE.Mesh(new THREE.BoxGeometry(5,5,5), new THREE.MeshBasicMaterial({color:0x6d4c41, transparent:true, opacity:pct}));
+        deb.position.set(x + Math.cos(ang)*rr, 4 + Math.sin(p*Math.PI)*26, z + Math.sin(ang)*rr);
+        deb.rotation.set(p*7+k, p*5, p*3); fxGroup.add(deb);
+      }
+    } else if (e.type === 'quakewave') {
+      // 震荡术每一跳：由中心向外扩散的双层地震波
+      const rad = e.radius || 85, p = 1 - pct;
+      const w1 = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.1, rad*p - 7), rad*p, 40), new THREE.MeshBasicMaterial({color:0xd7ccc8, transparent:true, opacity:pct*0.85, side:THREE.DoubleSide, depthWrite:false}));
+      w1.rotation.x = -Math.PI/2; w1.position.set(x, 3.4, z); fxGroup.add(w1);
+      const p2 = Math.max(0, p - 0.22);
+      const w2 = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.1, rad*p2 - 5), Math.max(0.2, rad*p2), 40), new THREE.MeshBasicMaterial({color:0x8d6e63, transparent:true, opacity:pct*0.6, side:THREE.DoubleSide, depthWrite:false}));
+      w2.rotation.x = -Math.PI/2; w2.position.set(x, 2.8, z); fxGroup.add(w2);
+    } else if (e.type === 'vines') {
+      const rad = (e.radius || 60) * (1 - pct * 0.3);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#2E7D32'), transparent:true, opacity:pct*0.8, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 3, z); fxGroup.add(ring);
+      for (let k = 0; k < 6; k++) {
+        const ang = k/6 * Math.PI*2 + (1-pct)*2.5;
+        const vh = (e.radius||60) * 0.5 * (0.6 + 0.4*((k*17%10)/10));
+        const v = new THREE.Mesh(new THREE.BoxGeometry(2.5, vh, 2.5), new THREE.MeshBasicMaterial({color:0x2E7D32, transparent:true, opacity:pct*0.7}));
+        v.position.set(x + Math.cos(ang)*rad*0.5, 6, z + Math.sin(ang)*rad*0.5); v.rotation.y = ang; fxGroup.add(v);
+      }
+    } else if (e.type === 'staffstrike') {
+      const rad = (e.radius || 30) * (1 - pct);
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(rad*1.4, 52, 4), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#FFD54F'), transparent:true, opacity:pct*0.85}));
+      beam.position.set(x, 28, z); fxGroup.add(beam);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.5, rad, 20), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#FFD54F'), transparent:true, opacity:pct*0.9, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
+    } else if (e.type === 'ring') {
+      const rad = (e.radius || 40) * (1 + (1 - pct) * 0.6);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.85, rad, 28), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#FFD54F'), transparent:true, opacity:pct*0.8, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 4, z); fxGroup.add(ring);
+    } else if (e.type === 'clonedie') {
+      const rad = (e.radius || 20) * (2 - pct);
+      const s = new THREE.Mesh(new THREE.SphereGeometry(rad*0.5, 10, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#FFD54F'), transparent:true, opacity:pct*0.6}));
+      s.position.set(x, 14, z); fxGroup.add(s);
+    } else if (e.type === 'hookwindup') {
+      const rad = (e.radius || 24) * (1 + pct * 0.5);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.8, rad, 20), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#ffd54f'), transparent:true, opacity:pct*0.7, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 8, z); fxGroup.add(ring);
+    } else if (e.type === 'chargeflash') {
+      // 蓄满瞬间：金色扩散闪光环 + 光球（冲锋就绪提示）
+      const rad = (e.radius || 30) * (1 + (1 - pct) * 0.9);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#FFE082'), transparent:true, opacity:pct*0.9, side:THREE.DoubleSide}));
+      ring.rotation.x = -Math.PI/2; ring.position.set(x, 5, z); fxGroup.add(ring);
+      const fl = new THREE.Mesh(new THREE.SphereGeometry((e.radius||30)*0.5, 12, 10), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#FFE082'), transparent:true, opacity:pct*0.7}));
+      fl.position.set(x, 12, z); fxGroup.add(fl);
+    } else if (e.type === 'chargedust') {
+      // 冲刺扬尘：低空棕色碎块，强化可见的冲锋过程
+      const rad = e.radius || 14;
+      for (let k = 0; k < 4; k++) {
+        const ang = Math.random()*Math.PI*2;
+        const d = rad * (0.3 + Math.random()*0.7);
+        const deb = new THREE.Mesh(new THREE.BoxGeometry(4,4,4), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||'#d7ccc8'), transparent:true, opacity:pct*0.7}));
+        deb.position.set(x + Math.cos(ang)*d, 4 + Math.random()*6, z + Math.sin(ang)*d);
+        deb.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3); fxGroup.add(deb);
+      }
     }
     if (mesh) fxGroup.add(mesh);
   }
@@ -2430,25 +3033,14 @@ function updatePendingSpellMeshes() {
     ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
     const fill = new THREE.Mesh(new THREE.CircleGeometry(s.radius*(1-pct)+5, 26), new THREE.MeshBasicMaterial({ color: fillColor, transparent: true, opacity: 0.16, side: THREE.DoubleSide }));
     fill.rotation.x = -Math.PI/2; fill.position.set(x, 1.6, z); fxGroup.add(fill);
-    // 从天而降的飞行物：火箭/火球/闪电有可辨识的“轨迹落地”表现
-    const prog = 1 - pct; // 0→1 下落进度
-    if (s.kind === 'rocket') {
-      const by = 320 - prog * 312;
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(4, 5, 22, 12), new THREE.MeshBasicMaterial({ color: 0xff3b30 }));
-      body.position.set(x, by, z);
-      const nose = new THREE.Mesh(new THREE.ConeGeometry(5.5, 12, 12), new THREE.MeshBasicMaterial({ color: 0xffd54f }));
-      nose.position.set(x, by + 16, z);
-      const flame = new THREE.Mesh(new THREE.ConeGeometry(4.5, 16, 10), new THREE.MeshBasicMaterial({ color: 0xff8a3d, transparent: true, opacity: 0.85 }));
-      flame.position.set(x, by - 18, z); flame.rotation.x = Math.PI;
-      fxGroup.add(body); fxGroup.add(nose); fxGroup.add(flame);
-    } else if (s.kind === 'fireball') {
-      const by = 320 - prog * 312;
-      const ball = new THREE.Mesh(new THREE.SphereGeometry(9, 14, 12), new THREE.MeshBasicMaterial({ color: 0xff7a1a }));
-      ball.position.set(x, by, z);
-      const glow = new THREE.Mesh(new THREE.SphereGeometry(15, 14, 12), new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.3 }));
-      glow.position.set(x, by, z);
-      fxGroup.add(ball); fxGroup.add(glow);
-    } else if (s.kind === 'lightning') {
+    const prog = 1 - pct; // 0→1 飞行进度
+    // ===== 抛射类法术：从施法方国王塔飞出，沿抛物线砸向落点 =====
+    if (s.kind === 'fireball')      drawFireballTrail(s, prog);
+    else if (s.kind === 'arrows')   drawArrowsTrail(s, prog);
+    else if (s.kind === 'rocket')   drawRocketTrail(s, prog);
+    else if (s.kind === 'barrel')   drawBarrelTrail(s, prog);
+    else if (s.kind === 'lightning') {
+      // 雷电/电击：CR 中是天降落雷，不走抛射轨迹
       const by = 300 - prog * 294;
       const bolt = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 4.5, 46, 8), new THREE.MeshBasicMaterial({ color: 0xfff27a, transparent: true, opacity: 0.7 + 0.3*Math.random() }));
       bolt.position.set(x, by, z);
@@ -2456,21 +3048,169 @@ function updatePendingSpellMeshes() {
       core.position.set(x, by, z);
       fxGroup.add(bolt); fxGroup.add(core);
     }
-    // 飞桶：延迟期间从投放方一侧沿抛物线飞向落点，呈现“飞行中”的3D建模效果
-    if (s.kind === 'barrel') {
-      const startZ = (s.owner === 'player') ? 320 : -320;
-      const bx = x;
-      const bz = startZ + (z - startZ) * prog;
-      const by = 8 + Math.sin(prog * Math.PI) * 120;
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 18, 12), new THREE.MeshBasicMaterial({ color: 0x8d6e63 }));
-      bar.position.set(bx, by, bz);
-      bar.rotation.z = (1 - pct) * 6;
-      bar.rotation.x = -prog * 2.2;
-      fxGroup.add(bar);
-      const sh = new THREE.Mesh(new THREE.CircleGeometry(7, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22*(1-prog*0.5), side: THREE.DoubleSide }));
-      sh.rotation.x = -Math.PI/2; sh.position.set(bx, 1.5, bz); fxGroup.add(sh);
-    }
   }
+}
+
+// ==================== 抛射法术轨迹 ====================
+// 轨迹采样：起点 = 施法方国王塔塔顶(s.sx,s.sy,h0)，终点 = 落点(s.x,s.y,h1)，中间叠加正弦抛物线
+function spellArcAt(s, t, arcH, h0, h1) {
+  const tc = t < 0 ? 0 : (t > 1 ? 1 : t);
+  const a = (h0 === undefined) ? 46 : h0, b = (h1 === undefined) ? 6 : h1;
+  return {
+    x: (s.sx + (s.x - s.sx) * tc) - CENTER_X,
+    y: a + (b - a) * tc + Math.sin(tc * Math.PI) * arcH,
+    z: (s.sy + (s.y - s.sy) * tc) - 340
+  };
+}
+// 轨迹切线（让弹体机头始终朝向飞行方向）
+function spellArcDir(s, t, arcH, h0, h1) {
+  const tc = t < 0 ? 0 : (t > 1 ? 1 : t);
+  const a = (h0 === undefined) ? 46 : h0, b = (h1 === undefined) ? 6 : h1;
+  const dy = (b - a) + arcH * Math.PI * Math.cos(tc * Math.PI);
+  const v = new THREE.Vector3(s.x - s.sx, dy, s.y - s.sy);
+  if (v.lengthSq() < 1e-6) v.set(0, -1, 0);
+  return v.normalize();
+}
+const _UPV = new THREE.Vector3(0, 1, 0);
+function orientAlong(obj, dir) { obj.quaternion.setFromUnitVectors(_UPV, dir); }
+// 稳定伪随机（同一次施放的散布固定，不会逐帧抖动）
+function spellRnd(seed, k) { const v = Math.sin(seed * 0.017 + k * 12.9898) * 43758.5453; return v - Math.floor(v); }
+// 落地阴影（越接近地面越小越深）
+function addFlyShadow(px, pz, py, r) {
+  const k = Math.max(0.25, 1 - py / 220);
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(r * (0.5 + k * 0.6), 16),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.10 + 0.18 * k, side: THREE.DoubleSide, depthWrite: false }));
+  sh.rotation.x = -Math.PI/2; sh.position.set(px, 1.4, pz); fxGroup.add(sh);
+}
+
+// 火球术：熊熊燃烧的火球拖着火焰尾迹划过天空，落地前压低俯冲
+function drawFireballTrail(s, t) {
+  const ARC = 92;
+  const p = spellArcAt(s, t, ARC);
+  // 火焰拖尾：越靠后越小越暗越透明
+  for (let i = 7; i >= 1; i--) {
+    const tt = t - i * 0.042;
+    if (tt <= 0) continue;
+    const q = spellArcAt(s, tt, ARC);
+    const f = 1 - i / 8;
+    const col = new THREE.Color().setHSL(0.045 + 0.02 * (1 - f), 1.0, 0.28 + 0.22 * f);
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(4 + 6 * f, 10, 8),
+      new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.16 + 0.5 * f, depthWrite: false }));
+    puff.position.set(q.x, q.y, q.z); fxGroup.add(puff);
+  }
+  // 外焰 → 主体 → 白热内核，三层叠出灼热感
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(16, 14, 12), new THREE.MeshBasicMaterial({ color: 0xff6d00, transparent: true, opacity: 0.28, depthWrite: false }));
+  halo.position.set(p.x, p.y, p.z); fxGroup.add(halo);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(9.5, 16, 12), new THREE.MeshBasicMaterial({ color: 0xff8f1a }));
+  ball.position.set(p.x, p.y, p.z); fxGroup.add(ball);
+  const core = new THREE.Mesh(new THREE.SphereGeometry(5.4, 12, 10), new THREE.MeshBasicMaterial({ color: 0xffe082 }));
+  core.position.set(p.x, p.y, p.z); fxGroup.add(core);
+  // 甩出的火星
+  for (let k = 0; k < 5; k++) {
+    const a = spellRnd(s.seed, k) * Math.PI * 2 + t * 9;
+    const r = 11 + spellRnd(s.seed, k + 20) * 9;
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.4, 2.4), new THREE.MeshBasicMaterial({ color: 0xffca28, transparent: true, opacity: 0.85 }));
+    sp.position.set(p.x + Math.cos(a) * r, p.y + Math.sin(a * 1.7) * 7, p.z + Math.sin(a) * r);
+    fxGroup.add(sp);
+  }
+  addFlyShadow(p.x, p.z, p.y, 10);
+}
+
+// 万箭齐发：一束箭矢从塔上齐射升空，高抛后在落点上方散开成箭雨
+function drawArrowsTrail(s, t) {
+  const N = 9;
+  for (let k = 0; k < N; k++) {
+    const tk = t + (spellRnd(s.seed, k + 300) - 0.5) * 0.09;   // 参差的先后
+    if (tk <= 0 || tk >= 1) continue;
+    const arc = 132 + (spellRnd(s.seed, k + 400) - 0.5) * 46;  // 各自不同的抛物线高度
+    const base = spellArcAt(s, tk, arc);
+    // 落点散布：前段紧凑成束，后段快速散开覆盖打击圈
+    const ang = spellRnd(s.seed, k) * Math.PI * 2;
+    const rr = Math.sqrt(spellRnd(s.seed, k + 50)) * (s.radius || 85) * 0.78;
+    const spread = Math.pow(tk, 1.9);
+    const px = base.x + Math.cos(ang) * rr * spread;
+    const pz = base.z + Math.sin(ang) * rr * spread;
+    const dir = spellArcDir(s, tk, arc);
+    const g = new THREE.Group();
+    g.position.set(px, base.y, pz); orientAlong(g, dir);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 19, 6), new THREE.MeshBasicMaterial({ color: 0x8d6e63 }));
+    g.add(shaft);
+    const head = new THREE.Mesh(new THREE.ConeGeometry(1.9, 5.5, 8), new THREE.MeshBasicMaterial({ color: 0xeceff1 }));
+    head.position.y = 12; g.add(head);
+    for (let f = 0; f < 2; f++) {   // 尾羽
+      const fin = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 5.2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+      fin.position.y = -8; fin.rotation.y = f * Math.PI / 2; g.add(fin);
+    }
+    fxGroup.add(g);
+    if (tk > 0.5) addFlyShadow(px, pz, base.y, 3.2);
+  }
+  // 起手瞬间：塔顶的齐射闪光
+  if (t < 0.22) {
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(9 * (1 - t / 0.22), 10, 8), new THREE.MeshBasicMaterial({ color: 0xbbdefb, transparent: true, opacity: 0.65 * (1 - t / 0.22) }));
+    fl.position.set(s.sx - CENTER_X, 46, s.sy - 340); fxGroup.add(fl);
+  }
+}
+
+// 火箭术：低弧线巡航导弹，尾焰狂喷 + 拖出一条长长的白烟
+function drawRocketTrail(s, t) {
+  const ARC = 58;
+  const p = spellArcAt(s, t, ARC);
+  const dir = spellArcDir(s, t, ARC);
+  // 烟迹：沿轨迹回溯，越远越蓬松越淡
+  for (let i = 10; i >= 1; i--) {
+    const tt = t - i * 0.055;
+    if (tt <= 0) continue;
+    const q = spellArcAt(s, tt, ARC);
+    const f = 1 - i / 11;
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(3.2 + (1 - f) * 7.5, 8, 6),
+      new THREE.MeshBasicMaterial({ color: 0xcfd8dc, transparent: true, opacity: 0.10 + 0.30 * f, depthWrite: false }));
+    puff.position.set(q.x + (spellRnd(s.seed, i) - 0.5) * 5, q.y + (spellRnd(s.seed, i + 30) - 0.5) * 5, q.z + (spellRnd(s.seed, i + 60) - 0.5) * 5);
+    fxGroup.add(puff);
+  }
+  const g = new THREE.Group();
+  g.position.set(p.x, p.y, p.z); orientAlong(g, dir);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.6, 26, 12), new THREE.MeshBasicMaterial({ color: 0xd32f2f }));
+  g.add(body);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(4.7, 4.7, 4.5, 12), new THREE.MeshBasicMaterial({ color: 0xfafafa }));
+  band.position.y = 3; g.add(band);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(4.5, 12, 12), new THREE.MeshBasicMaterial({ color: 0xffd54f }));
+  nose.position.y = 19; g.add(nose);
+  for (let f = 0; f < 3; f++) {   // 三片尾翼
+    const fin = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 8.5), new THREE.MeshBasicMaterial({ color: 0x455a64, side: THREE.DoubleSide }));
+    fin.position.y = -11; fin.rotation.y = f * Math.PI * 2 / 3; fin.position.x = Math.cos(f * Math.PI * 2 / 3) * 3.6; fin.position.z = Math.sin(f * Math.PI * 2 / 3) * 3.6;
+    g.add(fin);
+  }
+  // 双层尾焰，长度高频脉动
+  const fl = 17 + Math.sin(t * 60) * 5;
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(4.6, fl, 10), new THREE.MeshBasicMaterial({ color: 0xff9100, transparent: true, opacity: 0.9 }));
+  flame.position.y = -13 - fl / 2; flame.rotation.x = Math.PI; g.add(flame);
+  const flame2 = new THREE.Mesh(new THREE.ConeGeometry(2.6, fl * 0.6, 8), new THREE.MeshBasicMaterial({ color: 0xfff59d, transparent: true, opacity: 0.95 }));
+  flame2.position.y = -13 - fl * 0.3; flame2.rotation.x = Math.PI; g.add(flame2);
+  fxGroup.add(g);
+  addFlyShadow(p.x, p.z, p.y, 9);
+}
+
+// 飞桶：木桶被抛上高空一路翻滚，桶身有铁箍，落地摔碎放兵
+function drawBarrelTrail(s, t) {
+  const ARC = 130;
+  const p = spellArcAt(s, t, ARC, 44, 8);
+  const heading = new THREE.Group();
+  heading.position.set(p.x, p.y, p.z);
+  heading.rotation.y = Math.atan2(s.x - s.sx, s.y - s.sy);
+  const tumble = new THREE.Group();
+  tumble.rotation.x = -t * 11;                 // 前滚翻
+  const wood = (s.color && s.color !== '#E0E0E0') ? 0x8d6e63 : 0xa1887f;
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 19, 14), new THREE.MeshBasicMaterial({ color: wood }));
+  barrel.rotation.z = Math.PI / 2;             // 桶轴横置，垂直于飞行方向
+  tumble.add(barrel);
+  for (let b = -1; b <= 1; b += 2) {           // 两道铁箍
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(8.2, 1.1, 6, 16), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
+    hoop.rotation.y = Math.PI / 2; hoop.position.x = b * 6; tumble.add(hoop);
+  }
+  const lid = new THREE.Mesh(new THREE.CircleGeometry(7.4, 14), new THREE.MeshBasicMaterial({ color: 0x6d4c41, side: THREE.DoubleSide }));
+  lid.rotation.y = Math.PI / 2; lid.position.x = 9.6; tumble.add(lid);
+  heading.add(tumble); fxGroup.add(heading);
+  addFlyShadow(p.x, p.z, p.y, 8);
 }
 function disposeGroup(g) {
   g.traverse(o => {
@@ -2519,8 +3259,9 @@ function gameLoop(timestamp) {
     resolveCollisions();
     separateFromTowers();   // 地面单位贴边绕过塔模型，避免卡进塔里
     // 兜底清扫：血量耗尽的单位立即标记死亡，杜绝任何边界残留（双保险）
-    for (const u of game.units) { if (u.hp <= 0) u.dead = true; }
+    for (const u of game.units) { if (u.hp <= 0) { if (u.isBalloon && !u._balloonDone) balloonDeath(u); u.dead = true; } }
     game.units = game.units.filter(u => !u.dead);
+    if (game.player.hero && (game.player.hero.dead || game.player.hero.hp <= 0)) game.player.hero = null;
     for (const t of game.towers) updateTower(t, dt);
     updateEffects(dt);
     updatePendingSpells(dt);
@@ -2535,6 +3276,7 @@ function gameLoop(timestamp) {
 
 // ==================== UI 更新 ====================
 function updateUI() {
+  updateSkillBar();
   const timerEl = document.getElementById('timer');
   if (game.overtime) {
     const otMin = Math.floor(Math.max(0, game.overtimeTime) / 60);
@@ -2587,6 +3329,24 @@ function updateHandState() {
     nc.style.background = nextDef.color;
     nc.textContent = nextDef.icon;
   }
+  updateSkillBar();
+}
+
+// 英雄技能按钮：仅当玩家场上存活英雄且圣水足够时显示/可点
+function updateSkillBar() {
+  const bar = document.getElementById('skill-bar');
+  if (!bar || !game || !game.player) return;
+  const hero = game.player.hero;
+  const alive = hero && !hero.dead && hero.hp > 0;
+  if (!alive) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  const s1 = document.getElementById('skill1'), s2 = document.getElementById('skill2');
+  const e1 = game.player.elixir >= (hero.skill1Cost || 2);
+  const e2 = game.player.elixir >= (hero.skill2Cost || 3);
+  s1.classList.toggle('disabled', !e1);
+  s2.classList.toggle('disabled', !e2);
+  s1.classList.toggle('ready', e1);
+  s2.classList.toggle('ready', e2);
 }
 
 function selectCard(idx) {
@@ -2610,26 +3370,85 @@ function screenToWorld(e) {
   if (!raycaster.ray.intersectPlane(groundPlaneMath, pt)) return null;
   return { x: pt.x + 200, y: pt.z + 340 };
 }
+
+// ==================== 拖拽瞄准指示器 ====================
+const dragEl = document.getElementById('drag-indicator');
+function showDragIndicator(cardKey, wx, wy) {
+  const def = CARD_DEFS[cardKey];
+  if (!def || !dragEl) return;
+  dragEl.innerHTML = `<div class="di-icon" style="background:${def.color}">${def.icon}</div><div class="di-cost">${def.cost}</div><div class="di-name">${def.name}</div>`;
+  dragEl.classList.remove('hidden','valid','invalid');
+  positionDragIndicator(wx, wy);
+}
+function updateDragIndicator(wx, wy, valid) {
+  if (!dragEl) return;
+  positionDragIndicator(wx, wy);
+  dragEl.classList.toggle('valid', !!valid);
+  dragEl.classList.toggle('invalid', !valid);
+}
+function hideDragIndicator() {
+  if (dragEl) { dragEl.classList.add('hidden'); dragEl.classList.remove('valid','invalid'); }
+}
+function positionDragIndicator(wx, wy) {
+  // 把游戏坐标映射回屏幕像素（screenToWorld 的逆运算）
+  if (!canvas || !dragEl) return;
+  const rect = canvas.getBoundingClientRect();
+  // 正交相机：gameX-200 → NDC x, gameY-340 → NDC z(→y)
+  const ndcX = ((wx - CENTER_X) / (CW / 2)) * 0.5 + 0.5;   // 实际上 ortho 的范围是 CW×CH
+  const ndcY = 1 - ((wy - 340) / (CH / 2) + 1) * 0.5;       // 简化：用线性映射
+  const sx = ndcX * rect.width;
+  const sy = ndcY * rect.height;
+  dragEl.style.left = (rect.left + sx - 26) + 'px';   // 居中(52px宽的一半)
+  dragEl.style.top = (rect.top + sy - 34) + 'px';      // 居中(68px高的一半)
+}
 canvas.addEventListener('pointerdown', (e) => {
-  if (game) { const p = screenToWorld(e); hoverWorld = p ? { x:p.x, y:p.z } : null; }
+  if (game) { const p = screenToWorld(e); hoverWorld = p ? { x:p.x, y:p.y } : null; }
   if (!game || game.state !== 'playing' || game.gameTime < 1) return;
   if (game.selectedCardIdx === null) return;
   const p = screenToWorld(e);
   if (!p) return;
+  // 进入瞄准模式（不立即释放）：手指/鼠标按下后显示预览，松手(pointerup)才确认
   const cardKey = game.player.hand[game.selectedCardIdx];
-  if (canDeploy('player', p.x, p.y, cardKey)) {
-    playCard('player', cardKey, p.x, p.y);
+  game.dragAim = { active:true, cardKey, x:p.x, y:p.y, valid:canDeploy('player',p.x,p.y,cardKey) };
+  // 显示拖拽中的卡牌跟随指示器
+  showDragIndicator(cardKey, p.x, p.y);
+  e.preventDefault();   // 防止手机上触发滚动/双击缩放
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (game) { const p = screenToWorld(e); hoverWorld = p ? { x:p.x, y:p.y } : null; }
+  if (!game || !game.dragAim || !game.dragAim.active) {
+    if (game && game.selectedCardIdx === null) { canvas.style.cursor = 'default'; }
+    else if (game && game.selectedCardIdx !== null) {
+      const p2 = screenToWorld(e);
+      const ck = game.player.hand[game.selectedCardIdx];
+      canvas.style.cursor = (p2 && canDeploy('player',p2.x,p2.y,ck)) ? 'crosshair' : 'not-allowed';
+    }
+    return;
+  }
+  // 瞄准模式中：更新预览位置
+  const p = screenToWorld(e);
+  if (!p) return;
+  game.dragAim.x = p.x; game.dragAim.y = p.y;
+  game.dragAim.valid = canDeploy('player', p.x, p.y, game.dragAim.cardKey);
+  updateDragIndicator(p.x, p.y, game.dragAim.valid);
+  canvas.style.cursor = game.dragAim.valid ? 'crosshair' : 'not-allowed';
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (!game || !game.dragAim || !game.dragAim.active) return;
+  // 松手确认释放（有效位置才放，否则静默取消）
+  const da = game.dragAim;
+  if (da.valid) {
+    playCard('player', da.cardKey, da.x, da.y);
     game.selectedCardIdx = null;
     initHand();
   }
+  // 退出瞄准模式，清除拖拽指示器
+  game.dragAim.active = false;
+  hideDragIndicator();
 });
-canvas.addEventListener('pointermove', (e) => {
-  if (game) { const p = screenToWorld(e); hoverWorld = p ? { x:p.x, y:p.z } : null; }
-  if (!game || game.selectedCardIdx === null) { canvas.style.cursor = 'default'; return; }
-  const p = screenToWorld(e);
-  if (!p) { canvas.style.cursor = 'default'; return; }
-  const cardKey = game.player.hand[game.selectedCardIdx];
-  canvas.style.cursor = canDeploy('player', p.x, p.y, cardKey) ? 'pointer' : 'not-allowed';
+canvas.addEventListener('pointercancel', (e) => {
+  // 手机上系统取消触摸(如来电/通知)时也要清除瞄准状态
+  if (game && game.dragAim) { game.dragAim.active = false; hideDragIndicator(); }
 });
 // 手机窄屏自适应：整体等比缩放，点击坐标经 getBoundingClientRect 自动校正
 function fitToScreen() {
@@ -2688,13 +3507,24 @@ document.querySelectorAll('#deck-diff-select button').forEach(btn => {
 });
 
 // 渲染选牌界面
+function updateDeckUI() {
+  const n = selectedDeck.length;
+  document.getElementById('deck-count').textContent = n;
+  document.getElementById('deck-progress-fill').style.width = (n / 8 * 100) + '%';
+  const hint = document.getElementById('deck-hint');
+  if (n < 8) { hint.textContent = '还需选择 ' + (8 - n) + ' 张'; hint.classList.remove('full'); }
+  else { hint.textContent = '✓ 卡组已就绪，点击开始战斗！'; hint.classList.add('full'); }
+  document.getElementById('deck-confirm').classList.toggle('ready', n === 8);
+  // 同步卡牌选中态（随机 / 清空后让网格与实际选牌一致）
+  document.querySelectorAll('#deck-grid .deck-card').forEach(el => {
+    el.classList.toggle('selected', selectedDeck.includes(el.dataset.card));
+  });
+}
+
 function renderDeckSelect() {
   const grid = document.getElementById('deck-grid');
   grid.innerHTML = '';
   selectedDeck = [];
-  document.getElementById('deck-count').textContent = '0';
-  document.getElementById('deck-confirm').classList.remove('ready');
-
   ALL_CARDS.forEach(cardKey => {
     const def = CARD_DEFS[cardKey];
     const card = document.createElement('div');
@@ -2709,6 +3539,7 @@ function renderDeckSelect() {
     card.onclick = () => toggleDeckCard(cardKey, card);
     grid.appendChild(card);
   });
+  updateDeckUI();
 }
 
 function toggleDeckCard(cardKey, el) {
@@ -2722,10 +3553,26 @@ function toggleDeckCard(cardKey, el) {
     selectedDeck.push(cardKey);
     el.classList.add('selected');
   }
-  document.getElementById('deck-count').textContent = selectedDeck.length;
-  const confirmBtn = document.getElementById('deck-confirm');
-  confirmBtn.classList.toggle('ready', selectedDeck.length === 8);
+  updateDeckUI();
 }
+
+// 随机选满 8 张
+document.getElementById('deck-random').onclick = () => {
+  selectedDeck = [];
+  const pool = ALL_CARDS.slice();
+  for (let i = 0; i < 8 && pool.length; i++) {
+    const k = Math.floor(Math.random() * pool.length);
+    selectedDeck.push(pool[k]);
+    pool.splice(k, 1);
+  }
+  updateDeckUI();
+};
+
+// 清空选择
+document.getElementById('deck-clear').onclick = () => {
+  selectedDeck = [];
+  updateDeckUI();
+};
 
 // 确认选牌，开始游戏
 document.getElementById('deck-confirm').onclick = () => {
@@ -2743,6 +3590,16 @@ document.getElementById('restart-btn').onclick = () => {
   document.getElementById('deck-select').style.display = 'flex';
   renderDeckSelect();
 };
+
+// 英雄技能按钮：点击 / 数字键 1、2 释放（仅在玩家英雄存活时有效）
+function trySkill1() { const el = document.getElementById('skill1'); if (el && !el.classList.contains('disabled')) heroSkill1(); }
+function trySkill2() { const el = document.getElementById('skill2'); if (el && !el.classList.contains('disabled')) heroSkill2(); }
+document.getElementById('skill1').onclick = trySkill1;
+document.getElementById('skill2').onclick = trySkill2;
+window.addEventListener('keydown', (e) => {
+  if (e.key === '1') trySkill1();
+  else if (e.key === '2') trySkill2();
+});
 
 // 初始显示选牌界面
 renderDeckSelect();
