@@ -1554,6 +1554,12 @@ function playCard(owner, cardKey, x, y) {
   const def = CARD_DEFS[cardKey];
   if (!def || side.elixir < def.cost) return false;
   if (!canDeploy(owner, x, y, cardKey)) return false;
+  // ★★★ 双重保险：绝对不允许非矿工/非法术单位生在河道内（即使 canDeploy 被绕过或坐标偏移）
+  if (def && def.type !== 'spell' && !def.deployAnywhere) {
+    if (y > RIVER_TOP && y < RIVER_BOT) {
+      y = (y < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;   // 夹到最近河岸
+    }
+  }
   side.elixir -= def.cost;
   const handIdx = side.hand.indexOf(cardKey);
   if (handIdx === -1) return false;
@@ -1572,7 +1578,13 @@ function playCard(owner, cardKey, x, y) {
         const ang = (i / n) * Math.PI * 2;
         const ox = Math.cos(ang) * spread + (Math.random()-0.5)*6;
         const oy = Math.sin(ang) * spread + (Math.random()-0.5)*6;
-        game.units.push(makeUnit(owner, def, x+ox, y+oy));
+        let ux = x + ox, uy = y + oy;
+        // 多单位展开也不允许掉进河道
+        if (!def.deployAnywhere && uy > RIVER_TOP && uy < RIVER_BOT) {
+          uy = (uy < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;
+        }
+        const u = makeUnit(owner, def, ux, uy);
+        game.units.push(u);
       }
     } else {
       const u = makeUnit(owner, def, x, y);
@@ -2685,12 +2697,11 @@ function addUnitCommon(g, u, r) {
 function updateUnitMesh(m, u) {
   if (u.underground) { m.visible = false; return; }
   m.visible = true;
+  const ud = m.userData;
   if (ud.vineWrap) ud.vineWrap.visible = (u.rootTimer > 0);   // 被藤蔓定身时显示缠绕
   if (ud.drAura) ud.drAura.visible = !!(game[u.owner] && game[u.owner].teamDR && game[u.owner].teamDR.timer > 0);   // 天恩护盾生效时光环显示
   const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
-  if (u._posLog !== 1) { u._posLog = 1; console.log('[POS]', u.name, '→ world(', (u.x-CENTER_X).toFixed(1), hov, (u.y-340).toFixed(1), ') logic(', u.x.toFixed(1), u.y.toFixed(1), ')'); }
-  const ud = m.userData;
   const t = game.gameTime || 0;
   const spd = Math.hypot(u.vx, u.vy);
   const moving = spd > 1.5;
