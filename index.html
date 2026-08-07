@@ -885,7 +885,8 @@ function resolveCollisions() {
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
         const a = arr[i], b = arr[j];
-        if (a.owner === b.owner) continue;   // 皇室战争：友军之间不互相阻挡，可重叠穿过，绝不互推（彻底消除己方单位互卡）
+        // 皇室战争式软碰撞：所有地面单位（含友军）都不重叠——仅做"防穿透"位置修正；
+        // 真正的"互卡"由 computeAvoidance 的侧向绕行化解，而非硬推，故友军也参与分离（解决"建模叠在一起"）
         const minD = a.radius + b.radius;
         let dx = b.x - a.x, dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
@@ -944,7 +945,7 @@ function computeAvoidance(unit, dirX, dirY) {
   for (const o of game.units) {
     if (o === unit || o.dead || o.hp <= 0) continue;
     if (o.flying) continue;
-    if (o.owner === unit.owner) continue;   // 皇室战争：友军不互相避让，直接穿过重叠（不绕行不互推）
+    // 皇室战争：被任何单位（含友军）挡住前进路线时，侧向绕开而非硬推（解决"互推卡死"）
     if (unit.target && o === unit.target) continue;   // 自己的攻击目标不避让，直接上去打
     const ox = o.x - unit.x, oy = o.y - unit.y;
     const d = Math.hypot(ox, oy);
@@ -1556,7 +1557,7 @@ function playCard(owner, cardKey, x, y) {
   } else {
     const n = def.count;
     if (n > 1) {
-      const spread = Math.min(36, 14 + n * 2.5);
+      const spread = Math.min(62, 18 + n * 3.2);
       for (let i = 0; i < n; i++) {
         const ang = (i / n) * Math.PI * 2;
         const ox = Math.cos(ang) * spread + (Math.random()-0.5)*6;
@@ -1629,7 +1630,7 @@ function balloonDeath(b) {
   if (b.spawnCard) {
     const sdef = CARD_DEFS[b.spawnCard];
     if (sdef) {
-      const n = b.spawnCount, spread = Math.min(28, 8 + n * 2.5);
+      const n = b.spawnCount, spread = Math.min(48, 12 + n * 3.2);
       for (let k = 0; k < n; k++) {
         const ang = (k / n) * Math.PI * 2;
         const ox = Math.cos(ang) * spread + (Math.random()-0.5)*5;
@@ -1786,7 +1787,7 @@ function updatePendingSpells(dt) {
         const sdef = CARD_DEFS[s.spawnCard];
         if (sdef) {
           const n = s.spawnCount;
-          const spread = Math.min(30, 10 + n * 3);
+          const spread = Math.min(44, 14 + n * 3.5);
           for (let k = 0; k < n; k++) {
             const ang = (k / n) * Math.PI * 2;
             const ox = Math.cos(ang) * spread + (Math.random()-0.5)*6;
@@ -3414,9 +3415,9 @@ canvas.addEventListener('pointerdown', (e) => {
   if (!p) return;
   // 进入瞄准模式（不立即释放）：手指/鼠标按下后显示预览，松手(pointerup)才确认
   const cardKey = game.player.hand[game.selectedCardIdx];
-  game.dragAim = { active:true, cardKey, x:p.x, y:p.y, valid:canDeploy('player',p.x,p.y,cardKey) };
-  // 显示拖拽中的卡牌跟随指示器
-  showDragIndicator(cardKey, p.x, p.y);
+  game.dragAim = { active:true, cardKey, x:p.x, y:p.y, valid:canDeploy('player',p.x,p.y,cardKey), moved:false, sx:p.x, sy:p.y };
+  // 不立即 showDragIndicator：纯点击下牌会在落地瞬间闪一下卡牌图标；
+  // 改为「真正拖动超过阈值」才显示跟随指示器（见 pointermove），消除"图标一闪而过"
   e.preventDefault();   // 防止手机上触发滚动/双击缩放
 });
 canvas.addEventListener('pointermove', (e) => {
@@ -3433,10 +3434,16 @@ canvas.addEventListener('pointermove', (e) => {
   // 瞄准模式中：更新预览位置
   const p = screenToWorld(e);
   if (!p) return;
-  game.dragAim.x = p.x; game.dragAim.y = p.y;
-  game.dragAim.valid = canDeploy('player', p.x, p.y, game.dragAim.cardKey);
-  updateDragIndicator(p.x, p.y, game.dragAim.valid);
-  canvas.style.cursor = game.dragAim.valid ? 'crosshair' : 'not-allowed';
+  const da = game.dragAim;
+  da.x = p.x; da.y = p.y;
+  da.valid = canDeploy('player', p.x, p.y, da.cardKey);
+  // 仅当真正拖动（移动超过 6px 阈值）才显示跟随指示器，避免"点击下牌时图标一闪而过"
+  if (!da.moved) {
+    if (Math.hypot(p.x - da.sx, p.y - da.sy) > 6) { da.moved = true; showDragIndicator(da.cardKey, p.x, p.y); }
+  } else {
+    updateDragIndicator(p.x, p.y, da.valid);
+  }
+  canvas.style.cursor = da.valid ? 'crosshair' : 'not-allowed';
 });
 canvas.addEventListener('pointerup', (e) => {
   if (!game || !game.dragAim || !game.dragAim.active) return;
