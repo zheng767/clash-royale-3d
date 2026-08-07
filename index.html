@@ -63,6 +63,23 @@ body{background:#0f0f1a;display:flex;justify-content:center;align-items:center;m
 .deck-card .card-cost{background:linear-gradient(135deg,#d633ff,#9933ff);color:#fff;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;position:absolute;top:-5px;right:-5px;border:2px solid #1a1a2e;z-index:2}
 .deck-card .card-name{font-size:9px;color:#dfe0ee;text-align:center;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,0.85)}
 .deck-card .check-mark{position:absolute;top:5px;left:5px;width:19px;height:19px;border-radius:50%;background:#2ecc71;color:#fff;font-size:12px;display:none;align-items:center;justify-content:center;font-weight:700;z-index:3}
+/* 品质标签（普通/稀有/史诗/传奇/英雄）颜色区分 */
+.deck-card .q-tag{position:absolute;top:3px;right:3px;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px;z-index:3;color:#1a1a2e;letter-spacing:0.5px}
+.deck-card .q-common{background:#cfd8dc}
+.deck-card .q-rare{background:#FF9800;color:#fff}
+.deck-card .q-epic{background:#9C27B0;color:#fff}
+.deck-card .q-legendary{background:#FFD700}
+.deck-card .q-champion{background:linear-gradient(135deg,#FF4081,#FF9100);color:#fff;box-shadow:0 0 8px rgba(255,64,129,0.8)}
+/* 英雄卡：更炫酷的描边 + 角标光晕 */
+.deck-card.is-hero{border-width:2.5px;background:linear-gradient(160deg,#3a1f4e,#2a2a4e)}
+.deck-card.is-hero .card-icon{box-shadow:0 0 12px rgba(255,64,129,0.9),0 2px 6px rgba(0,0,0,0.5);border:2px solid #ffd700}
+.deck-card.is-hero .card-name{color:#ffd1e6;font-weight:800;text-shadow:0 0 6px rgba(255,64,129,0.9)}
+.deck-card.is-hero::after{content:'HERO';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:7px;font-weight:900;letter-spacing:1px;color:#FF4081;opacity:0.85}
+/* 弹幕提示层 */
+#banner-layer{position:fixed;top:16%;left:0;width:100%;height:64px;pointer-events:none;z-index:300;overflow:hidden}
+.danmaku{position:absolute;left:100%;top:50%;transform:translateY(-50%);white-space:nowrap;background:linear-gradient(135deg,#ff3b6b,#ff7a3d);color:#fff;font-weight:800;font-size:18px;padding:8px 20px;border-radius:22px;box-shadow:0 4px 18px rgba(0,0,0,0.55);animation:dm-move 2.4s linear forwards}
+.danmaku.out{opacity:0;transition:opacity .5s}
+@keyframes dm-move{from{left:100%}to{left:-45%}}
 .deck-card.selected .check-mark{display:flex;animation:popcheck 0.25s ease}
 @keyframes popcheck{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
 .deck-footer{padding:13px 18px;display:flex;gap:10px;justify-content:center;align-items:center;background:rgba(0,0,0,0.28);border-top:1px solid rgba(255,255,255,0.07)}
@@ -252,10 +269,34 @@ const CARD_DEFS = {
   // ===== 原版新增：复仇滚木 / 吹箭哥布林 / 骷髅帝王（CR 锦标赛 L11 数值，效果严格还原）=====
   log:        { name:'复仇滚木', cost:2, type:'spell', dmg:267, radius:40, color:'#8D6E63', icon:'滚', delay:0.3, spellFx:'log', groundOnly:true, lane:true, bandH:30, knockback:42, towerDmgMult:0.35 },
   dartgoblin: { name:'吹箭哥布林', cost:3, hp:180, dmg:59, range:106, spd:42.5, atkSpd:0.7, tgt:'any', count:1, color:'#AFB42B', icon:'镖', radius:11, deployTime:1.0, model:'dartgoblin', atk:'blow' },
-  skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:2, skill2Cost:3 },
-  tianci:     { name:'天赐', inGameName:'赐', cost:4, hp:1344, dmg:172, range:22, spd:21.25, atkSpd:1.7, tgt:'any', count:1, flying:true, color:'#FFF3B0', icon:'赐', radius:14, deployTime:1.0, isHero:true, heroType:'tianci', model:'tianci', atk:'angel', skill1Cost:4, skill2Cost:0 }
+  skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:1, skill2Cost:0 },
+  tianci:     { name:'天赐', inGameName:'赐', cost:4, hp:1344, dmg:172, range:22, spd:21.25, atkSpd:1.7, tgt:'any', count:1, flying:true, color:'#FFF3B0', icon:'赐', radius:14, deployTime:1.0, isHero:true, heroType:'tianci', model:'tianci', atk:'angel', skill1Cost:4, skill2Cost:0 },
+  // ===== 原版新增：坎（CR 锦标赛 L11 皇家冠军 Royal Champion 数值，效果严格还原）=====
+  //   基础数据对齐皇家冠军：7 费 / HP1455 / 伤害348 / 射程5(=106px) / 攻速1.5 / 只对地 / 中等移速；技能为自定义「镜反结界」
+  kan:        { name:'坎', cost:7, hp:1455, dmg:348, range:106, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 }
 };
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci'];
+// 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
+const QUALITY = {
+  // 普通 Common
+  knight:'common', archer:'common', goblin:'common', giant:'common', bomber:'common', skeletons:'common',
+  fireball:'common', musketeer:'common', minions:'common', speargoblin:'common', goblinbarrel:'common',
+  minionhorde:'common', babydragon:'common', barbarians:'common', cannon:'common', tesla:'common',
+  flamesprite:'common', royalgiant:'common', hogrider:'common', haosihan:'common', healtotem:'common',
+  frosttower:'common', zap:'common', arrows:'common', vines:'common', skarmy:'common',
+  skeletonballoon:'common', stormsentinel:'common', flamemage:'common', log:'common',
+  // 稀有 Rare
+  minipekka:'rare', valkyrie:'rare', wizard:'rare', rocket:'rare', dartgoblin:'rare', fisherman:'rare', miner:'rare', pekka:'rare',
+  // 史诗 Epic
+  darkprince:'epic', lightning:'epic', freeze:'epic', hurricane:'epic', quake:'epic', prince:'epic',
+  // 传奇 Legendary
+  princess:'legendary', icewizard:'legendary',
+  // 英雄（冠军）Champion
+  hero_tian:'champion', skeletonking:'champion', tianci:'champion', kan:'champion'
+};
+const QUALITY_COLORS = { common:'#cfd8dc', rare:'#FF9800', epic:'#9C27B0', legendary:'#FFD700', champion:'#FF4081' };
+const QUALITY_LABELS = { common:'普通', rare:'稀有', epic:'史诗', legendary:'传奇', champion:'英雄' };
+for (const k in CARD_DEFS) { if (CARD_DEFS[k]) CARD_DEFS[k].quality = QUALITY[k] || 'common'; }
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -408,8 +449,8 @@ function createGame(difficulty, playerDeckCards) {
     overtimeAnnounce: 0,
     winner: null,
     difficulty: difficulty || 'normal',
-    player: { elixir: 5, maxElixir: 10, hand: playerDeck.splice(0,4), deck: playerDeck, nextCard: playerDeck.shift() },
-    ai: { elixir: 5, maxElixir: 10, hand: aiDeck.splice(0,4), deck: aiDeck, nextCard: aiDeck.shift(), thinkTimer: 3, reactTimer: 0, attackLane: null, laneTimer: 0 },
+    player: { elixir: 5, maxElixir: 10, hand: playerDeck.splice(0,4), deck: playerDeck, nextCard: playerDeck.shift(), hero: null },
+    ai: { elixir: 5, maxElixir: 10, hand: aiDeck.splice(0,4), deck: aiDeck, nextCard: aiDeck.shift(), thinkTimer: 3, reactTimer: 0, attackLane: null, laneTimer: 0, hero: null },
     aiSkill: loadAISkill().skill,
     units: [],
     towers: createTowers(),
@@ -642,6 +683,7 @@ function clampToRiverBank(unit, newX, newY) {
 // ==================== 单位更新 ====================
 function updateUnit(unit, dt) {
   if (unit.hp <= 0) { if (unit.isBalloon) balloonDeath(unit); unit.dead = true; return; }
+  if (unit.reflectTimer > 0) unit.reflectTimer -= dt;   // 坎·镜反结界倒计时（任何状态下都持续）
   if (unit.isClone) {
     unit.cloneTimer -= dt;
     if (unit.cloneTimer <= 0) { unit.dead = true; game.effects.push({ type:'clonedie', x:unit.x, y:unit.y, life:0.3, maxLife:0.3, color:unit.color }); return; }
@@ -892,7 +934,9 @@ function resolveCollisions() {
         const a = arr[i], b = arr[j];
         // 皇室战争式软碰撞：所有地面单位（含友军）都不重叠——仅做"防穿透"位置修正；
         // 真正的"互卡"由 computeAvoidance 的侧向绕行化解，而非硬推，故友军也参与分离（解决"建模叠在一起"）
-        const minD = a.radius + b.radius;
+        const aR = a.isBuilding ? a.radius + 4 : a.radius;   // 建筑按真实占地(基座比半径略大)，避免单位陷进建筑
+        const bR = b.isBuilding ? b.radius + 4 : b.radius;
+        const minD = aR + bR;
         let dx = b.x - a.x, dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
         if (d >= minD) continue;
@@ -955,7 +999,7 @@ function computeAvoidance(unit, dirX, dirY) {
     const ox = o.x - unit.x, oy = o.y - unit.y;
     const d = Math.hypot(ox, oy);
     if (d > lookR || d < 0.01) continue;
-    const rsum = unit.radius + (o.radius || (o.w ? o.w / 2 : 12));
+    const rsum = unit.radius + (o.isBuilding ? o.radius + 4 : (o.radius || (o.w ? o.w / 2 : 12)));
     if (d > rsum * 2.4) continue;
     const fwd = (ox * dirX + oy * dirY) / d;   // 障碍是否在前进方向上
     if (fwd < 0.15) continue;
@@ -1005,7 +1049,16 @@ function separateFromTowers() {
   }
 }
 
-function dealDamage(attacker, target, dmg) {
+function dealDamage(attacker, target, dmg, isReflect) {
+  if (!target) return;
+  // 坎·镜反结界：开启后 2 秒内自身无敌，并将敌方攻击以 2 倍伤害反弹给攻击者
+  if (target.heroType === 'kan' && target.reflectTimer > 0) {
+    if (!isReflect && attacker && attacker.owner !== target.owner && target.hp > 0) {
+      game.effects.push({ type:'reflect', x:target.x, y:target.y, life:0.3, maxLife:0.3, radius:target.radius*2.6, color:'#E040FB' });
+      dealDamage(target, attacker, dmg * 2, true);   // 反弹 2 倍，标记跳过再反射避免互相反弹死循环
+    }
+    return;   // 无敌：坎自身不掉血
+  }
   // 矿工对皇冠塔（国王塔/公主塔）只造成 25% 伤害（CR 规则：Miner 对塔伤害减免）
   if (attacker && attacker.model === 'miner' && target && (target.type === 'king' || target.type === 'princess')) dmg *= 0.25;
   // 天赐「天恩护盾」：被增益方友方单位（不含塔）受伤减伤
@@ -1308,6 +1361,17 @@ function updateAI(dt) {
     }
   }
 
+  // ===== 1.45 AI 英雄技能：英雄存活、技能可负担、且在交战/受威胁时释放（含坎·镜反结界）=====
+  const aiHero = game.ai.hero;
+  if (aiHero && !aiHero.dead && aiHero.hp > 0 && aiHero.deployTimer <= 0) {
+    const aMeta = (HERO_SKILLS[aiHero.heroType] || HERO_SKILLS.tian);
+    if (aMeta[1] && game.ai.elixir >= aiHero.skill1Cost) {
+      const foes = game.units.filter(u => u.owner === 'player' && u.hp > 0 && dist(u, aiHero) < 150);
+      const threatened = foes.length > 0 || aiHero.hp < aiHero.maxHp * 0.6;
+      if (threatened) triggerHeroSkill('ai', 1);
+    }
+  }
+
   // ===== 1.5 国王塔紧急防守 =====
   const aiKing = game.towers.find(t => t.id === 'aKing' && t.hp > 0);
   if (aiKing) {
@@ -1589,7 +1653,7 @@ function playCard(owner, cardKey, x, y) {
     } else {
       const u = makeUnit(owner, def, x, y);
       game.units.push(u);
-      if (def.isHero && owner === 'player') game.player.hero = u;
+      if (def.isHero) game[owner].hero = u;
       // 寒冰法师落地伤害 + 减速（CR：spawn damage with slow）
       if (def.spawnDamage) {
         const foe = owner === 'player' ? 'ai' : 'player';
@@ -1629,7 +1693,7 @@ function makeUnit(owner, def, x, y) {
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
     isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
-    hookWindup: 0, rootTimer: 0,
+    hookWindup: 0, rootTimer: 0, souls: 0, reflectTimer: 0,
     _atkT: 0, _lunge: 0, _spin: 0
   };
 }
@@ -1667,29 +1731,26 @@ function balloonDeath(b) {
 // 英雄技能按 heroType 分发（天 / 骷髅帝王 各自实现）
 const HERO_SKILLS = {
   tian:         { name:'天', 1: heroSkill_tian_1,   2: heroSkill_tian_2, s1name:'定身', s1cost:2, s2name:'分身', s2cost:3 },
-  skeletonking: { name:'骷髅帝王', 1: (h) => heroSkill_skeletonking(h, false), 2: (h) => heroSkill_skeletonking(h, true), s1name:'召魂', s1cost:2, s2name:'亡魂', s2cost:3 },
-  tianci:       { name:'天赐', 1: heroSkill_tianci_1, 2: null, s1name:'天恩护盾', s1cost:4, s2name:null, s2cost:0 }
+  skeletonking: { name:'骷髅帝王', 1: heroSkill_skeletonking, 2: null, s1name:'亡魂召唤', s1cost:1, s2name:null, s2cost:0 },
+  tianci:       { name:'天赐', 1: heroSkill_tianci_1, 2: null, s1name:'天恩护盾', s1cost:4, s2name:null, s2cost:0 },
+  kan:          { name:'坎', 1: heroSkill_kan_1, 2: null, s1name:'镜反结界', s1cost:3, s2name:null, s2cost:0 }
 };
-function heroSkill1() {                 // 通用分发：1 技能
-  const h = game.player.hero;
+function triggerHeroSkill(side, which) {   // 通用分发：玩家 / AI 共用
+  const h = game[side].hero;
   if (!h || h.dead || h.hp <= 0) return;
-  if (game.player.elixir < h.skill1Cost) return;
-  const fn = (HERO_SKILLS[h.heroType] || HERO_SKILLS.tian)[1];
-  if (!fn) return;
-  game.player.elixir -= h.skill1Cost;
-  fn(h);
+  const meta = (HERO_SKILLS[h.heroType] || HERO_SKILLS.tian);
+  if (which === 1) {
+    if (game[side].elixir < h.skill1Cost) return;
+    const fn = meta[1]; if (!fn) return;
+    game[side].elixir -= h.skill1Cost; fn(h);
+  } else {
+    if (!meta[2] || game[side].elixir < h.skill2Cost) return;
+    game[side].elixir -= h.skill2Cost; meta[2](h);
+  }
   game.effects.push({ type:'skillflash', x:h.x, y:h.y, life:0.4, maxLife:0.4, radius:h.radius*2.2, color:'#ECEFF1' });
 }
-function heroSkill2() {                 // 通用分发：2 技能
-  const h = game.player.hero;
-  if (!h || h.dead || h.hp <= 0) return;
-  if (game.player.elixir < h.skill2Cost) return;
-  const fn = (HERO_SKILLS[h.heroType] || HERO_SKILLS.tian)[2];
-  if (!fn) return;
-  game.player.elixir -= h.skill2Cost;
-  fn(h);
-  game.effects.push({ type:'skillflash', x:h.x, y:h.y, life:0.4, maxLife:0.4, radius:h.radius*2.2, color:'#ECEFF1' });
-}
+function heroSkill1() { triggerHeroSkill('player', 1); }
+function heroSkill2() { triggerHeroSkill('player', 2); }
 // ===== 天 技能 =====
 function heroSkill_tian_1() {           // 1 技能（2 费）：定身最近敌方单位 1.5s + 劈棍（增伤 100%）
   const h = game.player.hero;
@@ -1723,26 +1784,18 @@ function heroSkill_tian_2() {           // 2 技能（3 费）：召唤 3 个分
   game.effects.push({ type:'deploy', x:h.x, y:h.y, life:0.3, maxLife:0.3, radius:30, color:'#FFD54F' });
 }
 // ===== 骷髅帝王 技能：亡魂召唤（Soul Summoning，CR 原版机制）=====
-function heroSkill_skeletonking(h, big) {
-  const foe = (h.owner === 'player') ? 'ai' : 'player';
-  const n = big ? 6 : 3;                 // 召唤骷髅兵数量（CR 骷髅蛮兵，以骷髅兵近似）
-  const dmg = big ? 360 : 180;           // 范围爆发伤害
-  const rad = big ? 95 : 72;
-  for (const u of game.units) {          // 范围伤害（敌方单位）
-    if (u.owner !== foe || u.dead || u.hp <= 0) continue;
-    if (dist(h, u) < rad) dealDamage(h, u, dmg);
+function heroSkill_skeletonking(h) {
+  // 亡魂召唤：开技能瞬间，召唤「下牌以来场上累计死亡的非建筑单位数」只骷髅兵（上限 15，与 CR 亡魂上限一致）
+  const n = Math.min(h.souls || 0, 15);
+  for (let k = 0; k < n; k++) {
+    const ang = (k / Math.max(1, n)) * Math.PI * 2 + Math.random() * 0.5;
+    const ox = Math.cos(ang) * (h.radius + 16) + (Math.random() - 0.5) * 8;
+    const oy = Math.sin(ang) * (h.radius + 16) + (Math.random() - 0.5) * 8;
+    const pos = clampToRiverBank(h, h.x + ox, h.y + oy);
+    game.units.push(makeUnit(h.owner, CARD_DEFS.skeletons, pos.x, pos.y));
   }
-  for (const t of game.towers) {         // 范围伤害（敌方塔，吃减伤）
-    if (t.owner !== foe || t.hp <= 0) continue;
-    if (dist(h, t) < rad + 20) dealDamage(h, t, dmg * 0.35);
-  }
-  for (let k = 0; k < n; k++) {          // 召唤骷髅兵环绕自身
-    const ang = (k / n) * Math.PI * 2;
-    const ox = Math.cos(ang) * (h.radius + 18) + (Math.random()-0.5)*6;
-    const oy = Math.sin(ang) * (h.radius + 18) + (Math.random()-0.5)*6;
-    game.units.push(makeUnit(h.owner, CARD_DEFS.skeletons, h.x + ox, h.y + oy));
-  }
-  game.effects.push({ type:'soulsummon', x:h.x, y:h.y, life:0.6, maxLife:0.6, radius:rad, color:'#ECEFF1' });
+  h.souls = 0;   // 召唤后清空亡魂
+  game.effects.push({ type:'soulsummon', x:h.x, y:h.y, life:0.7, maxLife:0.7, radius:90, color:'#ECEFF1' });
 }
 // ===== 天赐 技能：天恩护盾（自定义 4 费）=====
 function heroSkill_tianci_1(h) {
@@ -1756,6 +1809,12 @@ function heroSkill_tianci_1(h) {
   for (const u of game.units) {
     if (u.owner === side && u.hp > 0) game.effects.push({ type:'shieldflash', x:u.x, y:u.y, life:0.6, maxLife:0.6, radius:u.radius*2.2, color:'#FFE082' });
   }
+}
+// ===== 坎 技能：镜反结界（自定义 3 费）=====
+function heroSkill_kan_1(h) {
+  // 镜反结界：接下来 2 秒内自身无敌，任意敌人对坎造成的攻击会以 2 倍伤害反弹给该攻击者
+  h.reflectTimer = 2.0;
+  game.effects.push({ type:'kanreflect', x:h.x, y:h.y, life:2.0, maxLife:2.0, radius:h.radius*3.2, color:'#E040FB' });
 }
 function castSpell(owner, def, x, y) {
   // 持续力场型法术（如飓风）：立即生成力场，持续拉拽+持续伤害；按 CR 机制影响范围内**双方**地面/空中单位（不分敌我），不作用于建筑/塔
@@ -1800,7 +1859,8 @@ function updatePendingSpells(dt) {
       else if (s.kind === 'freeze') { fxType = 'freeze'; fxColor = '#81D4FA'; }
       else if (s.kind === 'quake') { fxType = 'quakeimpact'; fxColor = '#8d6e63'; }
       else if (s.kind === 'vines') { fxType = 'vines'; fxColor = '#2E7D32'; }
-      game.effects.push({ type: fxType, x: s.x, y: s.y, life: 0.5, maxLife: 0.5, radius: s.radius, color: fxColor });
+      else if (s.kind === 'log') { fxType = 'log'; fxColor = '#8d6e63'; }
+      game.effects.push({ type: fxType, x: s.x, y: s.y, life: 0.6, maxLife: 0.6, radius: s.radius, color: fxColor, owner: s.owner });
       // 震荡术：落地后不做一次性伤害，而是生成持续 2.4s 的震荡区，每 0.8s 震一次（共 3 跳，总伤 = dmg）
       if (s.quakeTicks > 0) {
         game.spellFields.push({
@@ -2693,6 +2753,14 @@ function addUnitCommon(g, u, r) {
     healRing.rotation.x = -Math.PI/2; healRing.position.y = 1.5; g.add(healRing);
     g.userData.healFill = healFill; g.userData.healRing = healRing;
   }
+  // 英雄卡：脚下发光能量环 + 头顶悬浮皇冠，整体更炫酷
+  if (u.isHero) {
+    const heroColor = u.owner === 'player' ? 0x4FC3F7 : 0xFF5252;
+    const aura = new THREE.Mesh(new THREE.RingGeometry(r * 1.5, r * 1.9, 32), new THREE.MeshBasicMaterial({ color: heroColor, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+    aura.rotation.x = -Math.PI / 2; aura.position.y = 1.2; g.add(aura); g.userData.heroAura = aura; g.userData.heroAuraColor = heroColor;
+    const crown = new THREE.Mesh(new THREE.TorusGeometry(r * 0.7, 2.4, 8, 22), new THREE.MeshBasicMaterial({ color: 0xFFD54F, transparent: true, opacity: 0.92 }));
+    crown.rotation.x = Math.PI / 2; crown.position.y = r * 1.95; g.add(crown); g.userData.heroCrown = crown;
+  }
 }
 function updateUnitMesh(m, u) {
   if (u.underground) { m.visible = false; return; }
@@ -2700,6 +2768,13 @@ function updateUnitMesh(m, u) {
   const ud = m.userData;
   if (ud.vineWrap) ud.vineWrap.visible = (u.rootTimer > 0);   // 被藤蔓定身时显示缠绕
   if (ud.drAura) ud.drAura.visible = !!(game[u.owner] && game[u.owner].teamDR && game[u.owner].teamDR.timer > 0);   // 天恩护盾生效时光环显示
+  // 英雄能量环脉冲；坎·镜反结界激活时变为洋红并放大
+  if (ud.heroAura) {
+    const pulse = 1 + Math.sin(t * 4) * 0.08;
+    if (u.reflectTimer > 0) { ud.heroAura.scale.set(pulse * 1.35, pulse * 1.35, 1); ud.heroAura.material.color.setHex(0xE040FB); ud.heroAura.material.opacity = 0.9; }
+    else { ud.heroAura.scale.set(pulse, pulse, 1); ud.heroAura.material.color.setHex(ud.heroAuraColor || 0x4FC3F7); ud.heroAura.material.opacity = 0.55; }
+  }
+  if (ud.heroCrown) { ud.heroCrown.rotation.z = t * 1.6; ud.heroCrown.position.y = (u.model === 'kan' ? u.radius * 2.1 : u.radius * 1.95) + Math.sin(t * 3) * 2; }
   const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
   const t = game.gameTime || 0;
@@ -3148,25 +3223,72 @@ function updateEffectMeshes() {
         loop.rotation.x = -Math.PI / 2 + (k ? 0.3 : -0.3); loop.position.set(x, 6 + k * 4, z); fxGroup.add(loop);
       }
     } else if (e.type === 'log') {
-      // 复仇滚木：横躺的木头沿车道滚过，带木纹环与扬尘
-      const w = 400, len = 30;
-      const logMesh = new THREE.Mesh(new THREE.CylinderGeometry(len / 2, len / 2, w, 14), new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.95 }));
-      logMesh.rotation.z = Math.PI / 2; logMesh.position.set(x, len * 0.6, z);
-      logMesh.rotation.x = (1 - pct) * -18; fxGroup.add(logMesh);
-      for (let k = -1; k <= 1; k++) {
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(len / 2, 2.4, 6, 16), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
-        ring.position.set(x + k * w * 0.3, len * 0.6, z); ring.rotation.y = Math.PI / 2; fxGroup.add(ring);
+      // 复仇滚木：横躺的木头沿车道滚动 —— 带树皮木纹环、端面年轮与尖刺，滚动时绕轴旋转并扬起尘土
+      const w = 400, R = 20;
+      const dir = (e.owner === 'player') ? -1 : 1;       // 玩家向上、AI 向下滚动
+      const travel = 150;                                 // 滚动行程
+      const zoff = (1 - pct) * travel * dir;              // 从落点向敌方一侧滚出
+      const logGrp = new THREE.Group();
+      // 木身（轴沿 X 横躺）
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(R, R, w, 18),
+        new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.92, metalness: 0.0 }));
+      body.rotation.z = Math.PI / 2; logGrp.add(body);
+      // 树皮节（沿长度分段的深色木纹环）
+      for (let k = -3; k <= 3; k++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(R + 0.6, 2.0, 6, 18),
+          new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 1.0 }));
+        ring.rotation.y = Math.PI / 2; ring.position.x = k * (w / 7); logGrp.add(ring);
       }
-      if (pct > 0.2) {
-        for (let k = 0; k < 6; k++) {
-          const puff = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshBasicMaterial({ color: 0xd7ccc8, transparent: true, opacity: pct * 0.6 }));
-          puff.position.set(x + (Math.random() - 0.5) * w * 0.8, len * 0.6 + Math.random() * 6, z + (Math.random() - 0.5) * len); fxGroup.add(puff);
+      // 两端年轮端面
+      for (const sx of [-1, 1]) {
+        const cap = new THREE.Mesh(new THREE.CircleGeometry(R, 20),
+          new THREE.MeshStandardMaterial({ color: 0xa1887f, roughness: 0.85, side: THREE.DoubleSide }));
+        cap.rotation.y = sx * Math.PI / 2; cap.position.x = sx * (w / 2); logGrp.add(cap);
+        for (let r = 1; r <= 3; r++) {
+          const yr = new THREE.Mesh(new THREE.RingGeometry(R * r / 4, R * r / 4 + 0.9, 20),
+            new THREE.MeshBasicMaterial({ color: 0x6d4c41, side: THREE.DoubleSide, transparent: true, opacity: 0.55 }));
+          yr.rotation.y = sx * Math.PI / 2; yr.position.x = sx * (w / 2 + (sx > 0 ? 0.15 : -0.15)); logGrp.add(yr);
+        }
+      }
+      // 尖刺（The Log 带刺）
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        const sp = new THREE.Mesh(new THREE.ConeGeometry(3, 9, 6),
+          new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 1.0 }));
+        sp.position.set((Math.random() - 0.5) * w * 0.82, Math.sin(a) * (R + 2.5), Math.cos(a) * (R + 2.5));
+        sp.rotation.x = -a + Math.PI / 2; logGrp.add(sp);
+      }
+      // 绕轴滚动（旋转量正比于滚动距离）
+      logGrp.rotation.x = (1 - pct) * dir * (travel / R);
+      logGrp.position.set(x, R + 2, z + zoff);
+      fxGroup.add(logGrp);
+      // 扬尘
+      if (pct > 0.12 && pct < 0.92) {
+        for (let k = 0; k < 5; k++) {
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(3 + Math.random() * 2, 6, 5),
+            new THREE.MeshBasicMaterial({ color: 0xd7ccc8, transparent: true, opacity: pct * 0.5 }));
+          puff.position.set(x + (Math.random() - 0.5) * w * 0.7, R * 0.5 + Math.random() * 5, z + zoff + (Math.random() - 0.5) * 14);
+          fxGroup.add(puff);
         }
       }
     } else if (e.type === 'skillflash') {
       const rad = (e.radius || 40) * (1 + (1 - pct) * 0.8);
       const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.7, rad, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#ECEFF1'), transparent: true, opacity: pct * 0.8, side: THREE.DoubleSide }));
       ring.rotation.x = -Math.PI / 2; ring.position.set(x, 4, z); fxGroup.add(ring);
+    } else if (e.type === 'reflect') {
+      // 坎·镜反：命中瞬间洋红闪环 + 飞向攻击者的反弹光矢
+      const rad = (e.radius || 40) * (1 - pct);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.7, rad, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#E040FB'), transparent: true, opacity: pct * 0.9, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(x, 6, z); fxGroup.add(ring);
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(rad * 0.5, 42, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#E040FB'), transparent: true, opacity: pct * 0.8 }));
+      beam.position.set(x, 24, z); fxGroup.add(beam);
+    } else if (e.type === 'kanreflect') {
+      // 坎·镜反结界：持续 2s 的洋红结界罩（渐隐 + 脉动）
+      const rad = (e.radius || 60) * (1 + (1 - pct) * 0.2);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(rad, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#E040FB'), transparent: true, opacity: 0.10 + 0.06 * Math.sin(e.life * 8), side: THREE.DoubleSide, depthWrite: false }));
+      dome.position.set(x, 0, z); fxGroup.add(dome);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.92, rad, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#E040FB'), transparent: true, opacity: pct * 0.6, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(x, 2, z); fxGroup.add(ring);
     } else if (e.type === 'soulsummon') {
       // 骷髅帝王亡魂召唤：地面扩散环 + 升起的魂魄小球
       const rad = (e.radius || 80) * pct;
@@ -3482,9 +3604,25 @@ function gameLoop(timestamp) {
     resolveCollisions();
     separateFromTowers();   // 地面单位贴边绕过塔模型，避免卡进塔里
     // 兜底清扫：血量耗尽的单位立即标记死亡，杜绝任何边界残留（双保险）
-    for (const u of game.units) { if (u.hp <= 0) { if (u.isBalloon && !u._balloonDone) balloonDeath(u); u.dead = true; } }
+    for (const u of game.units) {
+      if (u.hp <= 0) {
+        if (u.isBalloon && !u._balloonDone) balloonDeath(u);
+        if (!u._souled) {
+          u._souled = true;
+          // 亡魂收集（CR 机制）：任何非建筑单位死亡 → 场上存活的骷髅帝王各 +1 亡魂（自部署起累计）
+          if (!u.isBuilding) {
+            for (const o of game.units) {
+              if (o === u || o.dead || o.hp <= 0) continue;
+              if (o.heroType === 'skeletonking') o.souls = (o.souls || 0) + 1;
+            }
+          }
+        }
+        u.dead = true;
+      }
+    }
     game.units = game.units.filter(u => !u.dead);
     if (game.player.hero && (game.player.hero.dead || game.player.hero.hp <= 0)) game.player.hero = null;
+    if (game.ai.hero && (game.ai.hero.dead || game.ai.hero.hp <= 0)) game.ai.hero = null;
     for (const t of game.towers) updateTower(t, dt);
     updateEffects(dt);
     updatePendingSpells(dt);
@@ -3566,7 +3704,10 @@ function updateSkillBar() {
   const s1 = document.getElementById('skill1'), s2 = document.getElementById('skill2');
   const meta = (HERO_SKILLS[hero.heroType] || HERO_SKILLS.tian);
   // 动态填充技能名 + 费用（按英雄类型）
-  if (meta.s1name) s1.innerHTML = `${meta.s1name}<span class="sk-cost">${hero.skill1Cost || meta.s1cost}</span><span class="sk-key">1</span>`;
+  const s1label = (hero.heroType === 'skeletonking') ? `${meta.s1name}(${hero.souls || 0})`
+                 : (hero.heroType === 'kan' && hero.reflectTimer > 0) ? `${meta.s1name}(${hero.reflectTimer.toFixed(1)}s)`
+                 : meta.s1name;
+  if (meta.s1name) s1.innerHTML = `${s1label}<span class="sk-cost">${hero.skill1Cost || meta.s1cost}</span><span class="sk-key">1</span>`;
   const hasS2 = hero.skill2Cost > 0 && meta.s2name;
   if (hasS2) { s2.style.display = ''; s2.innerHTML = `${meta.s2name}<span class="sk-cost">${hero.skill2Cost}</span><span class="sk-key">2</span>`; }
   else { s2.style.display = 'none'; }
@@ -3762,11 +3903,16 @@ function renderDeckSelect() {
   selectedDeck = [];
   ALL_CARDS.forEach(cardKey => {
     const def = CARD_DEFS[cardKey];
+    const q = def.quality || 'common';
     const card = document.createElement('div');
-    card.className = 'deck-card';
+    card.className = 'deck-card' + (def.isHero ? ' is-hero' : '');
     card.dataset.card = cardKey;
+    card.dataset.quality = q;
+    card.style.borderColor = QUALITY_COLORS[q];
+    card.style.boxShadow = def.isHero ? '0 0 14px rgba(255,64,129,0.65)' : 'none';
     card.innerHTML = `
       <div class="check-mark">✓</div>
+      <div class="q-tag q-${q}">${QUALITY_LABELS[q] || ''}</div>
       <div class="card-icon" style="background:${def.color}">${def.icon}</div>
       <div class="card-name">${def.name}</div>
       <div class="card-cost">${def.cost}</div>
@@ -3785,20 +3931,40 @@ function toggleDeckCard(cardKey, el) {
     el.classList.remove('selected');
   } else {
     if (selectedDeck.length >= 8) return; // 最多8张
+    // 英雄卡限制：8 张中只能有 1 张英雄卡（包括坎/天/骷髅帝王/天赐）
+    if (CARD_DEFS[cardKey] && CARD_DEFS[cardKey].isHero
+        && selectedDeck.some(k => CARD_DEFS[k] && CARD_DEFS[k].isHero)) {
+      showBanner('只能选择 1 张英雄卡！');
+      return;
+    }
     selectedDeck.push(cardKey);
     el.classList.add('selected');
   }
   updateDeckUI();
 }
 
-// 随机选满 8 张
+// 弹幕提示：从右向左滑过的横幅（用于规则违规等提示）
+function showBanner(msg) {
+  let layer = document.getElementById('banner-layer');
+  if (!layer) { layer = document.createElement('div'); layer.id = 'banner-layer'; document.body.appendChild(layer); }
+  const b = document.createElement('div');
+  b.className = 'danmaku';
+  b.textContent = msg;
+  layer.appendChild(b);
+  setTimeout(() => { b.classList.add('out'); }, 1800);
+  setTimeout(() => { if (b.parentNode) b.parentNode.removeChild(b); }, 2500);
+}
+
+// 随机选满 8 张（保证至多 1 张英雄卡）
 document.getElementById('deck-random').onclick = () => {
   selectedDeck = [];
   const pool = ALL_CARDS.slice();
-  for (let i = 0; i < 8 && pool.length; i++) {
-    const k = Math.floor(Math.random() * pool.length);
-    selectedDeck.push(pool[k]);
-    pool.splice(k, 1);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  let heroPicked = false;
+  for (const k of pool) {
+    if (selectedDeck.length >= 8) break;
+    if (CARD_DEFS[k] && CARD_DEFS[k].isHero) { if (heroPicked) continue; heroPicked = true; }
+    selectedDeck.push(k);
   }
   updateDeckUI();
 };
