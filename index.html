@@ -3909,7 +3909,7 @@ function renderDeckSelect() {
     card.dataset.card = cardKey;
     card.dataset.quality = q;
     card.style.borderColor = QUALITY_COLORS[q];
-    card.style.boxShadow = def.isHero ? '0 0 14px rgba(255,64,129,0.65)' : 'none';
+    card.style.boxShadow = def.isHero ? '0 0 14px rgba(255,64,129,0.65)' : '';
     card.innerHTML = `
       <div class="check-mark">✓</div>
       <div class="q-tag q-${q}">${QUALITY_LABELS[q] || ''}</div>
