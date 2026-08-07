@@ -259,7 +259,7 @@ const CARD_DEFS = {
   // ===== 自创卡（平衡微调，对齐 CR 同类）=====
   stormsentinel: { name:'雷霆守卫', cost:3, hp:216, dmg:166, range:21, spd:41, atkSpd:1.2, tgt:'ground', count:2, color:'#ECEFF1', icon:'盾骷', radius:9, deployTime:1.0, shield:119, paralyze:true, model:'skguard', atk:'stab' },
   flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
-  hero_tian:  { name:'天', cost:5, hp:1500, dmg:312, range:24, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#FFD54F', icon:'天', radius:16, deployTime:1.0, isHero:true, model:'wukong', atk:'staff', skill1Cost:2, skill2Cost:3 },
+  hero_tian:  { name:'天', cost:5, hp:1888, dmg:312, range:24, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#FFD54F', icon:'天', radius:16, deployTime:1.0, isHero:true, model:'wukong', atk:'staff', skill1Cost:2, skill2Cost:3 },
   haosihan:   { name:'郝思涵', cost:5, hp:376, dmg:106, range:26, spd:31.875, atkSpd:1.6, tgt:'building', count:4, color:'#FF9E40', icon:'free', radius:14, deployTime:1.0, canJumpRiver:true, model:'royalhog', atk:'stab' },
   quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake', quakeDuration:2.4, quakeTickInterval:0.8, quakeTicks:3 },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
@@ -272,8 +272,8 @@ const CARD_DEFS = {
   skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:1, skill2Cost:0 },
   tianci:     { name:'天赐', inGameName:'赐', cost:4, hp:1344, dmg:172, range:22, spd:21.25, atkSpd:1.7, tgt:'any', count:1, flying:true, color:'#FFF3B0', icon:'赐', radius:14, deployTime:1.0, isHero:true, heroType:'tianci', model:'tianci', atk:'angel', skill1Cost:4, skill2Cost:0 },
   // ===== 原版新增：坎（CR 锦标赛 L11 皇家冠军 Royal Champion 数值，效果严格还原）=====
-  //   基础数据对齐皇家冠军：7 费 / HP1455 / 伤害348 / 射程5(=106px) / 攻速1.5 / 只对地 / 中等移速；技能为自定义「镜反结界」
-  kan:        { name:'坎', cost:7, hp:1455, dmg:348, range:106, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 }
+  //   基础数据对齐皇家冠军：5 费 / HP1455 / 伤害348 / 射程5(=106px) / 攻速1.5 / 只对地 / 中等移速；技能为自定义「镜反结界」
+  kan:        { name:'坎', cost:5, hp:1455, dmg:348, range:106, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 }
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
@@ -309,6 +309,7 @@ const unitMeshMap = new Map();
 let deployZoneMesh = null;
 let spellRangeMesh = null, spellRangeRing = null, spellRangeFill = null;
 let spellRangeTicks = null, spellRangePulse = null, spellRangeCross = null;
+let spellLaneMesh = null, spellLaneFill = null, spellLaneBorder = null;
 let renderedGame = null;
 
 function ensureScene() {
@@ -384,6 +385,15 @@ function ensureScene() {
     spellRangeMesh.position.y = 2;
     spellRangeMesh.visible = false;
     scene.add(spellRangeMesh);
+    // 车道法术（复仇滚木）预演示范围：横向矩形（全场宽 × 2*bandH），释放前显示扫过的整条车道
+    spellLaneMesh = new THREE.Group();
+    spellLaneBorder = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x8d6e63, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
+    spellLaneBorder.rotation.x = -Math.PI / 2; spellLaneBorder.position.y = 0.4;
+    spellLaneFill = new THREE.Mesh(new THREE.PlaneGeometry(0.94, 0.94), new THREE.MeshBasicMaterial({ color: 0x8d6e63, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+    spellLaneFill.rotation.x = -Math.PI / 2; spellLaneFill.position.y = 0.6;
+    spellLaneMesh.add(spellLaneBorder); spellLaneMesh.add(spellLaneFill);
+    spellLaneMesh.position.y = 2; spellLaneMesh.visible = false;
+    scene.add(spellLaneMesh);
     const st = document.createElement('div');
     st.id = 'scene-text';
     st.style.cssText = 'position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);color:#ffd700;font-weight:700;font-size:30px;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.85);pointer-events:none;z-index:5;display:none;';
@@ -2449,6 +2459,20 @@ function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, sk
       const glow = new THREE.PointLight(0xFFF3B0, 0.7, 70); glow.position.y = hy + headR * 0.5; parent.add(glow);
       for (const sx of [-1, 1]) { const eye = _sph(headR * 0.14, _mat(0x222222)); eye.position.set(sx * headR * 0.32, hy + headR * 0.1, headR * 0.85); parent.add(eye); }
       break; }
+    case 'kan': {
+      // 坎：日本武士（浪人）造型 —— 兜(helmet) + 前立新月 + 面頬(mask) + 髷(chonmage) + 发光眼
+      const helmMat = _mat(0x2b2f36, { metalness: 0.55, roughness: 0.4 });
+      const helm = new THREE.Mesh(new THREE.SphereGeometry(headR * 1.05, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), helmMat);
+      helm.position.y = hy + headR * 0.1; parent.add(helm);
+      const neckG = new THREE.Mesh(new THREE.CylinderGeometry(headR * 1.0, headR * 1.18, headR * 0.55, 12, 1, true), helmMat);
+      neckG.position.y = hy - headR * 0.15; parent.add(neckG);
+      const crest = new THREE.Mesh(new THREE.TorusGeometry(headR * 0.5, headR * 0.12, 8, 16, Math.PI), _mat(0xFFD54F, { metalness: 0.7, roughness: 0.25, emissive: 0xFFD54F, emissiveIntensity: 0.4 }));
+      crest.position.set(0, hy + headR * 0.85, headR * 0.5); crest.rotation.x = Math.PI / 2; parent.add(crest);
+      const menpo = new THREE.Mesh(new THREE.BoxGeometry(headR * 1.25, headR * 0.75, headR * 0.9), helmMat);
+      menpo.position.set(0, hy - headR * 0.35, headR * 0.32); parent.add(menpo);
+      const chon = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.28, 8, 6), _mat(0x141414)); chon.position.y = hy + headR * 0.72; parent.add(chon);
+      for (const sx of [-1, 1]) { const eye = _sph(headR * 0.15, _mat(0xE040FB, { emissive: 0xE040FB, emissiveIntensity: 0.9 })); eye.position.set(sx * headR * 0.28, hy - headR * 0.02, headR * 0.82); parent.add(eye); }
+      break; }
     default: break;
   }
 }
@@ -2526,6 +2550,20 @@ function addWeaponProps(u, pivot, ud, r, col, baseMat, skin, dark, metal, bodyW,
       const w = new THREE.Group(); const h = _cyl(r * 0.06, r * 0.06, r * 1.5, _mat(0xFFE082, { metalness: 0.6, roughness: 0.3 }), 8); h.position.y = r * 0.75; w.add(h);
       const orb = _sph(r * 0.3, _mat(0xFFFFFF, { emissive: 0xFFE082, emissiveIntensity: 0.8 })); orb.position.y = r * 1.5; w.add(orb);
       ud.armL.add(w); w.position.set(0, -bodyH * 0.1, r * 0.25); ud.weaponL = w; ud.staffOrb = orb; break; }
+    case 'kan': {
+      // 坎：武士刀(katana) + 肩甲(sode) + 背旗(sashimono 家纹)
+      for (const sx of [-1, 1]) { const sode = new THREE.Mesh(new THREE.BoxGeometry(r * 0.45, r * 0.5, r * 0.7), _mat(0x6A1B9A, { metalness: 0.3, roughness: 0.5 })); sode.position.set(sx * r * 0.85, legH + bodyH * 0.95, 0); pivot.add(sode); }
+      const katana = new THREE.Group();
+      const blade = _blade(r, metal, r * 1.6, r * 0.1); blade.rotation.z = -0.12; katana.add(blade);
+      const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.16, r * 0.16, r * 0.06, 10), _mat(0xFFD54F, { metalness: 0.6, roughness: 0.3 })); tsuba.rotation.x = Math.PI / 2; tsuba.position.y = -r * 0.8; katana.add(tsuba);
+      const tsuka = _cyl(r * 0.09, r * 0.09, r * 0.7, _mat(0x222222), 8); tsuka.position.y = -r * 1.15; katana.add(tsuka);
+      ud.armR.add(katana); katana.position.set(0, -bodyH * 0.42, r * 0.3); ud.weaponR = katana;
+      const ban = new THREE.Group();
+      const pole = _cyl(r * 0.05, r * 0.05, r * 2.2, _mat(0x6d4f43), 6); pole.position.y = r * 1.0; ban.add(pole);
+      const flag = new THREE.Mesh(new THREE.PlaneGeometry(r * 1.3, r * 1.0), new THREE.MeshStandardMaterial({ color: 0x7E57C2, side: THREE.DoubleSide, roughness: 0.7, emissive: 0x4A148C, emissiveIntensity: 0.25 })); flag.position.set(r * 0.7, r * 1.3, 0); ban.add(flag);
+      const mon = new THREE.Mesh(new THREE.CircleGeometry(r * 0.28, 16), _mat(0xFFD54F, { emissive: 0xFFD54F, emissiveIntensity: 0.3 })); mon.position.set(r * 0.7, r * 1.3, 0.06); ban.add(mon);
+      pivot.add(ban); ud.sashimono = ban;
+      break; }
     default: break;
   }
 }
@@ -2709,7 +2747,7 @@ function makeUnitMesh(u) {
   const skin = new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6 }); _log('skin OK');
   const dark = new THREE.MeshStandardMaterial({ color: 0x33363f, roughness: 0.7 }); _log('dark OK');
   const metal = new THREE.MeshStandardMaterial({ color: 0xd6dae2, metalness: 0.5, roughness: 0.35 }); _log('metal OK');
-  const ud = { r, barW: Math.max(28, r * 3.0), fg: null, pivot: null, body: null, head: null, legL: null, legR: null, armL: null, armR: null, weaponR: null, weaponL: null, wings: null, dragonHead: null, jaw: null, hog: null, barrel: null, coil: null, crystal: null, model: u.model, atk: u.atk, riderLift: 0, floatBob: false }; _log('ud OK');
+  const ud = { r, barW: Math.max(28, r * 3.0), fg: null, pivot: null, body: null, head: null, legL: null, legR: null, armL: null, armR: null, weaponR: null, weaponL: null, wings: null, dragonHead: null, jaw: null, hog: null, barrel: null, coil: null, crystal: null, model: u.model, atk: u.atk, riderLift: 0, floatBob: false, sashimono: null }; _log('ud OK');
   if (u.isBuilding) { _log('call buildBuilding'); buildBuilding(g, u, ud, r, baseMat, dark, metal); }
   else if (u.flying) { _log('call buildFlyer'); buildFlyer(g, u, ud, r, rawColor, baseMat, skin, dark, metal); }
   else { _log('call buildGround'); buildGround(g, u, ud, r, rawColor, baseMat, skin, dark, metal); }
@@ -2766,6 +2804,7 @@ function updateUnitMesh(m, u) {
   if (u.underground) { m.visible = false; return; }
   m.visible = true;
   const ud = m.userData;
+  const t = game.gameTime || 0;   // 提前声明，供英雄光环/皇冠/背旗动画使用（修复 TDZ）
   if (ud.vineWrap) ud.vineWrap.visible = (u.rootTimer > 0);   // 被藤蔓定身时显示缠绕
   if (ud.drAura) ud.drAura.visible = !!(game[u.owner] && game[u.owner].teamDR && game[u.owner].teamDR.timer > 0);   // 天恩护盾生效时光环显示
   // 英雄能量环脉冲；坎·镜反结界激活时变为洋红并放大
@@ -2775,9 +2814,10 @@ function updateUnitMesh(m, u) {
     else { ud.heroAura.scale.set(pulse, pulse, 1); ud.heroAura.material.color.setHex(ud.heroAuraColor || 0x4FC3F7); ud.heroAura.material.opacity = 0.55; }
   }
   if (ud.heroCrown) { ud.heroCrown.rotation.z = t * 1.6; ud.heroCrown.position.y = (u.model === 'kan' ? u.radius * 2.1 : u.radius * 1.95) + Math.sin(t * 3) * 2; }
+  // 坎背旗（sashimono）随风轻摆，增加武士高级感
+  if (ud.sashimono) { const fl = ud.sashimono.children[1]; if (fl) fl.rotation.y = Math.sin((game.gameTime || 0) * 4) * 0.14; }
   const hov = u.flying ? 40 : (u.model === 'flamesprite' ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov, u.y - 340);
-  const t = game.gameTime || 0;
   const spd = Math.hypot(u.vx, u.vy);
   const moving = spd > 1.5;
   const freq = 7 + spd * 0.32;          // 腿摆/扇翅频率随真实移速缩放（巨人慢、野猪快）
@@ -2989,37 +3029,56 @@ function updateDeployZone() {
   const def = CARD_DEFS[cardKey];
   if (def && def.type === 'spell') {
     deployZoneMesh.visible = false;
-    // 两种飞桶是“投掷召唤”而非范围打击，CR 里也不显示打击圈 → 排除
-    const showRange = def.spellFx !== 'barrel' && !!def.radius;
     // 瞄准模式优先用 dragAim 坐标（拖拽中的实时位置），否则用 hoverWorld
     const aim = (game.dragAim && game.dragAim.active) ? game.dragAim : null;
     const pos = aim || hoverWorld;
-    if (showRange && pos && isFinite(pos.x) && isFinite(pos.y)) {
-      const t = performance.now() / 1000;
-      spellRangeMesh.visible = true;
-      spellRangeMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340);
-      spellRangeMesh.scale.set(def.radius, def.radius, def.radius);
-      const inField = pos.x >= 0 && pos.x <= CW && pos.y >= 0 && pos.y <= CH;
-      const sc = new THREE.Color(inField ? (def.color || '#ffffff') : '#ff3b30');
-      spellRangeRing.material.color.copy(sc);
-      spellRangeFill.material.color.copy(sc);
-      spellRangePulse.material.color.copy(sc);
-      for (const c of spellRangeTicks.children) c.material.color.copy(sc);
-      for (const c of spellRangeCross.children) c.material.color.copy(sc);
-      // 外环呼吸 + 刻度自转 + 内环由内向外扩散，做出 CR 释放前调的“瞄准”观感
-      spellRangeRing.material.opacity = 0.72 + 0.28 * Math.sin(t * 6.0);
-      spellRangeFill.material.opacity = inField ? 0.14 + 0.05 * Math.sin(t * 6.0) : 0.26;
-      spellRangeTicks.rotation.y = -t * 0.9;
-      const ph = (t * 0.85) % 1;
-      const ps = 0.18 + ph * 0.82;
-      spellRangePulse.scale.set(ps, ps, 1);
-      spellRangePulse.material.opacity = 0.55 * (1 - ph);
-      // 震荡术是多段持续打击：准星随每 0.8s 一跳的节奏收缩，提示“会震 3 下”
-      const beat = def.quakeTicks ? (1 - ((t % (def.quakeTickInterval || 0.8)) / (def.quakeTickInterval || 0.8))) : 1;
-      const cs = def.quakeTicks ? (0.75 + 0.45 * beat) : 1;
-      spellRangeCross.scale.set(cs, cs, cs);
-    } else {
+    if (def.lane) {
+      // 车道法术（复仇滚木）：横向矩形预演示，显示扫过的整条车道（全场宽 × 2*bandH）
       spellRangeMesh.visible = false;
+      if (pos && isFinite(pos.x) && isFinite(pos.y)) {
+        const t = performance.now() / 1000;
+        const inField = pos.x >= 0 && pos.x <= CW && pos.y >= 0 && pos.y <= CH;
+        spellLaneMesh.visible = true;
+        spellLaneMesh.position.set(0, 2, pos.y - 340);
+        spellLaneMesh.scale.set(CW, 1, def.bandH * 2);
+        const c = inField ? new THREE.Color(def.color || '#8d6e63') : new THREE.Color('#ff3b30');
+        spellLaneBorder.material.color.copy(c); spellLaneFill.material.color.copy(c);
+        spellLaneBorder.material.opacity = 0.45 + 0.25 * Math.sin(t * 6);
+        spellLaneFill.material.opacity = inField ? 0.14 + 0.05 * Math.sin(t * 6) : 0.26;
+      } else {
+        spellLaneMesh.visible = false;
+      }
+    } else {
+      spellLaneMesh.visible = false;
+      // 两种飞桶是“投掷召唤”而非范围打击，CR 里也不显示打击圈 → 排除
+      const showRange = def.spellFx !== 'barrel' && !!def.radius;
+      if (showRange && pos && isFinite(pos.x) && isFinite(pos.y)) {
+        const t = performance.now() / 1000;
+        spellRangeMesh.visible = true;
+        spellRangeMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340);
+        spellRangeMesh.scale.set(def.radius, def.radius, def.radius);
+        const inField = pos.x >= 0 && pos.x <= CW && pos.y >= 0 && pos.y <= CH;
+        const sc = new THREE.Color(inField ? (def.color || '#ffffff') : '#ff3b30');
+        spellRangeRing.material.color.copy(sc);
+        spellRangeFill.material.color.copy(sc);
+        spellRangePulse.material.color.copy(sc);
+        for (const c of spellRangeTicks.children) c.material.color.copy(sc);
+        for (const c of spellRangeCross.children) c.material.color.copy(sc);
+        // 外环呼吸 + 刻度自转 + 内环由内向外扩散，做出 CR 释放前调的“瞄准”观感
+        spellRangeRing.material.opacity = 0.72 + 0.28 * Math.sin(t * 6.0);
+        spellRangeFill.material.opacity = inField ? 0.14 + 0.05 * Math.sin(t * 6.0) : 0.26;
+        spellRangeTicks.rotation.y = -t * 0.9;
+        const ph = (t * 0.85) % 1;
+        const ps = 0.18 + ph * 0.82;
+        spellRangePulse.scale.set(ps, ps, 1);
+        spellRangePulse.material.opacity = 0.55 * (1 - ph);
+        // 震荡术是多段持续打击：准星随每 0.8s 一跳的节奏收缩，提示“会震 3 下”
+        const beat = def.quakeTicks ? (1 - ((t % (def.quakeTickInterval || 0.8)) / (def.quakeTickInterval || 0.8))) : 1;
+        const cs = def.quakeTicks ? (0.75 + 0.45 * beat) : 1;
+        spellRangeCross.scale.set(cs, cs, cs);
+      } else {
+        spellRangeMesh.visible = false;
+      }
     }
   } else {
     spellRangeMesh.visible = false;
@@ -3224,7 +3283,7 @@ function updateEffectMeshes() {
       }
     } else if (e.type === 'log') {
       // 复仇滚木：横躺的木头沿车道滚动 —— 带树皮木纹环、端面年轮与尖刺，滚动时绕轴旋转并扬起尘土
-      const w = 400, R = 20;
+      const w = 400, R = 11;
       const dir = (e.owner === 'player') ? -1 : 1;       // 玩家向上、AI 向下滚动
       const travel = 150;                                 // 滚动行程
       const zoff = (1 - pct) * travel * dir;              // 从落点向敌方一侧滚出
@@ -3235,7 +3294,7 @@ function updateEffectMeshes() {
       body.rotation.z = Math.PI / 2; logGrp.add(body);
       // 树皮节（沿长度分段的深色木纹环）
       for (let k = -3; k <= 3; k++) {
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(R + 0.6, 2.0, 6, 18),
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(R + 0.4, 1.2, 6, 18),
           new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 1.0 }));
         ring.rotation.y = Math.PI / 2; ring.position.x = k * (w / 7); logGrp.add(ring);
       }
@@ -3253,9 +3312,9 @@ function updateEffectMeshes() {
       // 尖刺（The Log 带刺）
       for (let k = 0; k < 12; k++) {
         const a = (k / 12) * Math.PI * 2;
-        const sp = new THREE.Mesh(new THREE.ConeGeometry(3, 9, 6),
+        const sp = new THREE.Mesh(new THREE.ConeGeometry(1.8, 5, 6),
           new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 1.0 }));
-        sp.position.set((Math.random() - 0.5) * w * 0.82, Math.sin(a) * (R + 2.5), Math.cos(a) * (R + 2.5));
+        sp.position.set((Math.random() - 0.5) * w * 0.82, Math.sin(a) * (R + 1.8), Math.cos(a) * (R + 1.8));
         sp.rotation.x = -a + Math.PI / 2; logGrp.add(sp);
       }
       // 绕轴滚动（旋转量正比于滚动距离）
