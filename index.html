@@ -916,14 +916,16 @@ function resolveCollisions() {
       if (u.spd === 0) continue;   // 自身是建筑的单位不参与（建筑↔塔已在部署时校验）
       for (const t of towers) {
         if (u.owner === t.owner) continue;   // 皇室战争：友军单位可穿过己方塔，不被己方塔阻挡
-        const tR = Math.max(t.w, t.h) / 2 + 4;   // 塔的碰撞半径（加一点缓冲）
+        // 关键修复：把单位推到「攻击范围边缘内」（而非视觉半径外），确保贴塔即可攻击。
+        // 旧逻辑用 tR=max(w,h)/2+4 的视觉碰撞半径，range 小的近战(野猪/哥布林/小皮卡/骷髅)被推到攻击范围外，永远打不到塔。
+        const halfW = (t.w || t.h || 42) / 2;
+        const minD = u.range + halfW - 2;   // 停在攻击范围内 2px，保证 d <= effectiveRangeOf 恒成立
         let dx = u.x - t.x, dy = u.y - t.y;
         let d = Math.hypot(dx, dy);
-        const minD = u.radius + tR;
         if (d >= minD) continue;
         if (d < 0.0001) { dx = 1; dy = 0; d = 1; }
         const nx = dx / d, ny = dy / d;
-        const overlap = minD - d + 1;   // +1 额外推力确保不贴边卡住
+        const overlap = minD - d;
         u.x += nx * overlap;
         u.y += ny * overlap;
         const c = clampToRiverBank(u, u.x, u.y);
