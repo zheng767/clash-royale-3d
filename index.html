@@ -219,58 +219,58 @@ const CARD_DEFS = {
   knight:     { name:'骑士', cost:3, hp:1766, dmg:202, range:26, spd:21.25, atkSpd:1.2, tgt:'ground', count:1, color:'#5B6EE1', icon:'剑', radius:15, deployTime:1.0, model:'soldier', atk:'sword' },
   archer:     { name:'弓箭手', cost:3, hp:304, dmg:107, range:106, spd:21.25, atkSpd:0.9, tgt:'any', count:2, color:'#2ECC71', icon:'弓', radius:11, deployTime:1.0, model:'archer', atk:'arrow' },
   goblin:     { name:'哥布林', cost:2, hp:202, dmg:120, range:11, spd:42.5, atkSpd:1.1, tgt:'ground', count:4, color:'#7CB342', icon:'哥', radius:11, deployTime:1.0, model:'goblin', atk:'stab' },
-  giant:      { name:'巨人', cost:5, hp:4090, dmg:253, range:26, spd:15.9, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:21, deployTime:1.0, model:'giant', atk:'punch' },
+  giant:      { name:'巨人', cost:5, hp:3380, dmg:209, range:26, spd:15.9, atkSpd:1.5, tgt:'building', count:1, color:'#E0933D', icon:'巨', radius:21, deployTime:1.0, model:'giant', atk:'punch' },
   bomber:     { name:'炸弹人', cost:2, hp:304, dmg:225, range:96, spd:21.25, atkSpd:1.8, tgt:'ground', count:1, color:'#E74C3C', icon:'弹', radius:11, splash:33, deployTime:1.0, model:'bomber', atk:'lob' },
-  minipekka:  { name:'小皮卡', cost:4, hp:1433, dmg:755, range:18, spd:31.875, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:15, deployTime:1.0, model:'minipekka', atk:'bigslash' },
+  minipekka:  { name:'小皮卡', cost:4, hp:1184, dmg:624, range:18, spd:31.875, atkSpd:1.6, tgt:'ground', count:1, color:'#9B59B6', icon:'皮', radius:15, deployTime:1.0, model:'minipekka', atk:'bigslash' },
   skeletons:  { name:'骷髅兵', cost:1, hp:81, dmg:81, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:3, color:'#BDBDBD', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
-  fireball:   { name:'火球术', cost:4, type:'spell', dmg:688, radius:53, color:'#FF6B35', icon:'火', delay:1.0, spellFx:'fireball' },
-  musketeer:  { name:'火枪手', cost:4, hp:721, dmg:217, range:128, spd:21.25, atkSpd:1.0, tgt:'any', count:1, color:'#E91E63', icon:'枪', radius:15, deployTime:1.0, model:'soldier', atk:'shot' },
-  valkyrie:   { name:'女武神', cost:4, hp:1907, dmg:266, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#FF6F00', icon:'武', radius:15, splash:44, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
-  barbarians: { name:'野蛮人', cost:5, hp:691, dmg:191, range:15, spd:21.25, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:1.0, model:'barbarian', atk:'sword' },
+  fireball:   { name:'火球术', cost:4, type:'spell', dmg:569, radius:53, color:'#FF6B35', icon:'火', delay:1.0, spellFx:'fireball' },
+  musketeer:  { name:'火枪手', cost:4, hp:596, dmg:179, range:128, spd:21.25, atkSpd:1.0, tgt:'any', count:1, color:'#E91E63', icon:'枪', radius:15, deployTime:1.0, model:'soldier', atk:'shot' },
+  valkyrie:   { name:'女武神', cost:4, hp:1576, dmg:220, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#FF6F00', icon:'武', radius:15, splash:42, selfSplash:true, deployTime:1.0, model:'valkyrie', atk:'spin' },
+  barbarians: { name:'野蛮人', cost:5, hp:670, dmg:191, range:15, spd:21.25, atkSpd:1.3, tgt:'ground', count:5, color:'#8D6E63', icon:'蛮', radius:11, deployTime:1.0, model:'barbarian', atk:'sword' },
   hogrider:   { name:'野猪骑士', cost:4, hp:1697, dmg:317, range:18, spd:42.5, atkSpd:1.6, tgt:'building', count:1, color:'#F57C00', icon:'猪', radius:15, deployTime:1.0, canJumpRiver:true, model:'hogrider', atk:'hammer' },
-  wizard:     { name:'法师', cost:5, hp:755, dmg:281, range:117, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:13, splash:32, deployTime:1.0, model:'wizard', atk:'fireball' },
-  arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:243, radius:85, color:'#42A5F5', icon:'箭', delay:0.4, spellFx:'arrows', towerDmgMult:0.30 },
-  pekka:      { name:'皮卡超人', cost:7, hp:4160, dmg:816, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:19, deployTime:1.0, model:'pekka', atk:'bigslash' },
-  skarmy:     { name:'骷髅军团', cost:3, hp:81, dmg:81, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
-  rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1484, radius:43, color:'#FF1744', icon:'炸', delay:2.0, spellFx:'rocket', towerDmgMult:1.0 },
+  wizard:     { name:'法师', cost:5, hp:624, dmg:232, range:117, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#7C4DFF', icon:'法', radius:13, splash:32, deployTime:1.0, model:'wizard', atk:'fireball' },
+  arrows:     { name:'万箭齐发', cost:3, type:'spell', dmg:366, radius:74, color:'#42A5F5', icon:'箭', delay:0.4, spellFx:'arrows', towerDmgMult:0.254 },
+  pekka:      { name:'皮卡超人', cost:7, hp:2350, dmg:526, range:26, spd:15.9, atkSpd:1.8, tgt:'ground', count:1, color:'#26C6DA', icon:'超', radius:19, deployTime:1.0, model:'pekka', atk:'bigslash' },
+  skarmy:     { name:'骷髅军团', cost:3, hp:51, dmg:51, range:11, spd:21.25, atkSpd:1.1, tgt:'ground', count:15, color:'#E0E0E0', icon:'骷', radius:9, deployTime:1.0, model:'skeleton', atk:'stab' },
+  rocket:     { name:'火箭术', cost:6, type:'spell', dmg:1226, radius:43, color:'#FF1744', icon:'炸', delay:2.0, spellFx:'rocket', towerDmgMult:1.0 },
   royalgiant: { name:'皇家巨人', cost:6, hp:3164, dmg:307, range:106, spd:15.9, atkSpd:1.7, tgt:'building', count:1, color:'#FF8F00', icon:'皇', radius:19, deployTime:1.0, model:'royalgiant', atk:'shot' },
-  lightning:  { name:'雷电法术', cost:6, type:'spell', dmg:1057, radius:74, color:'#FFEB3B', icon:'雷', delay:1.0, stun:0.5, spellFx:'lightning', topTargets:3, towerDmgMult:0.30 },
-  darkprince: { name:'黑暗王子', cost:4, hp:1200, dmg:266, range:26, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:15, splash:24, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'darkprince', atk:'spin' },
-  princess:   { name:'公主', cost:3, hp:216, dmg:168, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:9, splash:43, deployTime:1.0, model:'princess', atk:'arrow_long' },
+  lightning:  { name:'雷电法术', cost:6, type:'spell', dmg:656, radius:74, color:'#FFEB3B', icon:'雷', delay:1.0, stun:0.5, spellFx:'lightning', topTargets:3, towerDmgMult:0.271 },
+  darkprince: { name:'黑暗王子', cost:4, hp:750, dmg:166, range:26, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#4A148C', icon:'暗', radius:15, splash:23, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'darkprince', atk:'spin' },
+  princess:   { name:'公主', cost:3, hp:216, dmg:139, range:191, spd:21.25, atkSpd:3.0, tgt:'any', count:1, color:'#FF69B4', icon:'主', radius:9, splash:42, deployTime:1.0, model:'princess', atk:'arrow_long' },
   cannon:     { name:'加农炮', cost:3, hp:824, dmg:212, range:117, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#607D8B', icon:'炮', radius:17, deployTime:1.0, isBuilding:true, decay:30, model:'cannon', atk:'shot' },
   tesla:      { name:'电磁塔', cost:4, hp:1152, dmg:220, range:117, spd:0, atkSpd:1.1, tgt:'any', count:1, color:'#03A9F4', icon:'磁', radius:15, deployTime:1.0, isBuilding:true, decay:25, model:'tesla', atk:'beam' },
   minions:    { name:'亡灵', cost:3, hp:230, dmg:107, range:34, spd:21.25, atkSpd:1.2, tgt:'any', count:3, color:'#37474F', icon:'亡', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
   babydragon: { name:'飞龙宝宝', cost:4, hp:1152, dmg:161, range:74, spd:21.25, atkSpd:1.5, tgt:'any', count:1, color:'#66BB6A', icon:'龙', radius:17, splash:32, flying:true, deployTime:1.0, model:'babydragon', atk:'breath' },
-  speargoblin: { name:'哥布林投矛手', cost:2, hp:92, dmg:41, range:106, spd:31.875, atkSpd:1.1, tgt:'ground', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
+  speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:106, spd:31.875, atkSpd:1.7, tgt:'ground', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
   goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:32, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3, spellFx:'barrel' },
   // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(VeryFast)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
-  flamesprite: { name:'烈焰精灵', cost:1, hp:230, dmg:207, range:55, spd:42.5, atkSpd:0.8, tgt:'ground', count:1, color:'#FF5722', icon:'焰', radius:11, splash:51, deployTime:1.0, suicide:true, model:'flamesprite', atk:'magic' },
+  flamesprite: { name:'烈焰精灵', cost:2, hp:230, dmg:207, range:53, spd:42.5, atkSpd:0.8, tgt:'ground', count:3, color:'#FF5722', icon:'焰', radius:11, splash:49, deployTime:1.0, suicide:true, model:'flamesprite', atk:'magic' },
   healtotem: { name:'治疗图腾', cost:4, hp:850, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:17, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132, model:'totem', atk:'none' },
   frosttower: { name:'冰霜塔', cost:4, hp:912, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:15, deployTime:1.0, isBuilding:true, decay:18, slow:true, model:'frosttower', atk:'ice' },
   // ===== 原版新增（CR 锦标赛 L11 数值，效果严格还原）=====
-  hurricane:   { name:'飓风法术', cost:3, type:'spell', field:true, duration:4.0, radius:117, dmg:80, pull:90, color:'#4DD0E1', icon:'飓', spellFx:'hurricane' },
-  zap:        { name:'电击法术', cost:2, type:'spell', dmg:192, radius:53, stun:1.0, color:'#FFEB3B', icon:'电', delay:0.4, spellFx:'lightning', towerDmgMult:0.30 },
-  freeze:     { name:'冰冻法术', cost:4, type:'spell', dmg:115, radius:64, stun:4.0, color:'#81D4FA', icon:'冻', delay:0.6, spellFx:'freeze', towerDmgMult:0.30 },
+  hurricane:   { name:'飓风法术', cost:3, type:'spell', field:true, duration:1.05, radius:117, dmg:52, pull:90, color:'#4DD0E1', icon:'飓', spellFx:'hurricane' },
+  zap:        { name:'电击法术', cost:2, type:'spell', dmg:192, radius:53, stun:0.5, color:'#FFEB3B', icon:'电', delay:0.4, spellFx:'lightning', towerDmgMult:0.30 },
+  freeze:     { name:'冰冻法术', cost:4, type:'spell', dmg:71, radius:64, stun:4.0, color:'#81D4FA', icon:'冻', delay:0.6, spellFx:'freeze', towerDmgMult:0.310 },
   minionhorde:{ name:'亡灵大军', cost:5, hp:230, dmg:107, range:34, spd:21.25, atkSpd:1.1, tgt:'any', count:6, color:'#37474F', icon:'亡', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
-  skeletonballoon: { name:'骷髅气球', cost:3, hp:532, dmg:0, range:18, spd:31.875, atkSpd:1.0, tgt:'building', count:1, color:'#E0E0E0', icon:'骷球', radius:13, flying:true, deployTime:1.0, isBalloon:true, deathDmg:145, deathRadius:42, spawnCard:'skeletons', spawnCount:7, model:'balloon', atk:'none' },
-  prince:     { name:'王子', cost:5, hp:1920, dmg:391, range:34, spd:21.25, atkSpd:1.4, tgt:'ground', count:1, color:'#FBC02D', icon:'王', radius:15, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'prince', atk:'lance' },
-  icewizard:  { name:'小邴', cost:3, hp:688, dmg:89, range:117, spd:21.25, atkSpd:1.7, tgt:'any', count:1, color:'#4FC3F7', icon:'邴', radius:13, splash:24, deployTime:1.0, slow:true, slowPct:0.30, slowDur:2.5, spawnDamage:84, spawnSlow:true, model:'icewizard', atk:'ice' },
+  skeletonballoon: { name:'骷髅气球', cost:5, hp:1049, dmg:0, range:18, spd:31.875, atkSpd:1.0, tgt:'building', count:1, color:'#E0E0E0', icon:'骷球', radius:13, flying:true, deployTime:1.0, isBalloon:true, deathDmg:150, deathRadius:42, model:'balloon', atk:'none' },
+  prince:     { name:'王子', cost:5, hp:1200, dmg:244, range:34, spd:21.25, atkSpd:1.4, tgt:'ground', count:1, color:'#FBC02D', icon:'王', radius:15, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'prince', atk:'lance' },
+  icewizard:  { name:'小邴', cost:3, hp:570, dmg:74, range:117, spd:21.25, atkSpd:1.7, tgt:'any', count:1, color:'#4FC3F7', icon:'邴', radius:13, splash:32, deployTime:1.0, slow:true, slowPct:0.30, slowDur:2.5, spawnDamage:69, spawnSlow:true, model:'icewizard', atk:'ice' },
   vines:      { name:'藤蔓法术', cost:2, type:'spell', dmg:184, radius:64, color:'#2E7D32', icon:'藤', delay:0.4, spellFx:'vines', root:2.0, groundOnly:false, rootTop:2 },
   // ===== 自创卡（平衡微调，对齐 CR 同类）=====
   stormsentinel: { name:'雷霆守卫', cost:3, hp:216, dmg:166, range:21, spd:41, atkSpd:1.2, tgt:'ground', count:2, color:'#ECEFF1', icon:'盾骷', radius:9, deployTime:1.0, shield:119, paralyze:true, model:'skguard', atk:'stab' },
   flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
   hero_tian:  { name:'天', cost:5, hp:1888, dmg:312, range:24, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#FFD54F', icon:'天', radius:16, deployTime:1.0, isHero:true, model:'wukong', atk:'staff', skill1Cost:2, skill2Cost:3 },
   haosihan:   { name:'郝思涵', cost:5, hp:376, dmg:106, range:26, spd:31.875, atkSpd:1.6, tgt:'building', count:4, color:'#FF9E40', icon:'free', radius:14, deployTime:1.0, canJumpRiver:true, model:'royalhog', atk:'stab' },
-  quake:      { name:'震荡术', cost:3, type:'spell', dmg:240, radius:85, stun:0.5, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake', quakeDuration:2.4, quakeTickInterval:0.8, quakeTicks:3 },
+  quake:      { name:'震荡术', cost:3, type:'spell', dmg:207, radius:74, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake', quakeDuration:3.0, quakeTickInterval:1.0, quakeTicks:3, towerDmgMult:0.638, buildingDmg:711, slowFactor:0.5, slowDur:1.5 },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
-  miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:31.875, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:0.25 },
+  miner:      { name:'矿工', cost:3, hp:1002, dmg:161, range:25, spd:31.875, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:0.25 },
   // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
-  fisherman:  { name:'渔夫', cost:3, hp:870, dmg:194, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:149, hookCDInit:1.3, model:'fisherman', atk:'hook' },
+  fisherman:  { name:'渔夫', cost:3, hp:720, dmg:161, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:127, hookCDInit:1.3, model:'fisherman', atk:'hook' },
   // ===== 原版新增：复仇滚木 / 吹箭哥布林 / 骷髅帝王（CR 锦标赛 L11 数值，效果严格还原）=====
   //   复仇滚木 / The Log（CR 锦标赛 L11 严格还原）：2 费 / 范围伤害266 / 对塔40(=15%) / 只打地面 / 击退1格
   //   机制：滚动法术——从落点向敌方滚出 rollDist(11.1格)，宽度 rollWidth(3.9格)，沿途碾过并击退地面单位（含建筑/塔，塔吃15%减伤）
   log:        { name:'复仇滚木', cost:2, type:'spell', dmg:266, color:'#8D6E63', icon:'滚', spellFx:'log', groundOnly:true, rolling:true, rollDist:11.1*TILE, rollWidth:3.9*TILE, rollTime:0.55, radius:13, knockback:1*TILE, towerDmgMult:40/266 },
-  dartgoblin: { name:'吹箭哥布林', cost:3, hp:180, dmg:59, range:106, spd:42.5, atkSpd:0.7, tgt:'any', count:1, color:'#AFB42B', icon:'镖', radius:11, deployTime:1.0, model:'dartgoblin', atk:'blow' },
+  dartgoblin: { name:'吹箭哥布林', cost:3, hp:216, dmg:129, range:138, spd:42.5, atkSpd:0.7, tgt:'any', count:1, color:'#AFB42B', icon:'镖', radius:11, deployTime:1.0, model:'dartgoblin', atk:'blow' },
   skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:1, skill2Cost:0 },
   tianci:     { name:'天赐', inGameName:'赐', cost:4, hp:1344, dmg:172, range:22, spd:21.25, atkSpd:1.7, tgt:'any', count:1, color:'#FFF3B0', icon:'赐', radius:14, deployTime:1.0, isHero:true, heroType:'tianci', model:'tianci', atk:'angel', skill1Cost:4, skill2Cost:0 },
   // ===== 原版新增：坎（CR 锦标赛 L11 皇家冠军 Royal Champion 数值，效果严格还原）=====
@@ -790,7 +790,7 @@ function updateUnit(unit, dt) {
     // ===== 有锁定目标、在攻击范围内、且已到达对岸：停下攻击 =====
     unit.atkCD -= dt;
     if (unit.atkCD <= 0) {
-      unit.atkCD = unit.atkSpd + (unit.paralyzeTimer > 0 ? 0.4 : 0) + (unit.slowTimer > 0 ? unit.atkSpd * 0.3 : 0);
+      unit.atkCD = unit.atkSpd + (unit.paralyzeTimer > 0 ? 0.4 : 0) + (unit.slowTimer > 0 ? unit.atkSpd * (1 - (unit.slowFactor || 0.7)) : 0);
       let dmg = unit.dmg;
       if (unit.canCharge && unit.charged) {
         dmg = Math.round(dmg * unit.chargeBonus);
@@ -803,14 +803,14 @@ function updateUnit(unit, dt) {
       unit._atkT = 0.30;
       spawnAttackFx(unit, unit.target);
       dealDamage(unit, unit.target, dmg);
-      if (unit.slow) unit.target.slowTimer = unit.slowDur || 1.5;
+      if (unit.slow) { unit.target.slowTimer = unit.slowDur || 1.5; unit.target.slowFactor = unit.slowPct ? (1 - unit.slowPct) : 0.7; }
       game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.2, maxLife:0.2, color:unit.color });
       // 冰霜塔（自创）：命中后给射程内所有敌方单位减速（范围光环）
       if (unit.model === 'frosttower') {
         const enemyOwner = unit.owner === 'player' ? 'ai' : 'player';
         for (const u of game.units) {
           if (u.owner !== enemyOwner || u.dead || u.hp <= 0) continue;
-          if (dist(unit, u) <= unit.range + (u.radius || 10)) u.slowTimer = unit.slowDur || 1.5;
+          if (dist(unit, u) <= unit.range + (u.radius || 10)) { u.slowTimer = unit.slowDur || 1.5; u.slowFactor = unit.slowPct ? (1 - unit.slowPct) : 0.7; }
         }
       }
       // 自爆单位（烈焰精灵）：造成范围伤害后自身消亡
@@ -828,7 +828,7 @@ function updateUnit(unit, dt) {
             if (unit.tgtType === 'ground' && u.flying) continue; // 地面单位溅射不波及空中（CR 规则）
             if (dist(unit, u) < unit.splash) {
               dealDamage(unit, u, unit.dmg);
-              if (unit.slow) u.slowTimer = unit.slowDur || 1.5;
+              if (unit.slow) { u.slowTimer = unit.slowDur || 1.5; u.slowFactor = unit.slowPct ? (1 - unit.slowPct) : 0.7; }
             }
           }
           // 自身为中心的旋风特效
@@ -840,7 +840,7 @@ function updateUnit(unit, dt) {
             if (unit.tgtType === 'ground' && u.flying) continue; // 地面单位溅射不波及空中（CR 规则）
             if (dist(unit.target, u) < unit.splash) {
               dealDamage(unit, u, unit.dmg);   // 溅射对范围内所有目标均为全额伤害（CR 规则）
-              if (unit.slow) u.slowTimer = unit.slowDur || 1.5;
+              if (unit.slow) { u.slowTimer = unit.slowDur || 1.5; u.slowFactor = unit.slowPct ? (1 - unit.slowPct) : 0.7; }
             }
           }
         }
@@ -920,7 +920,7 @@ function updateUnit(unit, dt) {
         let fdirX = dirX + av.x, fdirY = dirY + av.y;
         const nlen = Math.hypot(fdirX, fdirY) || 1;
         fdirX /= nlen; fdirY /= nlen;
-        const spdNow = (unit.canCharge ? unit.curSpd : unit.spd) * ((unit.slowTimer > 0 ? 0.7 : 1) * (unit.paralyzeTimer > 0 ? 0.85 : 1));
+        const spdNow = (unit.canCharge ? unit.curSpd : unit.spd) * ((unit.slowTimer > 0 ? (unit.slowFactor || 0.7) : 1) * (unit.paralyzeTimer > 0 ? 0.85 : 1));
         const step = spdNow * dt;
         unit.vx = fdirX * spdNow; unit.vy = fdirY * spdNow;
         let newX = unit.x + fdirX * step;
@@ -1701,7 +1701,7 @@ function makeUnit(owner, def, x, y) {
     slow: def.slow || false, suicide: def.suicide || false,
     color: def.color, icon: def.icon, radius: def.radius,
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
-    target: null, dead: false, stunTimer: 0, slowTimer: 0, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
+    target: null, dead: false, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
@@ -1711,7 +1711,7 @@ function makeUnit(owner, def, x, y) {
   };
 }
 
-// 骷髅气球坠毁：死亡伤害（对附近敌方建筑/塔）+ 投出骷髅兵，然后消失（CR 机制）
+// 气球坠毁：对附近敌方建筑/塔造成死亡伤害，然后消失（CR 机制：原版气球不额外召唤单位）
 function balloonDeath(b) {
   if (b.dead && b._balloonDone) return;
   b._balloonDone = true; b.dead = true;
@@ -1865,7 +1865,7 @@ function castSpell(owner, def, x, y) {
     topTargets: def.topTargets || 0, towerDmgMult: def.towerDmgMult || 0.35, root: def.root || 0,
     lane: def.lane || false, bandH: def.bandH || 28, knockback: def.knockback || 0,
     spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
-    quakeTicks: def.quakeTicks || 0, quakeTickInterval: def.quakeTickInterval || 0, quakeDuration: def.quakeDuration || 0,
+    quakeTicks: def.quakeTicks || 0, quakeTickInterval: def.quakeTickInterval || 0, quakeDuration: def.quakeDuration || 0, buildingDmg: def.buildingDmg || 0, towerDmgMult: def.towerDmgMult || 0.35, slowFactor: def.slowFactor || 0.5, slowDur: def.slowDur || 1.5,
     sx: kx, sy: ky,                                // 发射起点（国王塔）
     seed: Math.random() * 1000,                    // 每次施放的随机种子，避免多发轨迹完全重合
     timer: delay, maxTimer: delay
@@ -1892,9 +1892,13 @@ function updatePendingSpells(dt) {
       if (s.quakeTicks > 0) {
         game.spellFields.push({
           kind: 'quake', owner: s.owner, x: s.x, y: s.y, radius: s.radius, color: s.color,
-          tickDmg: (s.dmg || 0) / s.quakeTicks, tickInterval: s.quakeTickInterval || 0.8,
-          ticksLeft: s.quakeTicks, tickTimer: 0, stun: s.stun || 0,
-          timer: s.quakeDuration || 2.4, maxTimer: s.quakeDuration || 2.4
+          tickDmg: (s.dmg || 0) / s.quakeTicks,
+          tickBuildingDmg: (s.buildingDmg || 0) / s.quakeTicks,
+          towerMult: s.towerDmgMult || 0.35,
+          tickInterval: s.quakeTickInterval || 1.0,
+          ticksLeft: s.quakeTicks, tickTimer: 0,
+          slowFactor: s.slowFactor || 0.5, slowDur: s.slowDur || 1.5,
+          timer: s.quakeDuration || 3.0, maxTimer: s.quakeDuration || 3.0
         });
         game.pendingSpells.splice(i, 1);
         continue;
@@ -2013,24 +2017,29 @@ function updateSpellFields(dt) {
   for (let i = game.spellFields.length - 1; i >= 0; i--) {
     const f = game.spellFields[i];
     f.timer -= dt;
-    // ===== 震荡术：2.4s 内每 0.8s 震一次（落地立刻第一跳），共 3 跳，仅打地面，命中眩晕 0.5s，塔吃 35% =====
+    // ===== 震荡术：3s 内每 1s 震一次（落地立刻第一跳），共 3 跳；兵207/建筑711/塔132；仅打地面；命中减速 50% =====
     if (f.kind === 'quake') {
       f.tickTimer -= dt;
       if (f.ticksLeft > 0 && f.tickTimer <= 0) {
         f.ticksLeft--;
         f.tickTimer += f.tickInterval;
-        // 皇室战争：地震无差别命中范围内所有地面单位/塔（含双方），不按敌我过滤
+        // 皇室战争：地震无差别命中范围内所有地面单位/塔（含双方），不按敌我过滤；建筑吃专门的高额伤害
         for (const u of game.units) {
           if (u.hp <= 0) continue;
-          if (u.flying || u.underground) continue;          // 只震地面单位
+          if (u.flying || u.underground) continue;          // 只震地面单位（含建筑）
           if (Math.hypot(u.x - f.x, u.y - f.y) < f.radius) {
-            dealDamage({owner:f.owner}, u, f.tickDmg);
-            if (f.stun > 0) u.stunTimer = Math.max(u.stunTimer || 0, f.stun);
+            const dmg = u.isBuilding ? (f.tickBuildingDmg || 0) : (f.tickDmg || 0);
+            dealDamage({owner:f.owner}, u, dmg);
+            // 减速仅作用于非建筑单位（CR：地震对部队/英雄减速 50%，建筑不吃减速）
+            if (f.slowFactor && !u.isBuilding) {
+              u.slowTimer = Math.max(u.slowTimer || 0, f.slowDur || 1.5);
+              u.slowFactor = Math.min(u.slowFactor || 1, f.slowFactor);
+            }
           }
         }
         for (const t of game.towers) {
           if (t.hp <= 0) continue;
-          if (Math.hypot(t.x - f.x, t.y - f.y) < f.radius + 20) dealDamage({owner:f.owner}, t, f.tickDmg * 0.35);
+          if (Math.hypot(t.x - f.x, t.y - f.y) < f.radius + 20) dealDamage({owner:f.owner}, t, (f.tickDmg || 0) * (f.towerMult || 0.35));
         }
         game.effects.push({ type:'quakewave', x:f.x, y:f.y, life:0.55, maxLife:0.55, radius:f.radius, color:f.color });
       }
