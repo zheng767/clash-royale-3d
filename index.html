@@ -945,8 +945,6 @@ function resolveCollisions() {
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
         const a = arr[i], b = arr[j];
-        // 皇室战争式软碰撞：所有地面单位（含友军）都不重叠——仅做"防穿透"位置修正；
-        // 真正的"互卡"由 computeAvoidance 的侧向绕行化解，而非硬推，故友军也参与分离（解决"建模叠在一起"）
         const aR = a.isBuilding ? a.radius + 4 : a.radius;   // 建筑按真实占地(基座比半径略大)，避免单位陷进建筑
         const bR = b.isBuilding ? b.radius + 4 : b.radius;
         const minD = aR + bR;
@@ -954,21 +952,39 @@ function resolveCollisions() {
         let d = Math.hypot(dx, dy);
         if (d >= minD) continue;
         if (d < 0.0001) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy) || 1; }
-        const nx = dx / d, ny = dy / d;
+        const nx = dx / d, ny = dy / d;        // a→b 单位向量
         const overlap = minD - d;
-        const aFixed = a.spd === 0, bFixed = b.spd === 0;
-        if (aFixed && bFixed) {
-          a.x -= nx * overlap / 2; a.y -= ny * overlap / 2;
-          b.x += nx * overlap / 2; b.y += ny * overlap / 2;
-        } else if (aFixed) {
-          b.x += nx * overlap; b.y += ny * overlap;
-        } else if (bFixed) {
-          a.x -= nx * overlap; a.y -= ny * overlap;
+        // 各单位的本帧前进方向（vx/vy 由移动阶段写入；静止/固定者为 null）
+        const av = Math.hypot(a.vx, a.vy), bv = Math.hypot(b.vx, b.vy);
+        const avd = av > 1e-3 ? { x: a.vx / av, y: a.vy / av } : null;
+        const bvd = bv > 1e-3 ? { x: b.vx / bv, y: b.vy / bv } : null;
+        const aFixed = a.spd === 0 || avd === null;   // 固定建筑 / 本帧静止(原地攻击) → 不参与移动
+        const bFixed = b.spd === 0 || bvd === null;
+        // a 是否在朝 b 靠近、b 是否在朝 a 靠近（固定/静止者视为“在靠近”，触发径向顶开/挡停）
+        const aAppr = avd ? (avd.x * nx + avd.y * ny) : 1;
+        const bAppr = bvd ? (bvd.x * -nx + bvd.y * -ny) : 1;
+        const closing = aAppr > 0.05 && bAppr > 0.05;   // 两单位正在相互逼近(对撞/撞障碍)
+        // 侧向分离：去掉“沿前进方向”的分量，只保留垂直方向，避免把单位往回推导致来回抖
+        const lat = (px, py, vd) => { const al = px * vd.x + py * vd.y; return [px - al * vd.x, py - al * vd.y]; };
+        let pa, pb;
+        if (closing) {
+          // 对撞 / 撞固定障碍：沿连线径向顶开（皇室战争的 body block，单位被挡停而非穿透）
+          pa = [-nx, -ny]; pb = [nx, ny];
         } else {
-          // 标准对称分离(皇室战争的 body block)：两单位沿连线互推，
-          // 各自仍保留前进意图，靠碰撞把彼此横向挤开而非排队
-          a.x -= nx * overlap / 2; a.y -= ny * overlap / 2;
-          b.x += nx * overlap / 2; b.y += ny * overlap / 2;
+          // 同向跟随 / 平行：仅沿各自前进方向的垂向滑开，绝不把单位往回推(解决“互相挤来挤去”)
+          pa = avd ? lat(-nx, -ny, avd) : [-nx, -ny];
+          pb = bvd ? lat(nx, ny, bvd) : [nx, ny];
+        }
+        if (aFixed && bFixed) {
+          a.x += pa[0] * overlap / 2; a.y += pa[1] * overlap / 2;
+          b.x += pb[0] * overlap / 2; b.y += pb[1] * overlap / 2;
+        } else if (aFixed) {
+          b.x += pb[0] * overlap; b.y += pb[1] * overlap;
+        } else if (bFixed) {
+          a.x += pa[0] * overlap; a.y += pa[1] * overlap;
+        } else {
+          a.x += pa[0] * overlap / 2; a.y += pa[1] * overlap / 2;
+          b.x += pb[0] * overlap / 2; b.y += pb[1] * overlap / 2;
         }
         if (!aFixed) { const c = clampToRiverBank(a, a.x, a.y); a.x = c.x; a.y = c.y; }
         if (!bFixed) { const c = clampToRiverBank(b, b.x, b.y); b.x = c.x; b.y = c.y; }
@@ -2832,6 +2848,17 @@ function addUnitCommon(g, u, r) {
   frame.position.set(0, barY - 1.2, 0); bg.position.set(0, barY, 0); fg.position.set(0, barY + 1.2, 0);
   g.add(frame); g.add(bg); g.add(fg);
   g.userData.fg = fg; g.userData.barW = barW;
+  // 骷髅帝王·亡魂能量条：与血条等长、对齐，置于血条正下方；空时为白色轨道，蓝条随亡魂收集逐渐填满
+  if (u.heroType === 'skeletonking') {
+    const eW = barW;
+    const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 6, 1.4, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, 1.4, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, 1.8, 6), new THREE.MeshBasicMaterial({ color: 0x2196F3 }));
+    const eY = barY - 4.5;
+    eFrame.position.set(0, eY - 1.2, 0); eBg.position.set(0, eY, 0); eFg.position.set(0, eY + 1.2, 0);
+    g.add(eFrame); g.add(eBg); g.add(eFg);
+    g.userData.energyFg = eFg; g.userData.energyW = eW; g.userData.energyMax = 15;  // 技能最多召唤 15 只骷髅
+  }
   const label = makeLabel(u.icon || u.name.charAt(0), u.owner === 'player' ? '#b8ffd0' : '#ffc2c2');
   label.position.set(0, -14, 0); g.add(label);
   // 藤蔓定身缠绕可视化（默认隐藏，rootTimer>0 时显示，表现被藤蔓捆绑）
@@ -2943,6 +2970,13 @@ function updateUnitMesh(m, u) {
   const ratio = Math.max(0, u.hp / u.maxHp);
   const fg = ud.fg, barW = ud.barW;
   if (fg) { fg.scale.x = ratio; fg.position.x = -barW/2 + (barW*ratio)/2; }
+  // 骷髅帝王·亡魂能量条：蓝条按 亡魂/15 比例从左侧填满（与血条等长对齐），空时仅显示白色轨道
+  if (ud.energyFg) {
+    const efrac = Math.max(0, Math.min(1, (u.souls || 0) / ud.energyMax));
+    ud.energyFg.scale.x = Math.max(0.0001, efrac);
+    ud.energyFg.position.x = -ud.energyW/2 + (ud.energyW * efrac) / 2;
+    ud.energyFg.visible = efrac > 0.002;
+  }
 }
 // 按 atk 分类型的攻击姿态（p: 0→1 攻击进程）
 function animateAttack(ud, u, p) {
