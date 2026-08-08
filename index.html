@@ -2848,14 +2848,14 @@ function addUnitCommon(g, u, r) {
   frame.position.set(0, barY - 1.2, 0); bg.position.set(0, barY, 0); fg.position.set(0, barY + 1.2, 0);
   g.add(frame); g.add(bg); g.add(fg);
   g.userData.fg = fg; g.userData.barW = barW;
-  // 骷髅帝王·亡魂能量条：与血条等长、对齐，置于血条正下方；空时为白色轨道，蓝条随亡魂收集逐渐填满
+  // 骷髅帝王·亡魂能量条：置于血条正上方、紧贴；空态为白色轨道(深色描边保证可见)，蓝条随亡魂收集从左侧逐渐填满；宽度=血条 2/3；满 15 亡魂时恰好蓄满
   if (u.heroType === 'skeletonking') {
-    const eW = barW;
-    const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 6, 1.4, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, 1.4, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, 1.8, 6), new THREE.MeshBasicMaterial({ color: 0x2196F3 }));
-    const eY = barY - 4.5;
-    eFrame.position.set(0, eY - 1.2, 0); eBg.position.set(0, eY, 0); eFg.position.set(0, eY + 1.2, 0);
+    const eW = Math.round(barW * 2 / 3);
+    const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 6, 1.6, 8), new THREE.MeshBasicMaterial({ color: 0x37474F }));
+    const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, 1.6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, 2.0, 6), new THREE.MeshBasicMaterial({ color: 0x2196F3 }));
+    const eY = barY + 4.0;   // 血条正上方、紧贴（HP 条顶约 barY+2.1，能量条底约 eY-2.0，几乎无间隙）
+    eFrame.position.set(0, eY - 1.4, 0); eBg.position.set(0, eY, 0); eFg.position.set(0, eY + 1.4, 0);
     g.add(eFrame); g.add(eBg); g.add(eFg);
     g.userData.energyFg = eFg; g.userData.energyW = eW; g.userData.energyMax = 15;  // 技能最多召唤 15 只骷髅
   }
