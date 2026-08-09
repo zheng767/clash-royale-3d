@@ -1674,18 +1674,33 @@ function playCard(owner, cardKey, x, y) {
   } else {
     const n = def.count;
     if (n > 1) {
-      const spread = Math.min(62, 18 + n * 3.2);
-      for (let i = 0; i < n; i++) {
-        const ang = (i / n) * Math.PI * 2;
-        const ox = Math.cos(ang) * spread + (Math.random()-0.5)*6;
-        const oy = Math.sin(ang) * spread + (Math.random()-0.5)*6;
-        let ux = x + ox, uy = y + oy;
-        // 多单位展开也不允许掉进河道
-        if (!def.deployAnywhere && uy > RIVER_TOP && uy < RIVER_BOT) {
-          uy = (uy < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;
+      if (def.model === 'royalhog') {
+        // 郝思涵(皇家野猪)：CR 式横向一字排开，四猪平行、并列前进（不搞菱形/分散）
+        const gap = Math.max(30, def.radius * 2.3);
+        const totalW = gap * (n - 1);
+        for (let i = 0; i < n; i++) {
+          const ox = -totalW / 2 + gap * i;
+          let ux = x + ox, uy = y;
+          if (!def.deployAnywhere && uy > RIVER_TOP && uy < RIVER_BOT) {
+            uy = (uy < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;
+          }
+          const u = makeUnit(owner, def, ux, uy);
+          game.units.push(u);
         }
-        const u = makeUnit(owner, def, ux, uy);
-        game.units.push(u);
+      } else {
+        const spread = Math.min(62, 18 + n * 3.2);
+        for (let i = 0; i < n; i++) {
+          const ang = (i / n) * Math.PI * 2;
+          const ox = Math.cos(ang) * spread + (Math.random()-0.5)*6;
+          const oy = Math.sin(ang) * spread + (Math.random()-0.5)*6;
+          let ux = x + ox, uy = y + oy;
+          // 多单位展开也不允许掉进河道
+          if (!def.deployAnywhere && uy > RIVER_TOP && uy < RIVER_BOT) {
+            uy = (uy < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;
+          }
+          const u = makeUnit(owner, def, ux, uy);
+          game.units.push(u);
+        }
       }
     } else {
       const u = makeUnit(owner, def, x, y);
@@ -2864,8 +2879,12 @@ function addUnitCommon(g, u, r) {
     const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 6, 1.6, 8), new THREE.MeshBasicMaterial({ color: 0x37474F }));
     const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, 1.6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, 2.0, 6), new THREE.MeshBasicMaterial({ color: 0x2196F3 }));
-    const eY = barY + 4.0;   // 血条正上方、紧贴（HP 条顶约 barY+2.1，能量条底约 eY-2.0，几乎无间隙）
-    eFrame.position.set(0, eY - 1.4, 0); eBg.position.set(0, eY, 0); eFg.position.set(0, eY + 1.4, 0);
+    // 蓝条在血条正上方、严格不重叠：血条(绿/红填充)上沿 = barY+2.1；蓝条边框底沿与之贴合，三片由下往上依次衔接（边框→白底→蓝条）
+    const hpTop = barY + 2.1;                 // 血条上沿（fg 顶端）
+    const eFrameY = hpTop + 0.8;              // 蓝条边框(高1.6)底沿严格 = 血条上沿
+    const eBgY = eFrameY + 1.6;              // 白底(高1.6)底沿 = 边框顶沿
+    const eFgY = eBgY + 1.8;                  // 蓝条(高2.0)底沿 = 白底顶沿
+    eFrame.position.set(0, eFrameY, 0); eBg.position.set(0, eBgY, 0); eFg.position.set(0, eFgY, 0);
     g.add(eFrame); g.add(eBg); g.add(eFg);
     g.userData.energyFg = eFg; g.userData.energyW = eW; g.userData.energyMax = 15;  // 技能最多召唤 15 只骷髅
   }
