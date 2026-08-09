@@ -252,7 +252,7 @@ const CARD_DEFS = {
   zap:        { name:'电击法术', cost:2, type:'spell', dmg:192, radius:53, stun:0.5, color:'#FFEB3B', icon:'电', delay:0.4, spellFx:'lightning', towerDmgMult:0.30 },
   freeze:     { name:'冰冻法术', cost:4, type:'spell', dmg:71, radius:64, stun:4.0, color:'#81D4FA', icon:'冻', delay:0.6, spellFx:'freeze', towerDmgMult:0.310 },
   minionhorde:{ name:'亡灵大军', cost:5, hp:230, dmg:107, range:34, spd:21.25, atkSpd:1.1, tgt:'any', count:6, color:'#37474F', icon:'亡', radius:9, flying:true, deployTime:1.0, model:'minion', atk:'claw' },
-  skeletonballoon: { name:'骷髅气球', cost:5, hp:1049, dmg:0, range:18, spd:31.875, atkSpd:1.0, tgt:'building', count:1, color:'#E0E0E0', icon:'骷球', radius:13, flying:true, deployTime:1.0, isBalloon:true, deathDmg:150, deathRadius:42, model:'balloon', atk:'none' },
+  skeletonballoon: { name:'骷髅气球', cost:5, hp:1049, dmg:0, range:18, spd:31.875, atkSpd:1.0, tgt:'building', count:1, color:'#E0E0E0', icon:'骷球', radius:13, flying:true, deployTime:1.0, isBalloon:true, deathDmg:150, deathRadius:42, spawnCard:'skeletons', spawnCount:7, model:'balloon', atk:'none' },
   prince:     { name:'王子', cost:5, hp:1200, dmg:244, range:34, spd:21.25, atkSpd:1.4, tgt:'ground', count:1, color:'#FBC02D', icon:'王', radius:15, deployTime:1.0, canCharge:true, chargeMaxSpd:42.5, chargeAccel:150, chargeBonus:2.0, chargeWindup:0.55, model:'prince', atk:'lance' },
   icewizard:  { name:'小邴', cost:3, hp:570, dmg:74, range:117, spd:21.25, atkSpd:1.7, tgt:'any', count:1, color:'#4FC3F7', icon:'邴', radius:13, splash:32, deployTime:1.0, slow:true, slowPct:0.30, slowDur:2.5, spawnDamage:69, spawnSlow:true, model:'icewizard', atk:'ice' },
   vines:      { name:'藤蔓法术', cost:2, type:'spell', dmg:184, radius:64, color:'#2E7D32', icon:'藤', delay:0.4, spellFx:'vines', root:2.0, groundOnly:false, rootTop:2 },
@@ -665,16 +665,24 @@ function effectiveRangeOf(unit, target) {
 }
 
 // 河道碰撞检查：非跳跃单位不能进入河道深水（除非在桥的 X 通道内）
+// 战场边界夹取：把单位中心限制在场内(留半径余量，保证整只模型不探出战场)。所有移动/分离出口都经过它。
+function clampToArena(unit, x, y) {
+  const m = (unit.radius || 12) + 4;   // 留 4px 余量，模型前向略超出碰撞半径也能完整在场内
+  return {
+    x: Math.max(m, Math.min(400 - m, x)),
+    y: Math.max(m, Math.min(680 - m, y))
+  };
+}
 function clampToRiverBank(unit, newX, newY) {
-  if (unit.flying || unit.canJumpRiver) return { x: newX, y: newY };
+  if (unit.flying || unit.canJumpRiver) return clampToArena(unit, newX, newY);
   // 不在河道 Y 范围：自由移动
-  if (newY < RIVER_TOP || newY > RIVER_BOT) return { x: newX, y: newY };
+  if (newY < RIVER_TOP || newY > RIVER_BOT) return clampToArena(unit, newX, newY);
   // 在河道 Y 范围内：检查是否落在某座桥的 X 通道内
   // 桥道走廊（视觉宽度，BRIDGE_HALF）内 = 合法桥面，自由通行
   const onBridgeL = Math.abs(newX - BRIDGE_L.x) <= BRIDGE_HALF;
   const onBridgeR = Math.abs(newX - BRIDGE_R.x) <= BRIDGE_HALF;
   if (onBridgeL || onBridgeR) {
-    return { x: newX, y: newY };
+    return clampToArena(unit, newX, newY);
   }
   // 缓冲带（走廊外、BRIDGE_TOL 内）：是碰撞推挤造成的轻微出界，把 X 拉回桥道边缘，
   // 不踢下河（避免桥头反复抖动/卡死），让单位继续并排过桥
@@ -682,15 +690,15 @@ function clampToRiverBank(unit, newX, newY) {
   const nearR = Math.abs(newX - BRIDGE_R.x) <= BRIDGE_TOL && Math.abs(unit.x - BRIDGE_R.x) <= BRIDGE_TOL;
   if (nearL) {
     const edge = BRIDGE_L.x + (newX < BRIDGE_L.x ? -BRIDGE_HALF : BRIDGE_HALF);
-    return { x: edge, y: newY };
+    return clampToArena(unit, edge, newY);
   }
   if (nearR) {
     const edge = BRIDGE_R.x + (newX < BRIDGE_R.x ? -BRIDGE_HALF : BRIDGE_HALF);
-    return { x: edge, y: newY };
+    return clampToArena(unit, edge, newY);
   }
   // 真的在河道深水（远离任何桥）：夹到最近的河岸，单位会通过寻路自然沿河岸走向最近的桥
   const bankY = unit.y < (RIVER_TOP + RIVER_BOT) / 2 ? RIVER_TOP : RIVER_BOT;
-  return { x: newX, y: bankY };
+  return clampToArena(unit, newX, bankY);
 }
 
 // ==================== 单位更新 ====================
@@ -1703,7 +1711,9 @@ function playCard(owner, cardKey, x, y) {
 function makeUnit(owner, def, x, y) {
   const isMiner = !!(def.digTime);
   const kingX = CENTER_X, kingY = owner === 'player' ? KING_Y_P : KING_Y_AI;
-  const sx = isMiner ? kingX : x, sy = isMiner ? kingY : y;
+  const _m = (def.radius || 12) + 4;   // 出生即夹进战场(防止任何异常坐标单位出现在界外)
+  const sx = isMiner ? kingX : Math.max(_m, Math.min(400 - _m, x));
+  const sy = isMiner ? kingY : Math.max(_m, Math.min(680 - _m, y));
   return {
     owner, card: def.name, x: sx, y: sy,
     hp: def.hp, maxHp: def.hp, dmg: def.dmg, range: def.range,
@@ -2848,9 +2858,9 @@ function addUnitCommon(g, u, r) {
   frame.position.set(0, barY - 1.2, 0); bg.position.set(0, barY, 0); fg.position.set(0, barY + 1.2, 0);
   g.add(frame); g.add(bg); g.add(fg);
   g.userData.fg = fg; g.userData.barW = barW;
-  // 骷髅帝王·亡魂能量条：置于血条正上方、紧贴；空态为白色轨道(深色描边保证可见)，蓝条随亡魂收集从左侧逐渐填满；宽度=血条 2/3；满 15 亡魂时恰好蓄满
+  // 骷髅帝王·亡魂能量条：置于血条正上方、紧贴；空态为白色轨道(深色描边保证可见)，蓝条随亡魂收集从左侧逐渐填满；宽度=血条同长(对齐)；满 15 亡魂时恰好蓄满
   if (u.heroType === 'skeletonking') {
-    const eW = Math.round(barW * 2 / 3);
+    const eW = barW;
     const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 6, 1.6, 8), new THREE.MeshBasicMaterial({ color: 0x37474F }));
     const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, 1.6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, 2.0, 6), new THREE.MeshBasicMaterial({ color: 0x2196F3 }));
