@@ -2909,16 +2909,16 @@ function addUnitCommon(g, u, r) {
   frame.position.set(0, barY - 1.2, 0); bg.position.set(0, barY, 0); fg.position.set(0, barY + 1.2, 0);
   g.add(frame); g.add(bg); g.add(fg);
   g.userData.fg = fg; g.userData.barW = barW;
-  // 骷髅帝王·亡魂能量条：水平长度=血条同长(barW)；垂直厚度=血条填充(1.8)的 2/3(=1.2)；位于血条正上方、与血条之间留明显间隙 GAP、零接触零重叠；蓝条随亡魂从左侧填满；满 15 亡魂时蓄满
+  // 骷髅帝王·亡魂能量条：水平长度=血条同长(barW)；厚度(沿 Z 渲染成屏幕竖直高度)=血条填充(1.8)的 2/3(=1.2)；位于血条正上方、留约 4~5px 可见间隙、零接触零重叠；蓝条随亡魂从左侧填满；满 15 亡魂时蓄满
   if (u.heroType === 'skeletonking') {
     const eW = barW;                  // 水平长度 = 血条
-    const eT = 1.2;                   // 垂直厚度 = 血条填充(1.8)的 2/3
-    const GAP = 3;                    // 蓝条底沿与血条上沿之间的可见间隙，确保完全分离
+    const eT = 1.2;                   // 厚度(屏幕竖直方向) = 血条填充(1.8)的 2/3
+    const GAPZ = 13;                  // 沿世界 -Z(屏幕上方)偏移：相机近俯视，屏幕上下由 Z 决定、Y 几乎无效，故必须用 Z 偏移才能肉眼分开两片条
     const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 4, eT + 0.6, 8), new THREE.MeshBasicMaterial({ color: 0x37474F }));
     const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0x2196F3 }));
-    const eY = barY + 2.1 + GAP + (eT + 0.6) / 2;   // 能量条整体抬到血条上方 GAP 处，底沿=血条上沿+GAP，不接触
-    eFrame.position.set(0, eY, 0); eBg.position.set(0, eY, 0); eFg.position.set(0, eY, 0);
+    const eY = barY;                  // 与血条同高度，靠 Z 偏移制造屏幕上下的分离
+    eFrame.position.set(0, eY, -GAPZ); eBg.position.set(0, eY, -GAPZ); eFg.position.set(0, eY, -GAPZ);
     g.add(eFrame); g.add(eBg); g.add(eFg);
     g.userData.energyFg = eFg; g.userData.energyW = eW; g.userData.energyMax = 15;  // 技能最多召唤 15 只骷髅
   }
