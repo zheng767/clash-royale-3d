@@ -271,11 +271,14 @@ const CARD_DEFS = {
   //   机制：滚动法术——从落点向敌方滚出 rollDist(10.1格, 2020-08-04 官方 11.1→10.1)，宽度 rollWidth(3.9格)，滚动时长 rollTime(1.0s ≈ CR 10格/秒)，沿途碾过并击退地面单位（含建筑/塔，塔吃15%减伤）
   log:        { name:'复仇滚木', cost:2, type:'spell', dmg:266, color:'#8D6E63', icon:'滚', spellFx:'log', groundOnly:true, rolling:true, rollDist:10.1*TILE, rollWidth:3.9*TILE, rollTime:1.0, radius:13, knockback:1*TILE, towerDmgMult:40/266 },
   dartgoblin: { name:'吹箭哥布林', cost:3, hp:216, dmg:129, range:138, spd:42.5, atkSpd:0.7, tgt:'any', count:1, color:'#AFB42B', icon:'镖', radius:11, deployTime:1.0, model:'dartgoblin', atk:'blow' },
-  skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:1, skill2Cost:0 },
+  skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:2, skill2Cost:0 },
   tianci:     { name:'天赐', inGameName:'赐', cost:4, hp:1344, dmg:172, range:22, spd:21.25, atkSpd:1.7, tgt:'ground', count:1, color:'#FFF3B0', icon:'赐', radius:14, deployTime:1.0, isHero:true, heroType:'tianci', model:'tianci', atk:'angel', skill1Cost:4, skill2Cost:0 },
   // ===== 原版新增：坎（2026-08-10 用户要求改为近战单位，攻击距离参考 CR 浪人 Ronin 近战 0.7 格≈15px；其余数值沿用皇家冠军）=====
   //   5 费 / HP1455 / 伤害348 / 近战射程15(≈0.7格,同浪人) / 攻速1.5 / 只对地 / 中等移速；atk:'spear'(近战劈砍特效) / 技能为自定义「镜反结界」
-  kan:        { name:'坎', cost:5, hp:1455, dmg:348, range:15, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 }
+  kan:        { name:'坎', cost:5, hp:1455, dmg:348, range:15, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 },
+  // ===== 原版卡牌：野蛮人滚筒（Battle Ram，CR 锦标赛 L11 普通卡，机制与数值严格还原；数值待核对）=====
+  //   3 费 / 2 单位 / HP264(每滚筒) / 撞击伤害340(对建筑) / 只攻建筑 / Very Fast(42.5,同野猪骑士) / 冲锋撞建筑后碎裂投出1野蛮人(用 barbarians 单只数值)
+  battleram:  { name:'野蛮人滚筒', cost:3, hp:264, dmg:340, range:13, spd:42.5, atkSpd:1.0, tgt:'building', count:2, color:'#8D6E63', icon:'滚', radius:14, deployTime:1.0, model:'battleram', atk:'ram', isRam:true, spawnCard:'barbarians', spawnCount:1, previewLine:true }
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
@@ -285,7 +288,7 @@ const QUALITY = {
   minionhorde:'common', babydragon:'common', barbarians:'common', cannon:'common', tesla:'common',
   flamesprite:'common', royalgiant:'common', hogrider:'common', haosihan:'common', healtotem:'common',
   frosttower:'common', zap:'common', arrows:'common', vines:'common', skarmy:'common',
-  skeletonballoon:'common', stormsentinel:'common', flamemage:'common', log:'common',
+  skeletonballoon:'common', stormsentinel:'common', flamemage:'common', log:'common', battleram:'common',
   // 稀有 Rare
   minipekka:'rare', valkyrie:'rare', wizard:'rare', rocket:'rare', dartgoblin:'rare', fisherman:'rare', miner:'rare', pekka:'rare',
   // 史诗 Epic
@@ -298,7 +301,7 @@ const QUALITY = {
 const QUALITY_COLORS = { common:'#cfd8dc', rare:'#FF9800', epic:'#9C27B0', legendary:'#FFD700', champion:'#FF4081' };
 const QUALITY_LABELS = { common:'普通', rare:'稀有', epic:'史诗', legendary:'传奇', champion:'英雄' };
 for (const k in CARD_DEFS) { if (CARD_DEFS[k]) CARD_DEFS[k].quality = QUALITY[k] || 'common'; }
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -751,6 +754,8 @@ function updateUnit(unit, dt) {
     unit.deployTimer -= dt;
     return;
   }
+  // 骷髅帝王技能1冷却倒计时（每帧递减）
+  if (unit.heroType === 'skeletonking' && unit.skill1CD > 0) unit.skill1CD = Math.max(0, unit.skill1CD - dt);
   // 麻痹：被雷电命中后短暂眩晕，不能移动和攻击
   if (unit.stunTimer > 0) {
     unit.stunTimer -= dt;
@@ -829,6 +834,28 @@ function updateUnit(unit, dt) {
   const effectiveRange = unit.range + (moveDest.w ? moveDest.w/2 : moveDest.radius || 10);
   // 骷髅气球：飞到建筑/塔射程内即“坠毁”，死亡伤害 + 投出骷髅兵（CR 机制）
   if (unit.isBalloon && unit.target && d <= effectiveRange) { balloonDeath(unit); return; }
+  // 野蛮人滚筒：冲到建筑射程内即“撞击并碎裂”，造成撞击伤害 + 投出野蛮人（CR 机制）
+  if (unit.isRam && unit.target && d <= effectiveRange) {
+    dealDamage(unit, unit.target, unit.dmg);
+    game.effects.push({ type:'ramcrash', x:unit.x, y:unit.y, life:0.4, maxLife:0.4, color:'#8D6E63', radius:unit.radius*2.4 });
+    if (!unit._ramDone) {
+      unit._ramDone = true; unit.dead = true;
+      if (unit.spawnCard) {
+        const sdef = CARD_DEFS[unit.spawnCard];
+        if (sdef) {
+          const n = unit.spawnCount, spread = Math.min(48, 12 + n * 3.2);
+          for (let k = 0; k < n; k++) {
+            const ang = (k / n) * Math.PI * 2;
+            const ox = Math.cos(ang) * spread + (Math.random() - 0.5) * 5;
+            const oy = Math.sin(ang) * spread + (Math.random() - 0.5) * 5;
+            const pos = clampToRiverBank(unit, unit.x + ox, unit.y + oy);
+            game.units.push(makeUnit(unit.owner, sdef, pos.x, pos.y));
+          }
+        }
+      }
+    }
+    return;
+  }
   if (unit.dmg > 0 && unit.target && d <= effectiveRange) {
     // ===== 有锁定目标、在攻击范围内、且已到达对岸：停下攻击 =====
     unit.atkCD -= dt;
@@ -1445,7 +1472,7 @@ function updateAI(dt) {
   const aiHero = game.ai.hero;
   if (aiHero && !aiHero.dead && aiHero.hp > 0 && aiHero.deployTimer <= 0) {
     const aMeta = (HERO_SKILLS[aiHero.heroType] || HERO_SKILLS.tian);
-    if (aMeta[1] && game.ai.elixir >= aiHero.skill1Cost) {
+    if (aMeta[1] && game.ai.elixir >= aiHero.skill1Cost && (aiHero.heroType !== 'skeletonking' || (aiHero.skill1CD || 0) <= 0)) {
       const foes = game.units.filter(u => u.owner === 'player' && u.hp > 0 && dist(u, aiHero) < 150);
       const threatened = foes.length > 0 || aiHero.hp < aiHero.maxHp * 0.6;
       if (threatened) triggerHeroSkill('ai', 1);
@@ -1789,8 +1816,8 @@ function makeUnit(owner, def, x, y) {
     digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
-    isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0,
-    hookWindup: 0, rootTimer: 0, souls: 0, reflectTimer: 0, skillUsed: { 1: false, 2: false },
+    isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0, isRam: def.isRam || false,
+    hookWindup: 0, rootTimer: 0, souls: 0, skill1CD: 0, reflectTimer: 0, skillUsed: { 1: false, 2: false },
     _atkT: 0, _lunge: 0, _spin: 0
   };
 }
@@ -1828,7 +1855,7 @@ function balloonDeath(b) {
 // 英雄技能按 heroType 分发（天 / 骷髅帝王 各自实现）
 const HERO_SKILLS = {
   tian:         { name:'天', 1: heroSkill_tian_1,   2: heroSkill_tian_2, s1name:'定身', s1cost:2, s2name:'分身', s2cost:3 },
-  skeletonking: { name:'骷髅帝王', 1: heroSkill_skeletonking, 2: null, s1name:'亡魂召唤', s1cost:1, s2name:null, s2cost:0 },
+  skeletonking: { name:'骷髅帝王', 1: heroSkill_skeletonking, 2: null, s1name:'亡魂召唤', s1cost:2, s1cd:20, s2name:null, s2cost:0 },
   tianci:       { name:'天赐', 1: heroSkill_tianci_1, 2: null, s1name:'天恩护盾', s1cost:4, s2name:null, s2cost:0 },
   kan:          { name:'坎', 1: heroSkill_kan_1, 2: null, s1name:'镜反结界', s1cost:3, s2name:null, s2cost:0 }
 };
@@ -1836,8 +1863,14 @@ function triggerHeroSkill(side, which) {   // 通用分发：玩家 / AI 共用
   const h = game[side].hero;
   if (!h || h.dead || h.hp <= 0) return;
   if (!h.skillUsed) h.skillUsed = { 1: false, 2: false };
-  if (h.skillUsed[which]) return;          // 每张英雄卡每局（直到单位死亡）技能只能用一次
   const meta = (HERO_SKILLS[h.heroType] || HERO_SKILLS.tian);
+  // 骷髅帝王技能1：可重复释放，受 20 秒冷却限制；其余英雄每局一次性
+  const useCD = (which === 1 && h.heroType === 'skeletonking' && meta.s1cd);
+  if (useCD) {
+    if (h.skill1CD > 0) return;
+  } else {
+    if (h.skillUsed[which]) return;          // 每张英雄卡每局（直到单位死亡）技能只能用一次
+  }
   if (which === 1) {
     if (game[side].elixir < h.skill1Cost) return;
     const fn = meta[1]; if (!fn) return;
@@ -1847,7 +1880,11 @@ function triggerHeroSkill(side, which) {   // 通用分发：玩家 / AI 共用
     const fn = meta[2]; if (!fn) return;
     game[side].elixir -= h.skill2Cost; meta[2](h);
   }
-  h.skillUsed[which] = true;
+  if (useCD) {
+    h.skill1CD = meta.s1cd;
+  } else {
+    h.skillUsed[which] = true;
+  }
   game.effects.push({ type:'skillflash', x:h.x, y:h.y, life:0.4, maxLife:0.4, radius:h.radius*2.2, color:'#ECEFF1' });
 }
 function heroSkill1() { triggerHeroSkill('player', 1); }
@@ -2590,6 +2627,12 @@ function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, sk
     case 'dartgoblin': {
       for (const sx of [-1, 1]) { const ear = _cone(headR * 0.4, headR * 0.95, _mat(0xAFB42B), 6); ear.position.set(sx * headR * 0.9, hy + headR * 0.3, 0); parent.add(ear); }
       const eye = _sph(headR * 0.16, _mat(0x111111)); eye.position.set(0, hy + headR * 0.1, headR * 0.85); parent.add(eye); break; }
+    case 'battleram': {
+      // 野蛮人滚筒：棕色木桶(圆柱)罩住躯干 + 顶部野蛮人(头+双角)
+      const drum = _cyl(headR * 1.05, headR * 1.05, headR * 1.8, _mat(0x8D6E63), 14); drum.position.y = hy - headR * 0.1; parent.add(drum);
+      const bhead = _sph(headR * 0.8, _mat(0xFFCC99)); bhead.position.y = hy + headR * 1.1; parent.add(bhead);
+      for (const sx of [-1, 1]) { const horn = _cone(headR * 0.25, headR * 0.7, _mat(0xeeeeee), 6); horn.position.set(sx * headR * 0.7, hy + headR * 1.6, 0); parent.add(horn); }
+      break; }
     case 'skeletonking': {
       // 骷髅脸 + 金色王冠（CR 骷髅帝王）
       for (const sx of [-1, 1]) { const eye = _sph(headR * 0.2, _mat(0x111111)); eye.position.set(sx * headR * 0.35, hy + headR * 0.1, headR * 0.85); parent.add(eye); }
@@ -3207,6 +3250,17 @@ function updateDeployZone() {
         const dir = -1;   // 玩家部署：滚木朝敌方(上)滚动
         const len = def.rollDist, wid = def.rollWidth;
         const c = inField ? new THREE.Color(def.color || '#8d6e63') : new THREE.Color('#ff3b30');
+        spellLaneMesh.visible = true;
+        spellLaneMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340 + dir * len / 2);
+        spellLaneMesh.scale.set(wid, 1, len);
+        spellLaneBorder.material.color.copy(c); spellLaneFill.material.color.copy(c);
+        spellLaneBorder.material.opacity = 0.5 + 0.25 * Math.sin(t * 6);
+        spellLaneFill.material.opacity = inField ? 0.16 + 0.05 * Math.sin(t * 6) : 0.28;
+      } else if (def.previewLine) {
+        // 野蛮人滚筒：冲锋范围预演（参考滚木样式）——从落点朝敌方延伸一条直线矩形；宽=滚筒碰撞宽(对齐CR滚筒碰撞盒≈1.3格)，长=冲锋可视距离(10格)
+        const dir = -1;
+        const wid = (def.radius * 2) || 28, len = 10 * TILE;
+        const c = inField ? new THREE.Color(def.color || '#8D6E63') : new THREE.Color('#ff3b30');
         spellLaneMesh.visible = true;
         spellLaneMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340 + dir * len / 2);
         spellLaneMesh.scale.set(wid, 1, len);
@@ -3923,7 +3977,8 @@ function updateSkillBar() {
   if (hero.skillUsed[1]) {
     s1label = (hero.heroType === 'kan' && hero.reflectTimer > 0) ? `${meta.s1name}(${hero.reflectTimer.toFixed(1)}s)` : `${meta.s1name}(已用)`;
   } else if (hero.heroType === 'skeletonking') {
-    s1label = `${meta.s1name}(${hero.souls || 0})`;
+    if (hero.skill1CD > 0) s1label = `${meta.s1name}(冷却${hero.skill1CD.toFixed(1)}s)`;
+    else s1label = `${meta.s1name}(${hero.souls || 0})`;
   } else if (hero.heroType === 'kan' && hero.reflectTimer > 0) {
     s1label = `${meta.s1name}(${hero.reflectTimer.toFixed(1)}s)`;
   } else {
@@ -3933,7 +3988,9 @@ function updateSkillBar() {
   const hasS2 = hero.skill2Cost > 0 && meta.s2name;
   if (hasS2) { s2.style.display = ''; s2.innerHTML = `${meta.s2name}<span class="sk-cost">${hero.skill2Cost}</span><span class="sk-key">2</span>`; }
   else { s2.style.display = 'none'; }
-  const e1 = game.player.elixir >= (hero.skill1Cost || 2) && !hero.skillUsed[1];
+  const e1 = (hero.heroType === 'skeletonking')
+    ? (game.player.elixir >= (hero.skill1Cost || 2) && (hero.skill1CD || 0) <= 0)
+    : (game.player.elixir >= (hero.skill1Cost || 2) && !hero.skillUsed[1]);
   const e2 = hasS2 && game.player.elixir >= hero.skill2Cost && !hero.skillUsed[2];
   s1.classList.toggle('disabled', !e1);
   if (hasS2) s2.classList.toggle('disabled', !e2);
