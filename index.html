@@ -662,19 +662,22 @@ function getMoveTarget(unit, dest) {
   const unitBot = unit.y >= RIVER_BOT;
   const destTop = dest.y <= RIVER_TOP;
   const destBot = dest.y >= RIVER_BOT;
-  // 同侧（含都不在河里）：直接走目标
-  if (unitTop === destTop && unitBot === destBot) return { x: dest.x, y: dest.y };
-  // 需要过河：皇室战争采用「先走到最近桥的桥口、再直行过桥」的两段寻路。
-  // 不锁定桥道走廊、不强制纵向——单位按各自落点自然分布在桥面，靠碰撞互相挤开(而非排队)。
-  const aligned = Math.abs(unit.x - bridge.x) <= BRIDGE_HALF;
+  // 同侧（含都不在河里）：直接走目标，并解除过桥提交状态
+  if (unitTop === destTop && unitBot === destBot) { unit.bridgeCommitted = false; return { x: dest.x, y: dest.y }; }
+  // 需要过河：皇室战争采用「先沿本侧河岸走到最近桥的桥口、再直行过桥」的两段寻路。
+  // 不锁定桥道走廊——单位按各自落点自然分布在桥面，靠碰撞互相挤开(而非排队)。
   const lane = unit.bridgeLane || 0;   // 每单位稳定的过桥"车道"偏移：分散在桥宽内，避免全挤在同一个精确桥口点→卡桥头
-  if (aligned) {
-    // 已对准桥道：直奔目标，clampToRiverBank 会把越界的 X 拉回桥面，自然沿桥过河
-    return { x: dest.x, y: dest.y };
-  }
-  // 未对准：沿本侧河岸走到桥口（X 收向桥心+车道偏移，Y 先到河岸）
-  const bankY = unitTop ? RIVER_TOP : (unitBot ? RIVER_BOT : (unit.y < 340 ? RIVER_TOP : RIVER_BOT));
-  return { x: bridge.x + lane, y: bankY };
+  // 关键修复：此前 aligned 仅判 X 接近桥心就直奔目标，导致单位远在己方半场(大 Y)时也被判"对准"，
+  // 于是斜穿整片场地、漂移出桥道后被夹回河岸、再横滑到另一座桥——表现为"过桥走斜线"。
+  // 现改为：必须真正走到本侧桥口(河岸+桥道X走廊内)或已在桥面上，才提交过桥、直奔目标。
+  const nearBankY = unit.y < 340 ? RIVER_TOP : RIVER_BOT;
+  const atMouth = Math.abs(unit.x - bridge.x) <= BRIDGE_HALF &&
+    (Math.abs(unit.y - nearBankY) <= BRIDGE_HALF || (unit.y > RIVER_TOP - BRIDGE_HALF && unit.y < RIVER_BOT + BRIDGE_HALF));
+  if (atMouth) { unit.bridgeCommitted = true; return { x: dest.x, y: dest.y }; }
+  // 已提交过桥：保持直奔目标（clampToRiverBank 把越界 X 拉回桥面，自然沿桥过河）
+  if (unit.bridgeCommitted) return { x: dest.x, y: dest.y };
+  // 未到桥口：沿本侧河岸走到桥口（X 收向桥心+车道偏移，Y 到河岸）——不会在己方半场斜穿
+  return { x: bridge.x + lane, y: nearBankY };
 }
 
 // 有效攻击距离（含目标体积）
