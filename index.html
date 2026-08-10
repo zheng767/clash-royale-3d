@@ -2132,14 +2132,15 @@ function updatePendingSpells(dt) {
         // 雷电：只打范围内血量最高的 N 个目标（含建筑/塔），每个眩晕；塔吃 towerDmgMult 减伤（CR 规则）
         if (s.topTargets) {
           const cands = [];
-          // 皇室战争：范围法术无差别命中范围内所有单位/塔（含自己与友军），不分敌我
+          // 皇室战争：伤害法术只打敌方单位/塔，绝不会伤到己方（CR 核心规则）
           for (const u of game.units) {
-            if (u.hp <= 0) continue;
-            if (u.underground) continue;
+            if (u.hp <= 0 || u.underground) continue;
+            if (u.owner !== enemyOwner) continue;   // 只取敌方单位
             if (dist(s, u) < s.radius) cands.push(u);
           }
           for (const t of game.towers) {
             if (t.hp <= 0) continue;
+            if (t.owner !== enemyOwner) continue;   // 只取敌方塔
             if (dist(s, t) < s.radius + 20) cands.push(t);
           }
           cands.sort((a, b) => b.hp - a.hp);
@@ -2151,16 +2152,16 @@ function updatePendingSpells(dt) {
         } else {
           // 收集范围内所有敌方单位（藤蔓 groundOnly=false → 含空中单位；震荡术等地面类仍豁免飞行）
           const inRange = [];
-          // 皇室战争：范围法术无差别命中范围内所有单位（含己方/友军），不分敌我
+          // 皇室战争：伤害法术只打敌方单位（绝不会伤己方）——藤蔓 groundOnly=false 含空中；地面类仍豁免飞行
           for (const u of game.units) {
-            if (u.hp <= 0) continue;
-            if (u.underground) continue;
+            if (u.hp <= 0 || u.underground) continue;
             if (s.groundOnly && u.flying) continue;
+            if (u.owner !== enemyOwner) continue;   // 皇室战争：法术不伤友军，仅命中敌方
             // 复仇滚木：横向车道（覆盖全场宽度），命中判定为 |y - s.y| < bandH
             const hit = s.lane ? (Math.abs(u.y - s.y) < s.bandH) : (dist(s, u) < s.radius);
             if (hit) {
               inRange.push(u);
-              dealDamage({owner:s.owner}, u, s.dmg);   // 伤害对范围内所有单位（含空中）生效
+              dealDamage({owner:s.owner}, u, s.dmg);   // 仅敌方单位受击（含空中/地面）
               if (s.stun > 0) u.stunTimer = s.stun;
               // 复仇滚木：击退地面单位（沿滚动方向，玩家向上/AI 向下）
               if (s.knockback && !u.flying && !u.isBuilding) {
@@ -2175,9 +2176,10 @@ function updatePendingSpells(dt) {
             inRange.sort((a, b) => b.hp - a.hp);
             for (const tgt of inRange.slice(0, (s.rootTop || 2))) tgt.rootTimer = s.root;
           }
-          // 塔同样无差别命中（皇室战争：法术可命中范围内任何塔，含己方）
+          // 塔只命中敌方塔（皇室战争：法术可命中范围内任何“敌方”塔，不含己方）
           for (const t of game.towers) {
             if (t.hp <= 0) continue;
+            if (t.owner !== enemyOwner) continue;   // 不伤己方塔
             const hitT = s.lane ? (Math.abs(t.y - s.y) < s.bandH + 20) : (dist(s, t) < s.radius + 20);
             if (hitT) dealDamage({owner:s.owner}, t, s.dmg * (s.towerDmgMult || 0.35));
           }
@@ -2265,10 +2267,12 @@ function updateSpellFields(dt) {
       if (f.ticksLeft > 0 && f.tickTimer <= 0) {
         f.ticksLeft--;
         f.tickTimer += f.tickInterval;
-        // 皇室战争：地震无差别命中范围内所有地面单位/塔（含双方），不按敌我过滤；建筑吃专门的高额伤害
+        // 皇室战争：地震只打敌方地面单位/塔（不含己方），建筑吃专门的高额伤害
+        const qFoe = f.owner === 'player' ? 'ai' : 'player';
         for (const u of game.units) {
           if (u.hp <= 0) continue;
           if (u.flying || u.underground) continue;          // 只震地面单位（含建筑）
+          if (u.owner !== qFoe) continue;                    // 不伤己方地面单位
           if (Math.hypot(u.x - f.x, u.y - f.y) < f.radius) {
             const dmg = u.isBuilding ? (f.tickBuildingDmg || 0) : (f.tickDmg || 0);
             dealDamage({owner:f.owner}, u, dmg);
@@ -2281,6 +2285,7 @@ function updateSpellFields(dt) {
         }
         for (const t of game.towers) {
           if (t.hp <= 0) continue;
+          if (t.owner !== qFoe) continue;                    // 不伤己方塔
           if (Math.hypot(t.x - f.x, t.y - f.y) < f.radius + 20) dealDamage({owner:f.owner}, t, (f.tickDmg || 0) * (f.towerMult || 0.35));
         }
         game.effects.push({ type:'quakewave', x:f.x, y:f.y, life:0.55, maxLife:0.55, radius:f.radius, color:f.color });
@@ -2288,9 +2293,10 @@ function updateSpellFields(dt) {
       if (f.timer <= 0) game.spellFields.splice(i, 1);
       continue;
     }
+    const torFoe = f.owner === 'player' ? 'ai' : 'player';
     for (const u of game.units) {
       if (u.hp <= 0 || u.isBuilding || u.underground) continue;
-      // 飓风按 CR 机制：拉拽/伤害范围内**双方**所有地面与空中单位（不分敌我），只不作用于建筑/塔
+      // 飓风按 CR 机制：拉拽范围**双方**所有地面与空中单位（不分敌我，只不作用于建筑/塔）；但伤害只作用于敌方
       const d = Math.hypot(u.x - f.x, u.y - f.y);
       if (d < f.radius && d > 1) {
         const dirx = (f.x - u.x) / d, diry = (f.y - u.y) / d;
@@ -2298,7 +2304,8 @@ function updateSpellFields(dt) {
         const sizeFactor = 12 / (12 + (u.radius || 10));
         const pull = f.pull * sizeFactor * dt;
         u.x += dirx * pull; u.y += diry * pull;
-        if (f.dmgPerSec > 0) dealDamage({owner:f.owner}, u, f.dmgPerSec * dt);
+        // 伤害仅对敌方生效（皇室战争：飓风拉拽双方，伤害不波及己方）
+        if (f.dmgPerSec > 0 && u.owner === torFoe) dealDamage({owner:f.owner}, u, f.dmgPerSec * dt);
         if (!u.flying) { const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y; }
         u.target = null;   // 飓风最高优先级：无条件强制打断原锁定，下一帧由 findTarget 改锁最近敌方目标（含建筑，如国王塔）
       }
