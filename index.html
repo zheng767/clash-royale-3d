@@ -198,7 +198,7 @@ const PRINCESS_X_R = 14.5 * TILE;  // 308.125，右路公主塔/右桥 X（14500
 const RIVER_TOP = 16*TILE - TILE, RIVER_BOT = 16*TILE + TILE;   // 河流 2 瓦片宽(≈42px)，中心 y=340
 const BRIDGE_L = { x: PRINCESS_X_L, y: 16*TILE };   // 左桥：与左路公主塔同列
 const BRIDGE_R = { x: PRINCESS_X_R, y: 16*TILE };   // 右桥：与右路公主塔同列
-const BRIDGE_TOL = TILE * 1.6;   // 桥面判定缓冲(略宽于桥道半宽)：碰撞推挤时把轻微出界吸回桥面边缘，不会掉下河
+const BRIDGE_TOL = TILE * 2.0;   // 桥面判定缓冲(略宽于桥道半宽)：碰撞推挤时把轻微出界吸回桥面边缘，不会掉下河
 const BRIDGE_HALF = TILE;        // 桥道半宽 = 1 格 → 桥宽 2 格，对齐皇室战争原版(CR 桥为 2 瓦片宽)
 const PRINCESS_Y_AI = 6.5*TILE;     // AI 公主塔 Y（离河中心 9.5 格）
 const PRINCESS_Y_P = 25.5*TILE;     // 玩家公主塔 Y（离河中心 9.5 格）
@@ -667,13 +667,14 @@ function getMoveTarget(unit, dest) {
   // 需要过河：皇室战争采用「先走到最近桥的桥口、再直行过桥」的两段寻路。
   // 不锁定桥道走廊、不强制纵向——单位按各自落点自然分布在桥面，靠碰撞互相挤开(而非排队)。
   const aligned = Math.abs(unit.x - bridge.x) <= BRIDGE_HALF;
+  const lane = unit.bridgeLane || 0;   // 每单位稳定的过桥"车道"偏移：分散在桥宽内，避免全挤在同一个精确桥口点→卡桥头
   if (aligned) {
     // 已对准桥道：直奔目标，clampToRiverBank 会把越界的 X 拉回桥面，自然沿桥过河
     return { x: dest.x, y: dest.y };
   }
-  // 未对准：沿本侧河岸走到桥口（X 收向桥心，Y 先到河岸）
+  // 未对准：沿本侧河岸走到桥口（X 收向桥心+车道偏移，Y 先到河岸）
   const bankY = unitTop ? RIVER_TOP : (unitBot ? RIVER_BOT : (unit.y < 340 ? RIVER_TOP : RIVER_BOT));
-  return { x: bridge.x, y: bankY };
+  return { x: bridge.x + lane, y: bankY };
 }
 
 // 有效攻击距离（含目标体积）
@@ -1021,36 +1022,46 @@ function resolveCollisions() {
         const av = Math.hypot(a.vx, a.vy), bv = Math.hypot(b.vx, b.vy);
         const avd = av > 1e-3 ? { x: a.vx / av, y: a.vy / av } : null;
         const bvd = bv > 1e-3 ? { x: b.vx / bv, y: b.vy / bv } : null;
-        const aFixed = a.spd === 0 || avd === null;   // 固定建筑 / 本帧静止(原地攻击) → 不参与移动
-        const bFixed = b.spd === 0 || bvd === null;
-        // a 是否在朝 b 靠近、b 是否在朝 a 靠近（固定/静止者视为“在靠近”，触发径向顶开/挡停）
+        // 仅"真实建筑(spd:0)"不可推动；原地攻击的机动单位仍可被更重的单位挤开(CR：巨人会推开小兵而非被挡死)
+        const aImm = a.spd === 0;
+        const bImm = b.spd === 0;
+        // a 是否在朝 b 靠近、b 是否在朝 a 靠近（静止者视为"在靠近"，触发径向顶开）
         const aAppr = avd ? (avd.x * nx + avd.y * ny) : 1;
         const bAppr = bvd ? (bvd.x * -nx + bvd.y * -ny) : 1;
         const closing = aAppr > 0.05 && bAppr > 0.05;   // 两单位正在相互逼近(对撞/撞障碍)
-        // 侧向分离：去掉“沿前进方向”的分量，只保留垂直方向，避免把单位往回推导致来回抖
+        // 侧向分离：去掉"沿前进方向"的分量，只保留垂直方向，避免把单位往回推导致来回抖
         const lat = (px, py, vd) => { const al = px * vd.x + py * vd.y; return [px - al * vd.x, py - al * vd.y]; };
         let pa, pb;
         if (closing) {
           // 对撞 / 撞固定障碍：沿连线径向顶开（皇室战争的 body block，单位被挡停而非穿透）
           pa = [-nx, -ny]; pb = [nx, ny];
         } else {
-          // 同向跟随 / 平行：仅沿各自前进方向的垂向滑开，绝不把单位往回推(解决“互相挤来挤去”)
+          // 同向跟随 / 平行：仅沿各自前进方向的垂向滑开，绝不把单位往回推(解决"互相挤来挤去")
           pa = avd ? lat(-nx, -ny, avd) : [-nx, -ny];
           pb = bvd ? lat(nx, ny, bvd) : [nx, ny];
         }
-        if (aFixed && bFixed) {
-          a.x += pa[0] * overlap / 2; a.y += pa[1] * overlap / 2;
-          b.x += pb[0] * overlap / 2; b.y += pb[1] * overlap / 2;
-        } else if (aFixed) {
+        // 质量加权分离：体型/质量大的单位(如巨人/皇家巨人)几乎不动，轻单位(小兵)被挤开
+        const aMass = a.mass || 1, bMass = b.mass || 1;
+        const aHeavy = aMass >= 3, bHeavy = bMass >= 3;   // 重单位阈值：只锁建筑的大单位
+        if (aImm && bImm) {
+          // 两建筑重叠：不互推，避免抖动
+        } else if (aImm) {
           b.x += pb[0] * overlap; b.y += pb[1] * overlap;
-        } else if (bFixed) {
+        } else if (bImm) {
+          a.x += pa[0] * overlap; a.y += pa[1] * overlap;
+        } else if (aHeavy && !bHeavy) {
+          // 重单位(巨人/皇家巨人)把轻单位完全挤开、自身几乎不动(CR：巨人推开小兵而非被挡死)
+          b.x += pb[0] * overlap; b.y += pb[1] * overlap;
+        } else if (bHeavy && !aHeavy) {
           a.x += pa[0] * overlap; a.y += pa[1] * overlap;
         } else {
-          a.x += pa[0] * overlap / 2; a.y += pa[1] * overlap / 2;
-          b.x += pb[0] * overlap / 2; b.y += pb[1] * overlap / 2;
+          // 两个轻单位 或 两个重单位：按质量平分位移
+          const sum = aMass + bMass;
+          a.x += pa[0] * overlap * (bMass / sum); a.y += pa[1] * overlap * (bMass / sum);
+          b.x += pb[0] * overlap * (aMass / sum); b.y += pb[1] * overlap * (aMass / sum);
         }
-        if (!aFixed) { const c = clampToRiverBank(a, a.x, a.y); a.x = c.x; a.y = c.y; }
-        if (!bFixed) { const c = clampToRiverBank(b, b.x, b.y); b.x = c.x; b.y = c.y; }
+        if (!aImm) { const c = clampToRiverBank(a, a.x, a.y); a.x = c.x; a.y = c.y; }
+        if (!bImm) { const c = clampToRiverBank(b, b.x, b.y); b.x = c.x; b.y = c.y; }
       }
     }
     // 单位 ↔ 塔（塔固定，只把"敌军"推出去；自己的塔不挡自己的单位）
@@ -1797,6 +1808,8 @@ function makeUnit(owner, def, x, y) {
     healAura: def.healAura || 0, healRadius: def.healRadius || 0,
     slow: def.slow || false, suicide: def.suicide || false, leap: def.leap || false, leapT: 0, leapTgt: null, leapHop: 0, _leapAng: 0,
     color: def.color, icon: def.icon, radius: def.radius,
+    mass: def.tgt === 'building' ? 3.5 : 1,   // 质量：只锁定建筑的大单位(巨人/皇家巨人)质量高，碰撞时把小单位挤开而自身几乎不动
+    bridgeLane: (Math.random() * 2 - 1) * (BRIDGE_HALF || 21.25) * 0.6,   // 稳定过桥车道偏移(桥宽内)，分散过桥避免卡桥头
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
     target: null, dead: false, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
