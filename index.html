@@ -278,7 +278,7 @@ const CARD_DEFS = {
   kan:        { name:'坎', cost:5, hp:1455, dmg:348, range:15, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 },
   // ===== 原版卡牌：野蛮人滚筒（Battle Ram，CR 锦标赛 L11 普通卡，机制与数值严格还原；数值待核对）=====
   //   3 费 / 2 单位 / HP264(每滚筒) / 撞击伤害340(对建筑) / 只攻建筑 / Very Fast(42.5,同野猪骑士) / 冲锋撞建筑后碎裂投出1野蛮人(用 barbarians 单只数值)
-  battleram:  { name:'野蛮人滚筒', cost:3, type:'spell', dmg:340, color:'#8D6E63', icon:'滚', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:10*TILE, rollWidth:1.3*TILE, rollTime:1.0, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1 }
+  battleram:  { name:'野蛮人滚筒', cost:3, type:'spell', dmg:340, color:'#8D6E63', icon:'筒', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:10*TILE, rollWidth:1.3*TILE, rollTime:1.0, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1 }
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
@@ -2117,8 +2117,9 @@ function updateLogs(dt) {
           const n = L.spawnCount, spread = Math.min(36, 12 + n * 3);
           for (let k = 0; k < n; k++) {
             const ang = (k / n) * Math.PI * 2;
-            const ox = Math.cos(ang) * spread + (Math.random() - 0.5) * 4;
-            const oy = Math.sin(ang) * spread + (Math.random() - 0.5) * 4;
+            // 只有 1 只时就地落在滚筒终点（不做环形展开，避免被推偏）
+            const ox = n === 1 ? 0 : Math.cos(ang) * spread + (Math.random() - 0.5) * 4;
+            const oy = n === 1 ? 0 : Math.sin(ang) * spread + (Math.random() - 0.5) * 4;
             const pos = clampToRiverBank({ x: L.x, y: L.y, owner: L.owner }, L.x + ox, L.y + oy);
             game.units.push(makeUnit(L.owner, sdef, pos.x, pos.y));
           }
@@ -3298,13 +3299,18 @@ function renderLogs() {
           new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 1.0 }));
         hoop.rotation.y = Math.PI / 2; hoop.position.x = k * (w * 0.3); grp.add(hoop);
       }
-      const head = new THREE.Mesh(new THREE.SphereGeometry(R * 0.7, 12, 10),
-        new THREE.MeshStandardMaterial({ color: 0xFFCC99, roughness: 0.8 }));
-      head.position.set(0, R * 0.9, 0); grp.add(head);
+      // 桶顶露出的脑袋：与正规野蛮人单位建模同款（球头 0xffe0bd + 浅色络腮胡 0xddc9a0 + 白色尖角），比例照 addHeadDetail 的 barbarian 分支
+      const hR = R * 0.62, hy = R * 1.05;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(hR, 12, 10),
+        new THREE.MeshStandardMaterial({ color: 0xffe0bd, roughness: 0.6 }));
+      head.position.set(0, hy, 0); grp.add(head);
+      const beard = new THREE.Mesh(new THREE.BoxGeometry(hR * 1.1, hR * 0.9, hR * 1.1),
+        new THREE.MeshStandardMaterial({ color: 0xddc9a0, roughness: 0.8 }));
+      beard.position.set(0, hy - hR * 0.5, 0); grp.add(beard);
       for (const sx of [-1, 1]) {
-        const horn = new THREE.Mesh(new THREE.ConeGeometry(R * 0.22, R * 0.7, 6),
+        const horn = new THREE.Mesh(new THREE.ConeGeometry(hR * 0.3, hR * 0.9, 6),
           new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.6 }));
-        horn.position.set(sx * R * 0.5, R * 1.4, 0); grp.add(horn);
+        horn.position.set(sx * hR * 0.9, hy + hR * 0.7, 0); grp.add(horn);
       }
     } else {
       // 复仇滚木：细长木(横躺、轴沿X) + 木纹环 + 年轮 + 尖刺
