@@ -726,6 +726,7 @@ function updateUnit(unit, dt) {
     unit.confuseT -= dt;
     if (unit.confuseT <= 0) { unit.owner = unit._trueOwner || unit.owner; unit._trueOwner = null; }
   }
+  unit.anchored = false;   // 每帧重置；仅在"已锁定目标且处于攻击范围内"时置 true（前排锚定守位、后排绕行）
   if (unit.hp <= 0) {
     if (unit.isBalloon) balloonDeath(unit);
     else if ((unit.deathDmg > 0 || unit.suicide) && !unit._exploded) spiritExplode(unit);  // 自爆精灵被击杀也爆炸（CR：精灵死亡即自爆）
@@ -828,6 +829,7 @@ function updateUnit(unit, dt) {
   //      正在攻击（已在射程内）的单位保持当前目标，不抢切。
   const bestTarget = findTarget(unit);
   const inAttack = unit.target && !unit.target.dead && unit.target.hp > 0 && dist(unit, unit.target) <= effectiveRangeOf(unit, unit.target);
+  if (inAttack) unit.anchored = true;   // 前排正在攻击的单位锚定守位：碰撞中只被更重单位推挤，轻单位从它身边绕开(解决"互相挡住")
   if (!inAttack) {
     unit.target = bestTarget;
   }
@@ -838,6 +840,8 @@ function updateUnit(unit, dt) {
     moveDest = findNearestTower(unit, enemyOwner);
   }
   if (!moveDest) return;
+  // 围攻散开：移动时奔向目标圆周上自身包围角对应的点(同侧目标才生效)，散成包围圈而非全堆中心
+  const md = computeSurroundDest(unit, moveDest);
   const d = dist(unit, moveDest);
   const effectiveRange = unit.range + (moveDest.w ? moveDest.w/2 : moveDest.radius || 10);
   // 骷髅气球：飞到建筑/塔射程内即“坠毁”，死亡伤害 + 投出骷髅兵（CR 机制）
@@ -951,8 +955,8 @@ function updateUnit(unit, dt) {
         }
       }
     }
-    // ===== 不在范围内：移动靠近目的地（含绕行避让 + 冲锋加速） =====
-    const mt = getMoveTarget(unit, moveDest);
+    // ===== 不在范围内：移动靠近目的地（含围攻散开 + 绕行避让 + 冲锋加速） =====
+    const mt = getMoveTarget(unit, md);
     if (mt) {
       let dx = mt.x - unit.x, dy = mt.y - unit.y;
       const len = Math.hypot(dx, dy);
@@ -1025,6 +1029,8 @@ function resolveCollisions() {
         // 仅"真实建筑(spd:0)"不可推动；原地攻击的机动单位仍可被更重的单位挤开(CR：巨人会推开小兵而非被挡死)
         const aImm = a.spd === 0;
         const bImm = b.spd === 0;
+        // 锚定：正在攻击(已到攻击范围内)的前排单位守位；后排(未攻击、仍在移动)从它身边绕开，避免互挡卡死
+        const aAnch = a.anchored, bAnch = b.anchored;
         // a 是否在朝 b 靠近、b 是否在朝 a 靠近（静止者视为"在靠近"，触发径向顶开）
         const aAppr = avd ? (avd.x * nx + avd.y * ny) : 1;
         const bAppr = bvd ? (bvd.x * -nx + bvd.y * -ny) : 1;
@@ -1043,22 +1049,38 @@ function resolveCollisions() {
         // 质量加权分离：体型/质量大的单位(如巨人/皇家巨人)几乎不动，轻单位(小兵)被挤开
         const aMass = a.mass || 1, bMass = b.mass || 1;
         const aHeavy = aMass >= 3, bHeavy = bMass >= 3;   // 重单位阈值：只锁建筑的大单位
+        // 贴脸保护：不要把单位从"它正在攻击/前往的目标"身上推开，否则一群小兵会互相挤到攻击距离外(互挡)。
+        // 仅当本帧该单位位移方向与"指向自身目标"相反(被推离目标)时强力衰减该位移，让单位贴住目标(CR：小兵贴脸围攻)。
+        const awayDamp = (u, p) => {
+          if (!u.target || u.target.dead || u.target.hp <= 0) return 1;
+          const tx = u.target.x - u.x, ty = u.target.y - u.y;
+          const tl = Math.hypot(tx, ty) || 1;
+          const dot = (p[0] * tx + p[1] * ty) / tl;   // >0 推向目标, <0 推离目标
+          return dot < 0 ? 0.1 : 1;
+        };
+        const paD = [pa[0] * awayDamp(a, pa), pa[1] * awayDamp(a, pa)];
+        const pbD = [pb[0] * awayDamp(b, pb), pb[1] * awayDamp(b, pb)];
         if (aImm && bImm) {
           // 两建筑重叠：不互推，避免抖动
         } else if (aImm) {
-          b.x += pb[0] * overlap; b.y += pb[1] * overlap;
+          b.x += pbD[0] * overlap; b.y += pbD[1] * overlap;
         } else if (bImm) {
-          a.x += pa[0] * overlap; a.y += pa[1] * overlap;
+          a.x += paD[0] * overlap; a.y += paD[1] * overlap;
         } else if (aHeavy && !bHeavy) {
           // 重单位(巨人/皇家巨人)把轻单位完全挤开、自身几乎不动(CR：巨人推开小兵而非被挡死)
-          b.x += pb[0] * overlap; b.y += pb[1] * overlap;
+          b.x += pbD[0] * overlap; b.y += pbD[1] * overlap;
         } else if (bHeavy && !aHeavy) {
-          a.x += pa[0] * overlap; a.y += pa[1] * overlap;
+          a.x += paD[0] * overlap; a.y += paD[1] * overlap;
+        } else if (aAnch && !bAnch) {
+          // 前排锚定单位守位，后排(仍在移动)被全量推挤、从它身边绕开(解决"互相挡住")
+          b.x += pbD[0] * overlap; b.y += pbD[1] * overlap;
+        } else if (bAnch && !aAnch) {
+          a.x += paD[0] * overlap; a.y += paD[1] * overlap;
         } else {
-          // 两个轻单位 或 两个重单位：按质量平分位移
+          // 两个轻单位 或 两个重单位：按质量平分位移(×0.6 软化，允许小兵互相略重叠而贴紧目标围攻，不互挡)
           const sum = aMass + bMass;
-          a.x += pa[0] * overlap * (bMass / sum); a.y += pa[1] * overlap * (bMass / sum);
-          b.x += pb[0] * overlap * (aMass / sum); b.y += pb[1] * overlap * (aMass / sum);
+          a.x += paD[0] * overlap * (bMass / sum) * 0.6; a.y += paD[1] * overlap * (bMass / sum) * 0.6;
+          b.x += pbD[0] * overlap * (aMass / sum) * 0.6; b.y += pbD[1] * overlap * (aMass / sum) * 0.6;
         }
         if (!aImm) { const c = clampToRiverBank(a, a.x, a.y); a.x = c.x; a.y = c.y; }
         if (!bImm) { const c = clampToRiverBank(b, b.x, b.y); b.x = c.x; b.y = c.y; }
@@ -1088,10 +1110,26 @@ function resolveCollisions() {
   }
 }
 
+// 围攻定位：多个单位锁定同一目标时，各自奔向"目标圆周上自身稳定角度"的点(攻击距离处)，
+// 自然散开成包围圈，而不是全挤到目标正中心(导致后排被前排挡住、互相卡死)。
+// 需过桥的目标(异侧)直奔中心点(过桥后自然散开)；飞行/挖地/自爆突进/跳河单位不走包围。
+function computeSurroundDest(unit, moveDest) {
+  if (unit.flying || unit.underground || unit.suicide || unit.canJumpRiver) return moveDest;
+  const sameSide = (unit.y < 340) === (moveDest.y < 340);
+  if (!sameSide) return moveDest;
+  const effR = unit.range + (moveDest.w ? moveDest.w / 2 : (moveDest.radius || 10));
+  return { x: moveDest.x + Math.cos(unit.surroundAng) * effR, y: moveDest.y + Math.sin(unit.surroundAng) * effR };
+}
+
 // 绕行避让：被友军/塔挡在前方时，沿切向(侧边)滑过去，绝不往后推——
 // 这就是皇室战争中单位"互相绕行、不会在友军身后自锁"的来源(纯碰撞 + 切向绕行，无排队逻辑)
 function computeAvoidance(unit, dirX, dirY) {
   if (unit.flying) return { x: 0, y: 0 };
+  // 已逼近自身目标(<=2.2 倍攻击距离)时不再绕行，直接贴上去——避免"绕着目标打转、始终差一点打不到"的互挡
+  if (unit.target && !unit.target.dead && unit.target.hp > 0) {
+    const td = Math.hypot(unit.target.x - unit.x, unit.target.y - unit.y);
+    if (td <= effectiveRangeOf(unit, unit.target) * 2.2) return { x: 0, y: 0 };
+  }
   let ax = 0, ay = 0;
   const lookR = (unit.radius + 16) * 2.4;
   for (const o of game.units) {
@@ -1810,6 +1848,7 @@ function makeUnit(owner, def, x, y) {
     color: def.color, icon: def.icon, radius: def.radius,
     mass: def.tgt === 'building' ? 3.5 : 1,   // 质量：只锁定建筑的大单位(巨人/皇家巨人)质量高，碰撞时把小单位挤开而自身几乎不动
     bridgeLane: (Math.random() * 2 - 1) * (BRIDGE_HALF || 21.25) * 0.6,   // 稳定过桥车道偏移(桥宽内)，分散过桥避免卡桥头
+    surroundAng: Math.random() * Math.PI * 2,   // 稳定包围角：多个单位锁定同一目标时各自奔向目标圆周上该角度点，自然散成包围圈而非全堆中心
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
     target: null, dead: false, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
