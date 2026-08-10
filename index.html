@@ -1100,7 +1100,19 @@ function resolveCollisions() {
         const minD = u.range + halfW - 2;   // 停在攻击范围内 2px，保证 d <= effectiveRangeOf 恒成立
         let dx = u.x - t.x, dy = u.y - t.y;
         let d = Math.hypot(dx, dy);
-        if (d >= minD) continue;
+        const effR = effectiveRangeOf(u, t);
+        if (d >= minD) {
+          // 关键修复：正在攻击这座塔、却因人群拥挤被挤到攻击范围外的单位，拉回攻击范围内，
+          // 确保贴塔单位都能打到塔(皇室战争：围在塔边的单位都在射程内，不会"贴着塔打不出伤害")。
+          // 仅对"正锁定该塔"的单位生效，且只在其略超出攻击范围(≤effR+28)时拉回，避免远处单位被硬拽。
+          if (u.target === t && d <= effR + 28) {
+            const nx = dx / d, ny = dy / d;
+            const pull = d - minD;
+            u.x -= nx * pull; u.y -= ny * pull;
+            const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y;
+          }
+          continue;
+        }
         if (d < 0.0001) { dx = 1; dy = 0; d = 1; }
         const nx = dx / d, ny = dy / d;
         const overlap = minD - d;
@@ -1118,6 +1130,9 @@ function resolveCollisions() {
 // 需过桥的目标(异侧)直奔中心点(过桥后自然散开)；飞行/挖地/自爆突进/跳河单位不走包围。
 function computeSurroundDest(unit, moveDest) {
   if (unit.flying || unit.underground || unit.suicide || unit.canJumpRiver) return moveDest;
+  // 塔(公主/国王)不做包围角偏移：皇室战争里单位直奔塔心，碰撞自然把成团单位摊在塔周，
+  // 强制绕到固定角度反而让单体过桥后靠近塔时"甩一下"。仅对"单位类目标"做包围散开(解决互挡)。
+  if (moveDest.type === 'king' || moveDest.type === 'princess') return moveDest;
   const sameSide = (unit.y < 340) === (moveDest.y < 340);
   if (!sameSide) return moveDest;
   const effR = unit.range + (moveDest.w ? moveDest.w / 2 : (moveDest.radius || 10));
@@ -1154,22 +1169,8 @@ function computeAvoidance(unit, dirX, dirY) {
     ax += tx * 1.5 * strength;
     ay += ty * 1.5 * strength;
   }
-  // 塔作为绕行障碍：仅敌方塔贴边绕过（自己的塔不绕行；正在攻击的那座塔除外，否则会卡在塔前打不到）
-  for (const t of game.towers) {
-    if (t.hp <= 0 || t === unit.target) continue;
-    if (t.owner === unit.owner) continue;   // 皇室战争：自己的塔不挡自己的单位，无需绕行
-    const ox = t.x - unit.x, oy = t.y - unit.y;
-    const d = Math.hypot(ox, oy);
-    const rsum = unit.radius + Math.max(t.w, t.h) / 2;
-    if (d > rsum + 34 || d < 0.01) continue;
-    const fwd = (ox * dirX + oy * dirY) / d;   // 塔是否挡在前方
-    if (fwd < 0.1) continue;
-    let tx = -oy / d, ty = ox / d;             // 仅切向绕行
-    if (tx * dirX + ty * dirY < 0) { tx = -tx; ty = -ty; }
-    const strength = 1 - Math.max(0, d - rsum) / 34;
-    ax += tx * 1.6 * strength;
-    ay += ty * 1.6 * strength;
-  }
+  // 注：塔不做"绕行避让"——皇室战争里地面单位直奔目标，被塔挡住时由 separateFromTowers / resolveCollisions
+  //     的物理硬碰撞(贴边滑过 + 停在攻击范围)处理，不会从远处就甩出去绕大圈（那才是"过桥走直线又歪了"的根源）。
   return { x: ax, y: ay };
 }
 
