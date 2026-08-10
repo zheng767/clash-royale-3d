@@ -276,9 +276,9 @@ const CARD_DEFS = {
   // ===== 原版新增：坎（2026-08-10 用户要求改为近战单位，攻击距离参考 CR 浪人 Ronin 近战 0.7 格≈15px；其余数值沿用皇家冠军）=====
   //   5 费 / HP1455 / 伤害348 / 近战射程15(≈0.7格,同浪人) / 攻速1.5 / 只对地 / 中等移速；atk:'spear'(近战劈砍特效) / 技能为自定义「镜反结界」
   kan:        { name:'坎', cost:5, hp:1455, dmg:348, range:15, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 },
-  // ===== 原版卡牌：野蛮人滚筒（Battle Ram，CR 锦标赛 L11 普通卡，机制与数值严格还原；数值待核对）=====
-  //   3 费 / 2 单位 / HP264(每滚筒) / 撞击伤害340(对建筑) / 只攻建筑 / Very Fast(42.5,同野猪骑士) / 冲锋撞建筑后碎裂投出1野蛮人(用 barbarians 单只数值)
-  battleram:  { name:'野蛮人滚筒', cost:3, type:'spell', dmg:340, color:'#8D6E63', icon:'筒', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:10*TILE, rollWidth:1.3*TILE, rollTime:1.0, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1 }
+  // ===== 原版卡牌：野蛮人滚筒（Barbarian Barrel，CR 锦标赛 L11 普通卡，机制与数值严格还原）=====
+  //   2 费 / 滚动法术 / 滚动距离4.5格(2022-06 由5格降为4.5，沿用至今) / 范围伤害230(对地面) / 只命中地面 / 滚到尽头投出1野蛮人(用 barbarians 单只数值191) / 对塔全额(待核对)
+  battleram:  { name:'野蛮人滚筒', cost:2, type:'spell', dmg:230, color:'#8D6E63', icon:'筒', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:4.5*TILE, rollWidth:1.3*TILE, rollTime:0.5, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1 }
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
@@ -2090,6 +2090,7 @@ function updateLogs(dt) {
     // 地面单位（非飞行）：在滚木宽度带内且靠近滚木 y 即被碾（每单位只结算一次）
     for (const u of game.units) {
       if (u.hp <= 0 || u.dead || u.underground || u.flying) continue;
+      if (u.owner === L.owner) continue;            // 皇室战争：滚木/滚筒只伤敌方单位，不伤友军
       if (L.hits.has(u)) continue;
       if (Math.abs(u.x - L.x) > L.width / 2 + u.radius) continue;
       if (Math.abs(u.y - L.y) > L.radius + u.radius) continue;
@@ -2103,6 +2104,7 @@ function updateLogs(dt) {
     // 塔（公主/国王）同样命中，按 towerDmgMult 减伤，命中一次
     for (const t of game.towers) {
       if (t.hp <= 0) continue;
+      if (t.owner === L.owner) continue;            // 皇室战争：滚木/滚筒只伤敌方塔，不伤己方塔
       if (L.hits.has(t)) continue;
       if (Math.abs(t.x - L.x) > L.width / 2 + (t.w / 2)) continue;
       if (Math.abs(t.y - L.y) > L.radius + (t.h / 2)) continue;
