@@ -278,7 +278,7 @@ const CARD_DEFS = {
   kan:        { name:'坎', cost:5, hp:1455, dmg:348, range:15, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 },
   // ===== 原版卡牌：野蛮人滚筒（Battle Ram，CR 锦标赛 L11 普通卡，机制与数值严格还原；数值待核对）=====
   //   3 费 / 2 单位 / HP264(每滚筒) / 撞击伤害340(对建筑) / 只攻建筑 / Very Fast(42.5,同野猪骑士) / 冲锋撞建筑后碎裂投出1野蛮人(用 barbarians 单只数值)
-  battleram:  { name:'野蛮人滚筒', cost:3, hp:264, dmg:340, range:13, spd:42.5, atkSpd:1.0, tgt:'building', count:2, color:'#8D6E63', icon:'滚', radius:14, deployTime:1.0, model:'battleram', atk:'ram', isRam:true, spawnCard:'barbarians', spawnCount:1, previewLine:true }
+  battleram:  { name:'野蛮人滚筒', cost:3, type:'spell', dmg:340, color:'#8D6E63', icon:'滚', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:10*TILE, rollWidth:1.3*TILE, rollTime:1.0, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1 }
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
@@ -834,28 +834,6 @@ function updateUnit(unit, dt) {
   const effectiveRange = unit.range + (moveDest.w ? moveDest.w/2 : moveDest.radius || 10);
   // 骷髅气球：飞到建筑/塔射程内即“坠毁”，死亡伤害 + 投出骷髅兵（CR 机制）
   if (unit.isBalloon && unit.target && d <= effectiveRange) { balloonDeath(unit); return; }
-  // 野蛮人滚筒：冲到建筑射程内即“撞击并碎裂”，造成撞击伤害 + 投出野蛮人（CR 机制）
-  if (unit.isRam && unit.target && d <= effectiveRange) {
-    dealDamage(unit, unit.target, unit.dmg);
-    game.effects.push({ type:'ramcrash', x:unit.x, y:unit.y, life:0.4, maxLife:0.4, color:'#8D6E63', radius:unit.radius*2.4 });
-    if (!unit._ramDone) {
-      unit._ramDone = true; unit.dead = true;
-      if (unit.spawnCard) {
-        const sdef = CARD_DEFS[unit.spawnCard];
-        if (sdef) {
-          const n = unit.spawnCount, spread = Math.min(48, 12 + n * 3.2);
-          for (let k = 0; k < n; k++) {
-            const ang = (k / n) * Math.PI * 2;
-            const ox = Math.cos(ang) * spread + (Math.random() - 0.5) * 5;
-            const oy = Math.sin(ang) * spread + (Math.random() - 0.5) * 5;
-            const pos = clampToRiverBank(unit, unit.x + ox, unit.y + oy);
-            game.units.push(makeUnit(unit.owner, sdef, pos.x, pos.y));
-          }
-        }
-      }
-    }
-    return;
-  }
   if (unit.dmg > 0 && unit.target && d <= effectiveRange) {
     // ===== 有锁定目标、在攻击范围内、且已到达对岸：停下攻击 =====
     unit.atkCD -= dt;
@@ -1971,7 +1949,8 @@ function castSpell(owner, def, x, y) {
     game.logs.push({
       owner, x, y, dir, width: def.rollWidth, radius: def.radius,
       speed: def.rollDist / def.rollTime, traveled: 0, maxDist: def.rollDist,
-      dmg: def.dmg, knockback: def.knockback, towerDmgMult: def.towerDmgMult, hits: new Set()
+      dmg: def.dmg, knockback: def.knockback, towerDmgMult: def.towerDmgMult, hits: new Set(),
+      spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0, kind: def.spellFx || 'log'
     });
     return;
   }
@@ -2130,7 +2109,23 @@ function updateLogs(dt) {
       L.hits.add(t);
       dealDamage({ owner: L.owner }, t, L.dmg * L.towerDmgMult);
     }
-    if (L.traveled >= L.maxDist) game.logs.splice(i, 1);
+    if (L.traveled >= L.maxDist) {
+      // 野蛮人滚筒：滚到尽头投出野蛮人（CR 机制：只生 1 个；spawnCount=1）
+      if (L.spawnCard && L.spawnCount > 0) {
+        const sdef = CARD_DEFS[L.spawnCard];
+        if (sdef) {
+          const n = L.spawnCount, spread = Math.min(36, 12 + n * 3);
+          for (let k = 0; k < n; k++) {
+            const ang = (k / n) * Math.PI * 2;
+            const ox = Math.cos(ang) * spread + (Math.random() - 0.5) * 4;
+            const oy = Math.sin(ang) * spread + (Math.random() - 0.5) * 4;
+            const pos = clampToRiverBank({ x: L.x, y: L.y, owner: L.owner }, L.x + ox, L.y + oy);
+            game.units.push(makeUnit(L.owner, sdef, pos.x, pos.y));
+          }
+        }
+      }
+      game.logs.splice(i, 1);
+    }
   }
 }
 
@@ -2627,12 +2622,6 @@ function addHeadDetail(u, parent, head, headR, legH, bodyH, col, dark, metal, sk
     case 'dartgoblin': {
       for (const sx of [-1, 1]) { const ear = _cone(headR * 0.4, headR * 0.95, _mat(0xAFB42B), 6); ear.position.set(sx * headR * 0.9, hy + headR * 0.3, 0); parent.add(ear); }
       const eye = _sph(headR * 0.16, _mat(0x111111)); eye.position.set(0, hy + headR * 0.1, headR * 0.85); parent.add(eye); break; }
-    case 'battleram': {
-      // 野蛮人滚筒：棕色木桶(圆柱)罩住躯干 + 顶部野蛮人(头+双角)
-      const drum = _cyl(headR * 1.05, headR * 1.05, headR * 1.8, _mat(0x8D6E63), 14); drum.position.y = hy - headR * 0.1; parent.add(drum);
-      const bhead = _sph(headR * 0.8, _mat(0xFFCC99)); bhead.position.y = hy + headR * 1.1; parent.add(bhead);
-      for (const sx of [-1, 1]) { const horn = _cone(headR * 0.25, headR * 0.7, _mat(0xeeeeee), 6); horn.position.set(sx * headR * 0.7, hy + headR * 1.6, 0); parent.add(horn); }
-      break; }
     case 'skeletonking': {
       // 骷髅脸 + 金色王冠（CR 骷髅帝王）
       for (const sx of [-1, 1]) { const eye = _sph(headR * 0.2, _mat(0x111111)); eye.position.set(sx * headR * 0.35, hy + headR * 0.1, headR * 0.85); parent.add(eye); }
@@ -3256,17 +3245,6 @@ function updateDeployZone() {
         spellLaneBorder.material.color.copy(c); spellLaneFill.material.color.copy(c);
         spellLaneBorder.material.opacity = 0.5 + 0.25 * Math.sin(t * 6);
         spellLaneFill.material.opacity = inField ? 0.16 + 0.05 * Math.sin(t * 6) : 0.28;
-      } else if (def.previewLine) {
-        // 野蛮人滚筒：冲锋范围预演（参考滚木样式）——从落点朝敌方延伸一条直线矩形；宽=滚筒碰撞宽(对齐CR滚筒碰撞盒≈1.3格)，长=冲锋可视距离(10格)
-        const dir = -1;
-        const wid = (def.radius * 2) || 28, len = 10 * TILE;
-        const c = inField ? new THREE.Color(def.color || '#8D6E63') : new THREE.Color('#ff3b30');
-        spellLaneMesh.visible = true;
-        spellLaneMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340 + dir * len / 2);
-        spellLaneMesh.scale.set(wid, 1, len);
-        spellLaneBorder.material.color.copy(c); spellLaneFill.material.color.copy(c);
-        spellLaneBorder.material.opacity = 0.5 + 0.25 * Math.sin(t * 6);
-        spellLaneFill.material.opacity = inField ? 0.16 + 0.05 * Math.sin(t * 6) : 0.28;
       } else if (showRange) {
         // 圆形范围法术（火球/万箭/火箭/闪电/冰冻/震荡/藤蔓等）
         spellRangeMesh.visible = true;
@@ -3310,30 +3288,51 @@ function renderLogs() {
     const x = L.x - CENTER_X, z = L.y - 340;
     const w = L.width, R = L.radius;
     const grp = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(R, R, w, 18),
-      new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.92, metalness: 0.0 }));
-    body.rotation.z = Math.PI / 2; grp.add(body);   // 轴沿 X，木身横躺（长度=宽度，滚动方向为 y）
-    for (let k = -3; k <= 3; k++) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(R + 0.4, 1.2, 6, 18),
-        new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 1.0 }));
-      ring.rotation.y = Math.PI / 2; ring.position.x = k * (w / 7); grp.add(ring);
-    }
-    for (const sx of [-1, 1]) {
-      const cap = new THREE.Mesh(new THREE.CircleGeometry(R, 20),
-        new THREE.MeshStandardMaterial({ color: 0xa1887f, roughness: 0.85, side: THREE.DoubleSide }));
-      cap.rotation.y = sx * Math.PI / 2; cap.position.x = sx * (w / 2); grp.add(cap);
-      for (let r = 1; r <= 3; r++) {
-        const yr = new THREE.Mesh(new THREE.RingGeometry(R * r / 4, R * r / 4 + 0.9, 20),
-          new THREE.MeshBasicMaterial({ color: 0x6d4c41, side: THREE.DoubleSide, transparent: true, opacity: 0.55 }));
-        yr.rotation.y = sx * Math.PI / 2; yr.position.x = sx * (w / 2 + (sx > 0 ? 0.15 : -0.15)); grp.add(yr);
+    if (L.kind === 'barrel') {
+      // 野蛮人滚筒：棕色木桶(略粗、带金属箍) + 顶部露出半个野蛮人脑袋(暗示落地生兵)
+      const drum = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.15, R * 1.15, w * 0.92, 16),
+        new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.9, metalness: 0.05 }));
+      drum.rotation.z = Math.PI / 2; grp.add(drum);   // 轴沿 X，桶横躺、滚动方向为 y
+      for (let k = -1; k <= 1; k++) {
+        const hoop = new THREE.Mesh(new THREE.TorusGeometry(R * 1.18, 1.0, 6, 16),
+          new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 1.0 }));
+        hoop.rotation.y = Math.PI / 2; hoop.position.x = k * (w * 0.3); grp.add(hoop);
       }
-    }
-    for (let k = 0; k < 12; k++) {
-      const a = (k / 12) * Math.PI * 2;
-      const sp = new THREE.Mesh(new THREE.ConeGeometry(1.8, 5, 6),
-        new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 1.0 }));
-      sp.position.set((Math.random() - 0.5) * w * 0.82, Math.sin(a) * (R + 1.8), Math.cos(a) * (R + 1.8));
-      sp.rotation.x = -a + Math.PI / 2; grp.add(sp);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(R * 0.7, 12, 10),
+        new THREE.MeshStandardMaterial({ color: 0xFFCC99, roughness: 0.8 }));
+      head.position.set(0, R * 0.9, 0); grp.add(head);
+      for (const sx of [-1, 1]) {
+        const horn = new THREE.Mesh(new THREE.ConeGeometry(R * 0.22, R * 0.7, 6),
+          new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.6 }));
+        horn.position.set(sx * R * 0.5, R * 1.4, 0); grp.add(horn);
+      }
+    } else {
+      // 复仇滚木：细长木(横躺、轴沿X) + 木纹环 + 年轮 + 尖刺
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(R, R, w, 18),
+        new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.92, metalness: 0.0 }));
+      body.rotation.z = Math.PI / 2; grp.add(body);   // 轴沿 X，木身横躺（长度=宽度，滚动方向为 y）
+      for (let k = -3; k <= 3; k++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(R + 0.4, 1.2, 6, 18),
+          new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 1.0 }));
+        ring.rotation.y = Math.PI / 2; ring.position.x = k * (w / 7); grp.add(ring);
+      }
+      for (const sx of [-1, 1]) {
+        const cap = new THREE.Mesh(new THREE.CircleGeometry(R, 20),
+          new THREE.MeshStandardMaterial({ color: 0xa1887f, roughness: 0.85, side: THREE.DoubleSide }));
+        cap.rotation.y = sx * Math.PI / 2; cap.position.x = sx * (w / 2); grp.add(cap);
+        for (let r = 1; r <= 3; r++) {
+          const yr = new THREE.Mesh(new THREE.RingGeometry(R * r / 4, R * r / 4 + 0.9, 20),
+            new THREE.MeshBasicMaterial({ color: 0x6d4c41, side: THREE.DoubleSide, transparent: true, opacity: 0.55 }));
+          yr.rotation.y = sx * Math.PI / 2; yr.position.x = sx * (w / 2 + (sx > 0 ? 0.15 : -0.15)); grp.add(yr);
+        }
+      }
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        const sp = new THREE.Mesh(new THREE.ConeGeometry(1.8, 5, 6),
+          new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 1.0 }));
+        sp.position.set((Math.random() - 0.5) * w * 0.82, Math.sin(a) * (R + 1.8), Math.cos(a) * (R + 1.8));
+        sp.rotation.x = -a + Math.PI / 2; grp.add(sp);
+      }
     }
     grp.rotation.x = (L.traveled / R) * L.dir;       // 绕 X 轴滚动旋转
     grp.position.set(x, R + 2, z);
