@@ -451,8 +451,15 @@ function recordAIGameResult(winner) {
 function createGame(difficulty, playerDeckCards) {
   // 玩家使用选定的卡组
   const playerDeck = shuffle([...(playerDeckCards || ALL_CARDS)]);
-  // AI 从全部卡池中自由选8张，允许与玩家牌组重合（怎么好打怎么搭配）
-  const aiDeck = shuffle([...ALL_CARDS]).slice(0, 8);
+  // AI 从全部卡池随机选8张，允许与玩家牌组重合（怎么好打怎么搭配）；但必须遵守「至多1张英雄卡」规则（与玩家随机选卡一致）
+  const aiPool = shuffle([...ALL_CARDS]);
+  let aiHeroPicked = false;
+  const aiDeck = [];
+  for (const k of aiPool) {
+    if (aiDeck.length >= 8) break;
+    if (CARD_DEFS[k] && CARD_DEFS[k].isHero) { if (aiHeroPicked) continue; aiHeroPicked = true; }
+    aiDeck.push(k);
+  }
   return {
     state: 'playing',
     time: 180,
