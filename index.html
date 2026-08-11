@@ -1117,19 +1117,7 @@ function resolveCollisions() {
         const minD = u.range + halfW - 2;   // 停在攻击范围内 2px，保证 d <= effectiveRangeOf 恒成立
         let dx = u.x - t.x, dy = u.y - t.y;
         let d = Math.hypot(dx, dy);
-        const effR = effectiveRangeOf(u, t);
-        if (d >= minD) {
-          // 关键修复：正在攻击这座塔、却因人群拥挤被挤到攻击范围外的单位，拉回攻击范围内，
-          // 确保贴塔单位都能打到塔(皇室战争：围在塔边的单位都在射程内，不会"贴着塔打不出伤害")。
-          // 仅对"正锁定该塔"的单位生效，且只在其略超出攻击范围(≤effR+28)时拉回，避免远处单位被硬拽。
-          if (u.target === t && d <= effR + 28) {
-            const nx = dx / d, ny = dy / d;
-            const pull = d - minD;
-            u.x -= nx * pull; u.y -= ny * pull;
-            const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y;
-          }
-          continue;
-        }
+        if (d >= minD) continue;   // 已在攻击范围内(或略外)：循环内不硬推。略外者靠"贴塔攻击容差"判定可攻击，不再整帧 yank(消除瞬移)
         if (d < 0.0001) { dx = 1; dy = 0; d = 1; }
         const nx = dx / d, ny = dy / d;
         const overlap = minD - d;
@@ -1852,10 +1840,12 @@ function playCard(owner, cardKey, x, y) {
 // 由卡牌定义创建一个单位对象（手牌部署 / 法术召唤共用）
 function makeUnit(owner, def, x, y) {
   const isMiner = !!(def.digTime);
-  const kingX = CENTER_X, kingY = owner === 'player' ? KING_Y_P : KING_Y_AI;
+  const kingX = CENTER_X, kingY = owner === 'player' ? KING_Y_P : KING_Y_AI;   // 保留备用(矿工不再从国王塔掘进)
   const _m = (def.radius || 12) + 4;   // 出生即夹进战场(防止任何异常坐标单位出现在界外)
-  const sx = isMiner ? kingX : Math.max(_m, Math.min(400 - _m, x));
-  const sy = isMiner ? kingY : Math.max(_m, Math.min(680 - _m, y));
+  // 矿工：在部署点原地"破土而出"(皇室战争即如此)，不再从己方国王塔直线挖穿河道；
+  // 出土后为普通地面单位，过桥/寻敌走正常逻辑。跨河部署属 CR 机制——出土即在该侧。
+  const sx = Math.max(_m, Math.min(400 - _m, x));
+  const sy = Math.max(_m, Math.min(680 - _m, y));
   return {
     owner, card: def.name, x: sx, y: sy,
     hp: def.hp, maxHp: def.hp, dmg: def.dmg, range: def.range,
@@ -1874,7 +1864,7 @@ function makeUnit(owner, def, x, y) {
     surroundAng: Math.random() * Math.PI * 2,   // 稳定包围角：多个单位锁定同一目标时各自奔向目标圆周上该角度点，自然散成包围圈而非全堆中心
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
     target: null, dead: false, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
-    digFrom: isMiner ? { x: kingX, y: kingY } : null, digTo: isMiner ? { x, y } : null,
+    digFrom: isMiner ? { x: sx, y: sy } : null, digTo: isMiner ? { x: sx, y: sy } : null,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
     isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0, isRam: def.isRam || false,
