@@ -1039,7 +1039,7 @@ function resolveCollisions() {
         let dx = b.x - a.x, dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
         if (d >= minD) continue;
-        if (d < 0.0001) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d = Math.hypot(dx, dy) || 1; }
+        if (d < 0.0001) { const k = (i * 31 + j * 17) % 360; const rad = k * Math.PI / 180; dx = Math.cos(rad); dy = Math.sin(rad); d = 1; }   // 完全重合时的确定性微小错开(去掉 Math.random，避免仿真结果不可复现)
         const nx = dx / d, ny = dy / d;        // a→b 单位向量
         const overlap = minD - d;
         // 各单位的本帧前进方向（vx/vy 由移动阶段写入；静止/固定者为 null）
