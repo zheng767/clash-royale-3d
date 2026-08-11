@@ -247,6 +247,13 @@ const CARD_DEFS = {
   flamesprite: { name:'烈焰精灵', cost:2, hp:230, dmg:207, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#FF5722', icon:'焰', radius:11, splash:49, deployTime:1.0, suicide:true, leap:true, model:'flamesprite', atk:'magic' },
   healtotem: { name:'治疗图腾', cost:4, hp:850, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:17, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132, model:'totem', atk:'none' },
   frosttower: { name:'冰霜塔', cost:4, hp:912, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:15, deployTime:1.0, isBuilding:true, decay:18, slow:true, model:'frosttower', atk:'ice' },
+  // ===== 原版新增：破击炮(迫击炮/Mortar) + X连弩(X-Bow)（CR 锦标赛 L11 数值，机制严格还原；数值待核对）=====
+  //   破击炮 Mortar：4 费 / 建筑 / 对地(不含空) / 远射程 / 抛射炮弹(高抛物线) / 范围溅射 / 慢攻速；CR 中对地远程建筑代表。
+  //     数值(待核对)：HP≈900，范围伤害≈199，射程11.5格≈244px，攻速3.0s，寿命35s(=>decay=900/35≈26)。
+  //   X连弩 X-Bow：6 费 / 建筑 / 对地+建筑(可打塔, 不含空) / 超远射程 / 极高射速连弩弩箭 / 寿命35s(=>decay=1000/35≈29)。
+  //     数值(待核对)：HP≈1000，每击伤害≈50，射程14格≈297px，攻速0.3s。
+  mortar:     { name:'破击炮', cost:4, hp:1320, dmg:199, range:244, spd:0, atkSpd:5.0, tgt:'ground', count:1, color:'#6B8E23', icon:'破', radius:17, deployTime:1.0, isBuilding:true, decay:30, model:'mortar', atk:'mortar', splash:34 },
+  xbow:       { name:'X连弩', cost:6, hp:1248, dmg:116, range:287, spd:0, atkSpd:0.5, tgt:'ground', count:1, color:'#3D5AFE', icon:'弩', radius:17, deployTime:1.0, isBuilding:true, decay:35, model:'xbow', atk:'xshot' },
   // ===== 原版新增（CR 锦标赛 L11 数值，效果严格还原）=====
   hurricane:   { name:'飓风法术', cost:3, type:'spell', field:true, duration:1.05, radius:117, dmg:52, pull:90, color:'#4DD0E1', icon:'飓', spellFx:'hurricane' },
   zap:        { name:'电击法术', cost:2, type:'spell', dmg:192, radius:53, stun:0.5, color:'#FFEB3B', icon:'电', delay:0.4, spellFx:'lightning', towerDmgMult:0.30 },
@@ -298,7 +305,7 @@ const QUALITY = {
   // 稀有 Rare
   minipekka:'rare', valkyrie:'rare', wizard:'rare', rocket:'rare', dartgoblin:'rare', fisherman:'rare', miner:'rare', pekka:'rare',
   // 史诗 Epic
-  darkprince:'epic', lightning:'epic', freeze:'epic', hurricane:'epic', quake:'epic', prince:'epic',
+  darkprince:'epic', lightning:'epic', freeze:'epic', hurricane:'epic', quake:'epic', prince:'epic', xbow:'epic',
   // 传奇 Legendary
   princess:'legendary', icewizard:'legendary',
   // 英雄（冠军）Champion
@@ -307,7 +314,7 @@ const QUALITY = {
 const QUALITY_COLORS = { common:'#cfd8dc', rare:'#FF9800', epic:'#9C27B0', legendary:'#FFD700', champion:'#FF4081' };
 const QUALITY_LABELS = { common:'普通', rare:'稀有', epic:'史诗', legendary:'传奇', champion:'英雄' };
 for (const k in CARD_DEFS) { if (CARD_DEFS[k]) CARD_DEFS[k].quality = QUALITY[k] || 'common'; }
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite','mortar','xbow'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -321,6 +328,7 @@ let deployZoneMesh = null;
 let spellRangeMesh = null, spellRangeRing = null, spellRangeFill = null;
 let spellRangeTicks = null, spellRangePulse = null, spellRangeCross = null;
 let spellLaneMesh = null, spellLaneFill = null, spellLaneBorder = null;
+let cardRangeMesh = null, cardRangeFill = null, cardRangeRing = null;
 let renderedGame = null;
 
 function ensureScene() {
@@ -405,6 +413,15 @@ function ensureScene() {
     spellLaneMesh.add(spellLaneBorder); spellLaneMesh.add(spellLaneFill);
     spellLaneMesh.position.y = 2; spellLaneMesh.visible = false;
     scene.add(spellLaneMesh);
+    // 选牌射程预览：选中非法术卡牌时，在候选部署点显示该卡攻击射程圈（CR 部署前调）
+    cardRangeMesh = new THREE.Group();
+    cardRangeFill = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite:false }));
+    cardRangeFill.rotation.x = -Math.PI/2; cardRangeFill.position.y = 0.4;
+    cardRangeRing = new THREE.Mesh(new THREE.RingGeometry(0.93, 1, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite:false }));
+    cardRangeRing.rotation.x = -Math.PI/2; cardRangeRing.position.y = 0.7;
+    cardRangeMesh.add(cardRangeFill); cardRangeMesh.add(cardRangeRing);
+    cardRangeMesh.position.y = 2; cardRangeMesh.visible = false;
+    scene.add(cardRangeMesh);
     const st = document.createElement('div');
     st.id = 'scene-text';
     st.style.cssText = 'position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);color:#ffd700;font-weight:700;font-size:30px;text-align:center;text-shadow:0 2px 8px rgba(0,0,0,0.85);pointer-events:none;z-index:5;display:none;';
@@ -1555,16 +1572,17 @@ function updateAI(dt) {
   const enemyTanks = enemyUnits.filter(u => ['giant','hogrider','royalgiant','pekka'].includes(u.card));
   const enemyAirThreat = enemyUnits.filter(u => u.flying);
   const aiHasBuilding = game.units.some(u => u.owner === 'ai' && u.hp > 0 && u.isBuilding);
-  const cannonCard = ai.hand.find(c => c === 'cannon' && ai.elixir >= CARD_DEFS[c].cost);
+  const cannonCard = ai.hand.find(c => (c === 'cannon' || c === 'mortar') && ai.elixir >= CARD_DEFS[c].cost);
   const teslaCard  = ai.hand.find(c => c === 'tesla'  && ai.elixir >= CARD_DEFS[c].cost);
+  const xbowCard   = ai.hand.find(c => c === 'xbow'   && ai.elixir >= CARD_DEFS[c].cost);
   if (!aiHasBuilding) {
     const threatSide = enemyUnits.length
       ? (enemyUnits.reduce((s,u) => s+u.x,0)/enemyUnits.length < CENTER_X ? 'left' : 'right')
       : (ai.attackLane || 'left');
     let trigger = false, card = null;
-    if (enemyTanks.length > 0) { trigger = true; card = cannonCard || teslaCard; }            // 地面坦克：加农炮优先(便宜)
-    else if (enemyAirThreat.length > 0) { trigger = true; card = teslaCard; }                 // 对空只需电磁塔
-    else if (game.player.elixir >= 9 && enemyUnits.length >= 1) { trigger = true; card = cannonCard || teslaCard; } // 预判：提前布防
+    if (enemyTanks.length > 0) { trigger = true; card = cannonCard || teslaCard; }            // 地面坦克：加农炮/迫击炮优先(便宜)
+    else if (enemyAirThreat.length > 0) { trigger = true; card = teslaCard; }                 // 对空只需电磁塔(X连弩打不到空)
+    else if (game.player.elixir >= 9 && enemyUnits.length >= 1) { trigger = true; card = cannonCard || teslaCard || xbowCard; } // 预判：提前布防/攻城
     if (trigger && card) {
       const spot = aiBuildingSpot(threatSide);
       if (playCard('ai', card, spot.x, spot.y)) return;
@@ -1843,7 +1861,8 @@ function makeUnit(owner, def, x, y) {
     hp: def.hp, maxHp: def.hp, dmg: def.dmg, range: def.range,
     spd: def.spd, atkSpd: def.atkSpd, atkCD: 0.5,
     tgtType: def.tgt, splash: def.splash || 0, selfSplash: def.selfSplash || false,
-    sightRange: Math.min(Math.max(def.range + 60, 130), 200),
+    // 视野半径：下限保证近战也能感知(130)，上限随射程自适应，避免远射程建筑(range>200)因视野被截断而锁不到射程内的目标
+    sightRange: Math.min(Math.max(def.range + 60, 130), Math.max(200, def.range + 20)),
     deployTimer: def.deployTime || 0,
     canJumpRiver: def.canJumpRiver || false,
     flying: def.flying || false, isBuilding: def.isBuilding || false, decay: def.decay || 0,
@@ -3043,6 +3062,40 @@ function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
     const tower = _cyl(r * 0.5, r * 0.8, r * 2.0, _mat(0x5a6b7a), 10); tower.position.y = 8 + r; g.add(tower); ud.body = tower;
     const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(r * 0.6), _mat(0x9fe8ff, { emissive: 0x4fc3f7, emissiveIntensity: 0.8, transparent: true, opacity: 0.9 }));
     crystal.position.y = 8 + r * 2.1; g.add(crystal); ud.crystal = crystal;
+  } else if (u.model === 'mortar') {
+    // 破击炮：圆形底盘 + 梯形炮座 + 粗炮管大仰角(≈55°)上扬 + 炮口环
+    const disc = _cyl(r * 1.05, r * 1.2, r * 0.35, dark, 18); disc.position.y = 8 + r * 0.18; g.add(disc);
+    const seat = _box(r * 1.5, r * 1.1, r * 1.5, baseMat); seat.position.y = 8 + r * 0.7; g.add(seat); ud.body = seat;
+    const barrelPivot = new THREE.Group(); g.add(barrelPivot); ud.barrelPivot = barrelPivot;
+    const tube = _cyl(r * 0.34, r * 0.42, r * 1.5, metal, 16);
+    tube.rotation.x = Math.PI / 2 - 0.95;            // 大仰角：炮管明显朝上(迫击炮特征)
+    tube.position.set(0, 8 + r * 0.9, r * 0.55);
+    barrelPivot.add(tube); ud.barrel = tube;
+    const muzzle = new THREE.Mesh(new THREE.TorusGeometry(r * 0.34, r * 0.1, 8, 16), _mat(0x2b2b2b));
+    muzzle.rotation.x = Math.PI / 2; muzzle.position.set(0, 8 + r * 0.9 + (r * 0.75) * Math.sin(0.95), r * 0.55 + (r * 0.75) * Math.cos(0.95));
+    barrelPivot.add(muzzle);
+    // 两根支撑斜杆，增加机械感
+    for (const sx of [-1, 1]) {
+      const strut = _box(r * 0.18, r * 1.0, r * 0.18, dark);
+      strut.position.set(sx * r * 0.7, 8 + r * 0.5, -r * 0.4); strut.rotation.x = 0.5; g.add(strut);
+    }
+  } else if (u.model === 'xbow') {
+    // X连弩：圆形平台 + 旋转炮塔(随目标转动) + X 形弓臂 + 弓弦 + 待发弩箭(沿+Z)
+    const platform = _cyl(r * 1.15, r * 1.35, r * 0.5, dark, 18); platform.position.y = 8 + r * 0.25; g.add(platform); ud.body = platform;
+    const hub = _cyl(r * 0.45, r * 0.55, r * 0.5, metal, 12); hub.position.y = 8 + r * 0.55; g.add(hub);
+    const turret = new THREE.Group(); turret.position.y = 8 + r * 0.55; g.add(turret); ud.barrelPivot = turret;
+    const armMat = _mat(0x8d6e63);
+    const arm1 = _box(r * 2.3, r * 0.26, r * 0.26, armMat); arm1.rotation.z = Math.PI / 4; turret.add(arm1);
+    const arm2 = _box(r * 2.3, r * 0.26, r * 0.26, armMat); arm2.rotation.z = -Math.PI / 4; turret.add(arm2);
+    const string = _box(r * 0.12, r * 2.0, r * 0.12, _mat(0xe0e0e0)); turret.add(string);
+    // 中央转轴（蓝）
+    const axle = _cyl(r * 0.16, r * 0.16, r * 0.5, _mat(0x3D5AFE, { emissive: 0x1a3adf, emissiveIntensity: 0.5 }), 8); axle.position.y = r * 0.3; turret.add(axle);
+    // 弩箭（沿 +Z 方向待发）：杆 + 箭头 + 尾羽
+    const bolt = new THREE.Group(); bolt.position.z = r * 0.2; turret.add(bolt); ud.barrel = bolt;
+    const shaft = _cyl(r * 0.08, r * 0.08, r * 1.5, _mat(0x6d4c41), 8); shaft.rotation.x = Math.PI / 2; shaft.position.z = r * 0.4; bolt.add(shaft);
+    const headB = new THREE.Mesh(new THREE.ConeGeometry(r * 0.2, r * 0.42, 8), _mat(0xeceff1)); headB.rotation.x = Math.PI / 2; headB.position.z = r * 1.2; bolt.add(headB);
+    const f1 = _box(r * 0.1, r * 0.5, r * 0.1, _mat(0xbdbdbd)); f1.position.set(r * 0.12, 0, -r * 0.35); bolt.add(f1);
+    const f2 = _box(r * 0.1, r * 0.5, r * 0.1, _mat(0xbdbdbd)); f2.position.set(-r * 0.12, 0, -r * 0.35); bolt.add(f2);
   }
 }
 function makeUnitMesh(u) {
@@ -3344,6 +3397,12 @@ function spawnAttackFx(u, tgt) {
     case 'lob':
       game.effects.push({ type: 'bomb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.30, maxLife: 0.30, color: '#2b2b2b' });
       break;
+    case 'mortar':
+      game.effects.push({ type: 'mortarshell', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.55, maxLife: 0.55, color: u.color });
+      break;
+    case 'xshot':
+      game.effects.push({ type: 'xbolt', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.14, maxLife: 0.14, color: u.color });
+      break;
     case 'magic':
       game.effects.push({ type: 'orb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.22, maxLife: 0.22, color: '#ff5722' });
       break;
@@ -3355,7 +3414,7 @@ function spawnAttackFx(u, tgt) {
 }
 function updateDeployZone() {
   if (!deployZoneMesh) return;
-  if (game.selectedCardIdx === null) { deployZoneMesh.visible = false; if (spellRangeMesh) spellRangeMesh.visible = false; if (spellLaneMesh) spellLaneMesh.visible = false; return; }
+  if (game.selectedCardIdx === null) { deployZoneMesh.visible = false; if (spellRangeMesh) spellRangeMesh.visible = false; if (spellLaneMesh) spellLaneMesh.visible = false; if (cardRangeMesh) cardRangeMesh.visible = false; return; }
   const cardKey = game.player.hand[game.selectedCardIdx];
   const def = CARD_DEFS[cardKey];
   if (def && def.type === 'spell') {
@@ -3406,7 +3465,28 @@ function updateDeployZone() {
       }
     }
   } else {
-    spellRangeMesh.visible = false;
+    spellRangeMesh.visible = false; spellLaneMesh.visible = false;
+    // 选牌射程预览：在候选部署点显示该卡攻击射程圈（随鼠标在己方半场移动）
+    const def2 = CARD_DEFS[cardKey];
+    let px = CENTER_X, py = 520;
+    if (hoverWorld && isFinite(hoverWorld.x) && isFinite(hoverWorld.y)) { px = hoverWorld.x; py = hoverWorld.y; }
+    if (py < 340) py = 340 + 30;                       // 候选点限制在玩家可部署半场(桥后为敌方半场)
+    px = Math.max(20, Math.min(CW - 20, px));
+    py = Math.max(340 + 20, Math.min(CH - 20, py));
+    const rng = (def2 && def2.range) ? def2.range : 0;
+    if (rng > 0) {
+      cardRangeMesh.visible = true;
+      cardRangeMesh.position.set(px - CENTER_X, 2, py - 340);
+      cardRangeMesh.scale.set(rng, rng, rng);
+      const rc = new THREE.Color(def2.color || '#ffffff');
+      const inField = px >= 0 && px <= CW && py >= 0 && py <= CH;
+      cardRangeRing.material.color.copy(rc); cardRangeFill.material.color.copy(rc);
+      const t = performance.now() / 1000;
+      cardRangeRing.material.opacity = 0.6 + 0.3 * Math.sin(t * 5);
+      cardRangeFill.material.opacity = inField ? 0.10 + 0.04 * Math.sin(t * 5) : 0.22;
+    } else {
+      cardRangeMesh.visible = false;
+    }
     let zMin = 20, zMax = 340;
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
@@ -3582,6 +3662,37 @@ function updateEffectMeshes() {
       const b = new THREE.Mesh(new THREE.SphereGeometry(4.5, 10, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.95}));
       b.position.set(bx, by, bz); fxGroup.add(b);
       if (p > 0.85) { const fl = new THREE.Mesh(new THREE.SphereGeometry(8, 10, 8), new THREE.MeshBasicMaterial({color:0xff7a1a, transparent:true, opacity:0.7})); fl.position.set(e.tx-CENTER_X, 10, e.ty-340); fxGroup.add(fl); }
+    } else if (e.type === 'mortarshell') {
+      // 破击炮炮弹：高抛物线飞行的深色金属壳 + 弹头尖 + 烟雾拖尾 + 落点火光
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const by = 14 + Math.sin(p * Math.PI) * 46;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const shell = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 10), new THREE.MeshBasicMaterial({ color: 0x2b2b2b, transparent: true, opacity: 0.98 }));
+      shell.position.set(bx, by, bz); fxGroup.add(shell);
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(3, 7, 8), new THREE.MeshBasicMaterial({ color: 0xffa726, transparent: true, opacity: 0.95 }));
+      tip.position.set(bx, by + 5, bz); fxGroup.add(tip);
+      for (let k = 1; k <= 3; k++) {
+        const pp = Math.max(0, p - k * 0.12);
+        const px = (e.sx + (e.tx - e.sx) * pp) - CENTER_X;
+        const pz = (e.sy + (e.ty - e.sy) * pp) - 340;
+        const py = 14 + Math.sin(pp * Math.PI) * 46;
+        const smoke = new THREE.Mesh(new THREE.SphereGeometry(2.5 + k, 8, 6), new THREE.MeshBasicMaterial({ color: 0xbbbbbb, transparent: true, opacity: 0.4 - k * 0.1 }));
+        smoke.position.set(px, py, pz); fxGroup.add(smoke);
+      }
+      if (p > 0.8) { const fl = new THREE.Mesh(new THREE.SphereGeometry(9, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0.75 })); fl.position.set(e.tx - CENTER_X, 11, e.ty - 340); fxGroup.add(fl); }
+    } else if (e.type === 'xbolt') {
+      // X连弩弩箭：细长杆 + 箭头 + 半透明蓝色拖尾，表现高速连射轨迹
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const ang = Math.atan2(e.tx - e.sx, e.ty - e.sy);
+      const shaft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 16), new THREE.MeshBasicMaterial({ color: 0x6d4c41, transparent: true, opacity: 0.96 }));
+      shaft.rotation.y = ang; shaft.position.set(bx, 15, bz); fxGroup.add(shaft);
+      const headB = new THREE.Mesh(new THREE.ConeGeometry(2.4, 6, 8), new THREE.MeshBasicMaterial({ color: 0xeceff1, transparent: true, opacity: 0.98 }));
+      headB.rotation.y = ang; headB.rotation.x = Math.PI / 2; headB.position.set(bx + Math.sin(ang) * 9, 15, bz + Math.cos(ang) * 9); fxGroup.add(headB);
+      const trail = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.0, 22), new THREE.MeshBasicMaterial({ color: 0x3d5afe, transparent: true, opacity: 0.35 }));
+      trail.rotation.y = ang; trail.position.set(bx - Math.sin(ang) * 11, 15, bz - Math.cos(ang) * 11); fxGroup.add(trail);
     } else if (e.type === 'rain') {
       const rad = e.radius || 60;
       for (let k = 0; k < 10; k++) {
