@@ -474,6 +474,7 @@ window.addEventListener('error', function (e) {
 });
 ensureScene();
 let game = null;
+let engageSeq = 0;   // 全局「开火顺序」计数器：单位首次进入攻击(anchored)时领取递增序号，用于碰撞时「先开火者守位、后到者让位」(CR 行为)
 
 // ==================== AI 训练（跨对局持久化到本地） ====================
 // 每次与玩家对局结束后都会写入训练数据：对局数、胜场、训练等级(skill 0~1)。
@@ -875,7 +876,11 @@ function updateUnit(unit, dt) {
   //      正在攻击（已在射程内）的单位保持当前目标，不抢切。
   const bestTarget = findTarget(unit);
   const inAttack = unit.target && !unit.target.dead && unit.target.hp > 0 && dist(unit, unit.target) <= effectiveRangeOf(unit, unit.target);
-  if (inAttack) unit.anchored = true;   // 前排正在攻击的单位锚定守位：碰撞中只被更重单位推挤，轻单位从它身边绕开(解决"互相挡住")
+  if (inAttack) {
+    unit.anchored = true;   // 前排正在攻击的单位锚定守位：碰撞中只被更重单位推挤，轻单位从它身边绕开(解决"互相挡住")
+    // 首次进入攻击：领取「开火顺序」序号。先开火的单位在后续碰撞中守位，后到者让位(CR：先到的占住位置)
+    if (!unit.engaged) { unit.engaged = true; unit.engageOrder = ++engageSeq; }
+  }
   if (!inAttack) {
     unit.target = bestTarget;
   }
@@ -1123,10 +1128,18 @@ function resolveCollisions() {
         } else if (bAnch && !aAnch) {
           a.x += paD[0] * overlap; a.y += paD[1] * overlap;
         } else {
-          // 两个轻单位 或 两个重单位：按质量平分位移(×0.6 软化，允许小兵互相略重叠而贴紧目标围攻，不互挡)
-          const sum = aMass + bMass;
-          a.x += paD[0] * overlap * (bMass / sum) * 0.6; a.y += paD[1] * overlap * (bMass / sum) * 0.6;
-          b.x += pbD[0] * overlap * (aMass / sum) * 0.6; b.y += pbD[1] * overlap * (aMass / sum) * 0.6;
+          // 两个轻单位 / 两个重单位 / 双方都在攻击：
+          // 若双方都在攻击(anchored)，按「开火顺序」决定谁守位——先开火(engageOrder 更小)的一方占住位置、纹丝不动，
+          // 后到的一方被挤开去填剩余的缝(CR：先到的单位不被后来的单位推动；后来者绕到侧边空位而非顶人)。
+          if (aAnch && bAnch && a.engageOrder > 0 && b.engageOrder > 0 && a.engageOrder !== b.engageOrder) {
+            if (a.engageOrder < b.engageOrder) { b.x += pb[0] * overlap; b.y += pb[1] * overlap; }
+            else { a.x += pa[0] * overlap; a.y += pa[1] * overlap; }
+          } else {
+            // 按质量平分位移(×0.6 软化，允许小兵互相略重叠而贴紧目标围攻，不互挡)
+            const sum = aMass + bMass;
+            a.x += paD[0] * overlap * (bMass / sum) * 0.6; a.y += paD[1] * overlap * (bMass / sum) * 0.6;
+            b.x += pbD[0] * overlap * (aMass / sum) * 0.6; b.y += pbD[1] * overlap * (aMass / sum) * 0.6;
+          }
         }
         if (!aImm) { const c = clampToRiverBank(a, a.x, a.y); a.x = c.x; a.y = c.y; }
         if (!bImm) { const c = clampToRiverBank(b, b.x, b.y); b.x = c.x; b.y = c.y; }
@@ -1160,14 +1173,11 @@ function resolveCollisions() {
 // 自然散开成包围圈，而不是全挤到目标正中心(导致后排被前排挡住、互相卡死)。
 // 需过桥的目标(异侧)直奔中心点(过桥后自然散开)；飞行/挖地/自爆突进/跳河单位不走包围。
 function computeSurroundDest(unit, moveDest) {
-  if (unit.flying || unit.underground || unit.suicide || unit.canJumpRiver) return moveDest;
-  // 塔(公主/国王)不做包围角偏移：皇室战争里单位直奔塔心，碰撞自然把成团单位摊在塔周，
-  // 强制绕到固定角度反而让单体过桥后靠近塔时"甩一下"。仅对"单位类目标"做包围散开(解决互挡)。
-  if (moveDest.type === 'king' || moveDest.type === 'princess') return moveDest;
-  const sameSide = (unit.y < 340) === (moveDest.y < 340);
-  if (!sameSide) return moveDest;
-  const effR = unit.range + (moveDest.w ? moveDest.w / 2 : (moveDest.radius || 10));
-  return { x: moveDest.x + Math.cos(unit.surroundAng) * effR, y: moveDest.y + Math.sin(unit.surroundAng) * effR };
+  // 皇室战争里单位就是径直走向目标、进入攻击距离即停手，由「碰撞分离 + 切向绕行」自然摊成松散包围，
+  // 并不计算随自身位置实时变化的「包围落点角」。那种做法有两个毛病：(1) 单位为了绕到某个固定/实时角度而在
+  // 目标背面打转，表现为生硬的"环绕"；(2) 在桥面等受限空间里，落点角算出的点被河岸夹回，单位始终差一点
+  // 攻击距离而卡死(过桥卡死)。故这里直接返回目标中心，散开交给碰撞处理，更贴近 CR 表现。
+  return moveDest;
 }
 
 // 绕行避让：被友军/塔挡在前方时，沿切向(侧边)滑过去，绝不往后推——
@@ -1895,7 +1905,7 @@ function makeUnit(owner, def, x, y) {
     bridgeLane: (Math.random() * 2 - 1) * (BRIDGE_HALF || 21.25) * 0.6,   // 稳定过桥车道偏移(桥宽内)，分散过桥避免卡桥头
     surroundAng: Math.random() * Math.PI * 2,   // 稳定包围角：多个单位锁定同一目标时各自奔向目标圆周上该角度点，自然散成包围圈而非全堆中心
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
-    target: null, dead: false, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
+    target: null, dead: false, engaged: false, engageOrder: 0, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
     digFrom: isMiner ? { x: sx, y: sy } : null, digTo: isMiner ? { x: sx, y: sy } : null,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
