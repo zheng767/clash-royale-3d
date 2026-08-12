@@ -735,6 +735,11 @@ function getMoveTarget(unit, dest) {
 
 // 有效攻击距离（含目标体积）
 function effectiveRangeOf(unit, target) {
+  // 【CR 边缘到边缘 口径】塔的碰撞半径为 collR(公主塔1.5格/国王塔2格，取自 CR 源码 3×3 占地)，
+  //   单位打塔的有效中心距 = 单位射程 + 塔collR；单位打单位沿用 w/2 或 radius。
+  //   旧实现用 target.w/2(公主塔=21px=1格) 少算了 0.5 格，使单位比 CR 近一截开火——已修正。
+  if (target.type && TOWER_DEFS[target.type] && TOWER_DEFS[target.type].collR != null)
+    return unit.range + TOWER_DEFS[target.type].collR;
   return unit.range + (target.w ? target.w / 2 : target.radius || 10);
 }
 
@@ -912,7 +917,7 @@ function updateUnit(unit, dt) {
   // 围攻散开：移动时奔向目标圆周上自身包围角对应的点(同侧目标才生效)，散成包围圈而非全堆中心
   const md = computeSurroundDest(unit, moveDest);
   const d = dist(unit, moveDest);
-  const effectiveRange = unit.range + (moveDest.w ? moveDest.w/2 : moveDest.radius || 10);
+  const effectiveRange = effectiveRangeOf(unit, moveDest);   // 与 inAttack 判定同一口径(塔用 CR collR)
   // 骷髅气球：飞到建筑/塔射程内即“坠毁”，死亡伤害 + 投出骷髅兵（CR 机制）
   if (unit.isBalloon && unit.target && d <= effectiveRange) { balloonDeath(unit); return; }
   if (unit.dmg > 0 && unit.target && d <= effectiveRange) {
