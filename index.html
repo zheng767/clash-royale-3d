@@ -282,7 +282,7 @@ const CARD_DEFS = {
   //   炸弹塔 Bomb Tower：4 费 / 稀有 / 建筑(对地不含空) / 范围伤害222(1.5格=31.875) / 寿命约35s(decay=30) / 死亡爆炸(同类范围伤害, 1.5格)
   //   气球兵 Balloon：5 费 / 史诗 / 飞行 / 只打建筑 / 投弹640 / 死亡3秒延迟爆炸(3格=63.75范围, 命中所有敌人与塔)
   magicarcher:{ name:'神箭游侠', cost:4, hp:529, dmg:133, range:148.75, spd:21.25, atkSpd:1.1, tgt:'any', count:1, color:'#7E57C2', icon:'箭', radius:11, deployTime:1.0, model:'archer', atk:'piercearrow', projectileRange:233.75, pierceWidth:5.3, firstHit:0.7 },
-  bombtower:  { name:'炸弹塔', cost:4, hp:1356, dmg:222, range:127.5, spd:0, atkSpd:1.6, tgt:'ground', count:1, color:'#795548', icon:'炸', radius:15, deployTime:1.0, isBuilding:true, decay:30, model:'cannon', atk:'lob', splash:31.875, deathDmg:222, deathRadius:31.875 },
+  bombtower:  { name:'炸弹塔', cost:4, hp:1356, dmg:222, range:127.5, spd:0, atkSpd:1.6, tgt:'ground', count:1, color:'#795548', icon:'炸', radius:15, deployTime:1.0, isBuilding:true, decay:30, model:'bombtower', atk:'bombtoss', splash:31.875, deathDmg:222, deathRadius:31.875 },
   balloon:    { name:'气球兵', cost:5, hp:1679, dmg:640, range:2, spd:21.25, atkSpd:2.0, tgt:'building', count:1, color:'#90A4AE', icon:'球', radius:15, flying:true, deployTime:1.0, model:'balloon', atk:'bombdrop', deathDmg:240, deathRadius:63.75, deathDelay:3.0, firstHit:0.2 },
   // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
   fisherman:  { name:'渔夫', cost:3, hp:870, dmg:194, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:127, hookCDInit:1.3, model:'fisherman', atk:'hook' },
@@ -1951,18 +1951,24 @@ function makeUnit(owner, def, x, y) {
   // 出土后为普通地面单位，过桥/寻敌走正常逻辑。跨河部署属 CR 机制——出土即在该侧。
   const sx = Math.max(_m, Math.min(400 - _m, x));
   const sy = Math.max(_m, Math.min(680 - _m, y));
-  // 矿工挖地轨迹：出土点 = 部署点（CR 一致）。跨河部署时从己方最近的桥头下挖、经桥底抵达部署点
-  // （用户要求"从桥底下挖过去"，而非笔直横穿河道）。挖地时长固定 digTime=1.0s，与 CR 掘进节奏一致。
+  // 矿工挖地轨迹：出土点 = 部署点（CR 一致）。
+  // 跨河部署：从己方半场靠桥一侧(深入己方半场约 35px 的桥头入口)下挖 → 经桥底 → 敌方部署点，
+  // 使挖地轨迹在「己方半场」与「敌方半场」都可见（用户要求"从桥底下挖过去，轨迹两边都要显示"，而非直线横穿河道）。
+  // 己方半场部署：在部署点附近做一段深入己方半场的短挖地道，让挖地轨迹可见。挖地时长固定 digTime=1.0s，与 CR 掘进节奏一致。
   let _digFrom = null, _digTo = null;
   if (isMiner) {
     _digTo = { x: sx, y: sy };
     const crossRiver = (owner === 'player' && sy < RIVER_TOP) || (owner === 'ai' && sy > RIVER_BOT);
     if (crossRiver) {
       const bridgeX = Math.abs(sx - BRIDGE_L.x) <= Math.abs(sx - BRIDGE_R.x) ? BRIDGE_L.x : BRIDGE_R.x;
-      const homeBankY = owner === 'player' ? RIVER_BOT : RIVER_TOP;
-      _digFrom = { x: bridgeX, y: homeBankY };
+      // 桥头入口深入己方半场(约 35px)，保证挖掘轨迹在己方半场也可见；掘进路线：己方桥头→桥底→敌方部署点
+      const entryY = owner === 'player' ? RIVER_BOT + 35 : RIVER_TOP - 35;
+      _digFrom = { x: bridgeX, y: entryY };
     } else {
-      _digFrom = { x: sx, y: sy };   // 己方半场：原地短挖（仅破土坑，无长轨迹）
+      // 己方半场部署：在部署点同侧深处偏移一段，形成可见的短挖地道（不跨河）
+      const dy = owner === 'player' ? -30 : 30;   // 向己方半场更深处偏移
+      const fy = owner === 'player' ? Math.max(RIVER_BOT + 8, sy + dy) : Math.min(RIVER_TOP - 8, sy + dy);
+      _digFrom = { x: sx, y: fy };
     }
   }
   return {
@@ -2396,6 +2402,14 @@ function updateLogs(dt) {
       if (!u.isBuilding) {                 // 建筑不可被击退；CR：滚木击退所有地面部队
         u.y += L.dir * L.knockback;
         const c = clampToRiverBank(u, u.x, u.y); u.x = c.x; u.y = c.y;
+        // 滚木打断：冲锋单位(王子/黑暗王子等)冲锋被打断、重置并从常速重新蓄力加速（CR 机制：被击退即丢失冲锋）
+        if (u.canCharge) {
+          u.charged = false;
+          u.chargeTimer = 0;
+          u.curSpd = u.spd;
+          u._chargeDustT = 0;
+          u.target = null;   // 重置后需重新锁定并奔向目标(重新开始加速)
+        }
       }
     }
     // 塔（公主/国王）同样命中，按 towerDmgMult 减伤，命中一次
@@ -3200,6 +3214,23 @@ function buildBuilding(g, u, ud, r, baseMat, dark, metal) {
     const wr = wgeo.clone(); wr.rotation.z = Math.PI / 2; wr.position.set(r * 0.9, r * 0.5, 0); g.add(wr);
     const barrelPivot = new THREE.Group(); g.add(barrelPivot); ud.barrelPivot = barrelPivot;
     const barrel = _cyl(r * 0.22, r * 0.28, r * 1.2, metal, 12); barrel.rotation.x = Math.PI / 2 - 0.3; barrel.position.set(0, 8 + r * 0.7, r * 0.7); barrelPivot.add(barrel); ud.barrel = barrel;
+  } else if (u.model === 'bombtower') {
+    // 炸弹塔：石质塔身(上窄下宽) + 横向砖纹带 + 出挑塔檐 + 顶部黑色圆炸弹(引线+火花)
+    const stone = _mat(0x70737a, { roughness: 0.92 });
+    const stoneDark = _mat(0x565863, { roughness: 0.95 });
+    const tower = _cyl(r * 0.72, r * 1.05, r * 1.95, stone, 16); tower.position.y = 8 + r * 0.95; g.add(tower); ud.body = tower;
+    for (const yy of [8 + r * 0.5, 8 + r * 1.45]) {            // 两道砖纹带，增加石砌质感
+      const band = _cyl(r * 0.94, r * 0.94, r * 0.16, stoneDark, 16); band.position.y = yy; g.add(band);
+    }
+    const rim = _cyl(r * 1.14, r * 0.74, r * 0.24, stoneDark, 16); rim.position.y = 8 + r * 1.98; g.add(rim);  // 出挑塔檐
+    const bomb = new THREE.Mesh(new THREE.SphereGeometry(r * 0.8, 18, 16), new THREE.MeshStandardMaterial({ color: 0x232323, roughness: 0.45, metalness: 0.25 }));
+    bomb.position.y = 8 + r * 2.55; g.add(bomb); ud.bomb = bomb;   // 顶部黑色圆炸弹
+    const hi = new THREE.Mesh(new THREE.SphereGeometry(r * 0.26, 10, 8), new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.3, metalness: 0.6 }));
+    hi.position.set(-r * 0.26, 8 + r * 2.78, r * 0.32); g.add(hi);   // 炸弹高光
+    const fuse = _cyl(r * 0.09, r * 0.11, r * 0.7, _mat(0x6d4c41), 6);   // 引线(向后上翘)
+    fuse.position.set(r * 0.42, 8 + r * 3.0, 0); fuse.rotation.z = -0.5; g.add(fuse);
+    const spark = new THREE.Mesh(new THREE.SphereGeometry(r * 0.18, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffb300 }));
+    spark.position.set(r * 0.66, 8 + r * 3.25, 0); g.add(spark); ud.spark = spark;   // 引线火花(呼吸闪烁)
   } else if (u.model === 'tesla') {
     const pole = _cyl(r * 0.25, r * 0.3, r * 2.0, metal, 10); pole.position.y = 8 + r; g.add(pole); ud.body = pole;
     const coil = new THREE.Mesh(new THREE.TorusGeometry(r * 0.5, r * 0.12, 8, 16), _mat(0x03A9F4, { emissive: 0x03A9F4, emissiveIntensity: 0.7 })); coil.rotation.x = Math.PI / 2; coil.position.y = 8 + r * 1.6; g.add(coil); ud.coil = coil;
@@ -3368,6 +3399,7 @@ function updateUnitMesh(m, u) {
   if (ud.hog) ud.hog.position.y = Math.abs(Math.sin(ph)) * (ud.r * 0.12);
   // 建筑特征部件常驻微动
   if (ud.coil) ud.coil.rotation.z = t * 1.5;
+  if (ud.spark) { const sp = 0.75 + Math.sin(t * 9) * 0.35; ud.spark.scale.set(sp, sp, sp); }  // 炸弹塔引线火花呼吸闪烁
   if (ud.crystal && u.atk === 'none') { const s = 1 + Math.sin(t * 3) * 0.12; ud.crystal.scale.set(s, s, s); }
   if (ud.crystal && u.model === 'frosttower') ud.crystal.rotation.y = t * 1.2;
   // 加农炮炮口随目标旋转（基座固定，仅炮管转向当前攻击目标）
@@ -3551,6 +3583,9 @@ function spawnAttackFx(u, tgt) {
       break;
     case 'lob':
       game.effects.push({ type: 'bomb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.30, maxLife: 0.30, color: '#2b2b2b' });
+      break;
+    case 'bombtoss':
+      game.effects.push({ type: 'bombtower_bomb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.34, maxLife: 0.34, color: '#1c1c1c' });
       break;
     case 'bombdrop':
       game.effects.push({ type: 'bomb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.25, maxLife: 0.25, color: '#2b2b2b' });
@@ -3854,6 +3889,34 @@ function updateEffectMeshes() {
       const b = new THREE.Mesh(new THREE.SphereGeometry(4.5, 10, 8), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.95}));
       b.position.set(bx, by, bz); fxGroup.add(b);
       if (p > 0.85) { const fl = new THREE.Mesh(new THREE.SphereGeometry(8, 10, 8), new THREE.MeshBasicMaterial({color:0xff7a1a, transparent:true, opacity:0.7})); fl.position.set(e.tx-CENTER_X, 10, e.ty-340); fxGroup.add(fl); }
+    } else if (e.type === 'bombtower_bomb') {
+      // 炸弹塔抛射：飞行相位=黑色圆炸弹(引线+火花)高抛物线；落地相位=闪光球+金环+碎屑爆炸
+      const p = 1 - e.life / e.maxLife;
+      const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
+      const by = 16 + Math.sin(p * Math.PI) * 34;
+      const bz = (e.sy + (e.ty - e.sy) * p) - 340;
+      const tt = game.gameTime || 0;
+      if (p < 0.8) {
+        const b = new THREE.Mesh(new THREE.SphereGeometry(6, 12, 10), new THREE.MeshBasicMaterial({ color: 0x1c1c1c, transparent: true, opacity: 0.98 }));
+        b.position.set(bx, by, bz); fxGroup.add(b);
+        const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 6, 6), new THREE.MeshBasicMaterial({ color: 0x6d4c41 }));
+        fuse.position.set(bx, by + 6, bz); fxGroup.add(fuse);
+        const spark = new THREE.Mesh(new THREE.SphereGeometry(2.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffb300 }));
+        spark.position.set(bx + 1.5, by + 9.5, bz); fxGroup.add(spark);
+      } else {
+        const q = (p - 0.8) / 0.2;
+        const rad = 6 + q * 24;
+        const boom = new THREE.Mesh(new THREE.SphereGeometry(rad, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff6b35, transparent: true, opacity: 1 - q }));
+        boom.position.set(e.tx - CENTER_X, 14, e.ty - 340); fxGroup.add(boom);
+        const ring = new THREE.Mesh(new THREE.RingGeometry(rad * 0.55, rad, 22), new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: (1 - q) * 0.9, side: THREE.DoubleSide }));
+        ring.rotation.x = -Math.PI / 2; ring.position.set(e.tx - CENTER_X, 3, e.ty - 340); fxGroup.add(ring);
+        for (let k = 0; k < 5; k++) {
+          const a = k / 5 * Math.PI * 2 + tt * 2;
+          const d = rad * (0.4 + (k % 2) * 0.6);
+          const ch = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.5, 2.5), new THREE.MeshBasicMaterial({ color: 0x8d6e63, transparent: true, opacity: 1 - q }));
+          ch.position.set(e.tx - CENTER_X + Math.cos(a) * d, 5 + (k % 2) * 4, e.ty - 340 + Math.sin(a) * d); fxGroup.add(ch);
+        }
+      }
     } else if (e.type === 'mortarshell') {
       // 破击炮炮弹：高抛物线飞行的深色金属壳 + 弹头尖 + 烟雾拖尾 + 落点火光
       const p = 1 - e.life / e.maxLife;
