@@ -197,6 +197,11 @@ const PRINCESS_X_R = 14.5 * TILE;  // 308.125，右路公主塔/右桥 X（14500
 // 双桥/公主塔 x = 3.5/14.5 格（CR 源码实测，更靠两侧）；国王塔 x = 9 格（正中）
 const RIVER_TOP = 16*TILE - TILE, RIVER_BOT = 16*TILE + TILE;   // 河流 2 瓦片宽(≈42px)，中心 y=340
 const RIVER_JUMP_H = 34;   // 跳河单位(野猪骑士/郝思涵)过河抛物线峰值高度(px)，纯视觉
+// 圣水积累速率（每 +1 圣水所需秒数，CR 锦标赛标准）：1x=2.8s/滴，2x=1.4s/滴，3x≈0.933s/滴
+const ELIXIR_RATE_1X = 2.8;
+const ELIXIR_RATE_2X = 1.4;
+const ELIXIR_RATE_3X = 2.8 / 3;
+const REG_DOUBLE_AT = 60;   // 常规 3 分钟赛：剩余时间低于此值(秒)时进入 2x 圣水（最后一分钟双倍）
 const BRIDGE_L = { x: PRINCESS_X_L, y: 16*TILE };   // 左桥：与左路公主塔同列
 const BRIDGE_R = { x: PRINCESS_X_R, y: 16*TILE };   // 右桥：与右路公主塔同列
 const BRIDGE_TOL = TILE * 2.0;   // 桥面判定缓冲(略宽于桥道半宽)：碰撞推挤时把轻微出界吸回桥面边缘，不会掉下河
@@ -4640,11 +4645,11 @@ function gameLoop(timestamp) {
     game.elixirTimer += dt;
     let elixirRate;
     if (game.overtime) {
-      // 加时赛：overtimeTime 从120倒数，>60 为第一分钟。
-      // CR 标准：第一分钟 2x(1 圣水/1.4s)，第二分钟 3x(1 圣水/0.93s)
-      elixirRate = game.overtimeTime > 60 ? 1.4 : (2.8 / 3);
+      // 加时赛(突然死亡)：全程 3x 圣水（1 圣水/0.93s），CR 标准
+      elixirRate = ELIXIR_RATE_3X;
     } else {
-      elixirRate = game.time < 60 ? 1.4 : 2.8;
+      // 常规 3 分钟：前 2 分钟 1x，最后一分钟（剩余 ≤60s）2x 圣水
+      elixirRate = game.time <= REG_DOUBLE_AT ? ELIXIR_RATE_2X : ELIXIR_RATE_1X;
     }
     if (game.elixirTimer >= elixirRate) {
       game.elixirTimer -= elixirRate;
