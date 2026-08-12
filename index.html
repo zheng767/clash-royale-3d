@@ -277,6 +277,13 @@ const CARD_DEFS = {
   quake:      { name:'震荡术', cost:3, type:'spell', dmg:252, radius:74, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake', quakeDuration:3.0, quakeTickInterval:1.0, quakeTicks:3, towerDmgMult:159/252, buildingDmg:861, slowFactor:0.5, slowDur:1.5 },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
   miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:31.875, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:48/194 },
+  // ===== 原版新增：神箭游侠 / 炸弹塔 / 气球兵（CR 锦标赛 L11 数值 + 机制严格还原，已联网校准 clasher.us）=====
+  //   神箭游侠 Magic Archer：4 费 / 传奇 / 对空对地 / 射程7格(148.75) / 抛射物射程11格(233.75) / 穿箭(命中直线所有敌人与塔) / 最小溅射0.25格(5.3)
+  //   炸弹塔 Bomb Tower：4 费 / 稀有 / 建筑(对地不含空) / 范围伤害222(1.5格=31.875) / 寿命约35s(decay=30) / 死亡爆炸(同类范围伤害, 1.5格)
+  //   气球兵 Balloon：5 费 / 史诗 / 飞行 / 只打建筑 / 投弹640 / 死亡3秒延迟爆炸(3格=63.75范围, 命中所有敌人与塔)
+  magicarcher:{ name:'神箭游侠', cost:4, hp:529, dmg:133, range:148.75, spd:21.25, atkSpd:1.1, tgt:'any', count:1, color:'#7E57C2', icon:'箭', radius:11, deployTime:1.0, model:'archer', atk:'piercearrow', projectileRange:233.75, pierceWidth:5.3, firstHit:0.7 },
+  bombtower:  { name:'炸弹塔', cost:4, hp:1356, dmg:222, range:127.5, spd:0, atkSpd:1.6, tgt:'ground', count:1, color:'#795548', icon:'炸', radius:15, deployTime:1.0, isBuilding:true, decay:30, model:'cannon', atk:'lob', splash:31.875, deathDmg:222, deathRadius:31.875 },
+  balloon:    { name:'气球兵', cost:5, hp:1679, dmg:640, range:2, spd:21.25, atkSpd:2.0, tgt:'building', count:1, color:'#90A4AE', icon:'球', radius:15, flying:true, deployTime:1.0, model:'balloon', atk:'bombdrop', deathDmg:240, deathRadius:63.75, deathDelay:3.0, firstHit:0.2 },
   // ===== 原版新增：渔夫（CR 锦标赛 L11）=====
   fisherman:  { name:'渔夫', cost:3, hp:870, dmg:194, range:25, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#1565C0', icon:'渔', radius:13, deployTime:1.0, hookRange:127, hookCDInit:1.3, model:'fisherman', atk:'hook' },
   // ===== 原版新增：复仇滚木 / 吹箭哥布林 / 骷髅帝王（CR 锦标赛 L11 数值，效果严格还原）=====
@@ -309,18 +316,18 @@ const QUALITY = {
   frosttower:'common', zap:'common', arrows:'common', vines:'common', skarmy:'common',
   skeletonballoon:'common', stormsentinel:'common', flamemage:'common', log:'common', battleram:'common',
   // 稀有 Rare
-  minipekka:'rare', valkyrie:'rare', wizard:'rare', rocket:'rare', dartgoblin:'rare', fisherman:'rare', miner:'rare', pekka:'rare',
+  minipekka:'rare', valkyrie:'rare', wizard:'rare', rocket:'rare', dartgoblin:'rare', fisherman:'rare', miner:'rare', pekka:'rare', bombtower:'rare',
   // 史诗 Epic
-  darkprince:'epic', lightning:'epic', freeze:'epic', hurricane:'epic', quake:'epic', prince:'epic', xbow:'epic',
+  darkprince:'epic', lightning:'epic', freeze:'epic', hurricane:'epic', quake:'epic', prince:'epic', xbow:'epic', balloon:'epic',
   // 传奇 Legendary
-  princess:'legendary', icewizard:'legendary',
+  princess:'legendary', icewizard:'legendary', magicarcher:'legendary',
   // 英雄（冠军）Champion
   hero_tian:'champion', skeletonking:'champion', tianci:'champion', kan:'champion'
 };
 const QUALITY_COLORS = { common:'#cfd8dc', rare:'#FF9800', epic:'#9C27B0', legendary:'#FFD700', champion:'#FF4081' };
 const QUALITY_LABELS = { common:'普通', rare:'稀有', epic:'史诗', legendary:'传奇', champion:'英雄' };
 for (const k in CARD_DEFS) { if (CARD_DEFS[k]) CARD_DEFS[k].quality = QUALITY[k] || 'common'; }
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite','mortar','xbow'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite','mortar','xbow','magicarcher','bombtower','balloon'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -532,6 +539,7 @@ function createGame(difficulty, playerDeckCards) {
     spellFields: [],
     logs: [],
     healFields: [],
+    pendingBombs: [],
     selectedCardIdx: null,
     dragAim: { active:false, cardKey:null, x:0, y:0, valid:false },   // 拖拽瞄准状态（手机端：按下预览→松手确认）
     elixirTimer: 0,
@@ -776,6 +784,13 @@ function updateUnit(unit, dt) {
   unit.anchored = false;   // 每帧重置；仅在"已锁定目标且处于攻击范围内"时置 true（前排锚定守位、后排绕行）
   if (unit.hp <= 0) {
     if (unit.isBalloon) balloonDeath(unit);
+    else if (unit.deathDelay > 0 && unit.deathDmg > 0 && !unit._deathScheduled) {
+      // 气球兵：死亡不立即爆炸，而是埋下延迟引信(默认3秒)，引爆时命中范围内所有敌人与塔
+      unit._deathScheduled = true; unit.dead = true;
+      game.pendingBombs.push({ x: unit.x, y: unit.y, owner: unit.owner, dmg: unit.deathDmg, radius: unit.deathRadius || 40, timer: unit.deathDelay, maxTimer: unit.deathDelay, color: unit.color });
+      game.effects.push({ type:'bombmarker', x: unit.x, y: unit.y, life: unit.deathDelay, maxLife: unit.deathDelay, radius: unit.deathRadius || 40 });
+      return;
+    }
     else if ((unit.deathDmg > 0 || unit.suicide) && !unit._exploded && !unit.chain) spiritExplode(unit);  // 自爆精灵(非连锁型)被击杀也爆炸；连锁型(雷电精灵)仅在发动攻击时连锁，提前阵亡不触发
     unit.dead = true; return;
   }
@@ -809,7 +824,9 @@ function updateUnit(unit, dt) {
   if (unit.isBuilding && unit.decay) {
     unit.hp -= unit.decay * dt;
     if (unit.hp <= 0 && !unit.dead) {
-      unit.hp = 0; unit.dead = true;
+      unit.hp = 0;
+      if (unit.deathDmg > 0 && !unit._exploded) spiritExplode(unit);   // 炸弹塔寿命耗尽也触发死亡爆炸（CR：被摧毁/到期均爆炸）
+      unit.dead = true;
       game.effects.push({ type:'explosion', x:unit.x, y:unit.y, life:0.5, maxLife:0.5, radius:35 });
       return;
     }
@@ -924,6 +941,31 @@ function updateUnit(unit, dt) {
       dealDamage(unit, unit.target, dmg);
       if (unit.slow) { unit.target.slowTimer = unit.slowDur || 1.5; unit.target.slowFactor = unit.slowPct ? (1 - unit.slowPct) : 0.7; }
       game.effects.push({ type:'hit', x:unit.target.x, y:unit.target.y, life:0.2, maxLife:0.2, color:unit.color });
+      // 神箭游侠穿箭：沿攻击射线命中路径上所有敌人与塔（直到抛射物射程末端），每目标全额伤害（CR 机制）
+      if (unit.atk === 'piercearrow' && unit.target) {
+        const ang = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
+        const dirx = Math.cos(ang), diry = Math.sin(ang);
+        const maxDist = unit.projectileRange || 233.75;
+        const halfW = (unit.pierceWidth || 5.3) / 2;
+        const foe = unit.owner === 'player' ? 'ai' : 'player';
+        for (const u of game.units) {
+          if (u.owner !== foe || u === unit.target || u.dead || u.hp <= 0 || u.underground) continue;
+          const rx = u.x - unit.x, ry = u.y - unit.y;
+          const proj = rx * dirx + ry * diry;
+          if (proj < 0 || proj > maxDist) continue;            // 只命中目标前方抛射物射程内
+          const perp = Math.abs(rx * diry - ry * dirx);        // 垂直距离
+          if (perp <= halfW + (u.radius || 10)) dealDamage(unit, u, unit.dmg);
+        }
+        for (const t of game.towers) {
+          if (t.owner !== foe || t.hp <= 0) continue;
+          if (t.type === 'king' && !t.active) continue;
+          const rx = t.x - unit.x, ry = t.y - unit.y;
+          const proj = rx * dirx + ry * diry;
+          if (proj < 0 || proj > maxDist) continue;
+          const perp = Math.abs(rx * diry - ry * dirx);
+          if (perp <= halfW + (t.radius || 20)) dealDamage({ owner: unit.owner }, t, Math.round(unit.dmg * (unit.towerDmgMult || 1)));
+        }
+      }
       // 冰霜塔（自创）：命中后给射程内所有敌方单位减速（范围光环）
       if (unit.model === 'frosttower') {
         const enemyOwner = unit.owner === 'player' ? 'ai' : 'player';
@@ -1354,6 +1396,27 @@ function updateEffects(dt) {
     e.life -= dt;
     if (e.life <= 0) game.effects.splice(i, 1);
   }
+}
+
+// 气球兵延迟引信：埋下的炸弹倒计时，到点引爆，命中范围内所有敌方单位(地面+空中)与塔（CR：3 秒延迟 + 3 格范围）
+function tickPendingBombs(dt) {
+  if (!game.pendingBombs || !game.pendingBombs.length) return;
+  for (const b of game.pendingBombs) {
+    b.timer -= dt;
+    if (b.timer > 0) continue;   // 倒计时中：未到点
+    // 引信到点：命中范围内所有敌方单位(含空中)与塔
+    const foe = b.owner === 'player' ? 'ai' : 'player';
+    for (const u of game.units) {
+      if (u.owner !== foe || u.dead || u.hp <= 0 || u.underground) continue;
+      if (dist(b, u) < b.radius) dealDamage({ owner: b.owner }, u, b.dmg);
+    }
+    for (const t of game.towers) {
+      if (t.owner !== foe || t.hp <= 0) continue;
+      if (dist(b, t) < b.radius + (t.radius || 20)) dealDamage({ owner: b.owner }, t, b.dmg);
+    }
+    game.effects.push({ type: 'explosion', x: b.x, y: b.y, life: 0.5, maxLife: 0.5, radius: b.radius, color: '#FF7043' });
+  }
+  game.pendingBombs = game.pendingBombs.filter(b => b.timer > 0);
 }
 
 // ==================== AI 系统 ====================
@@ -1888,10 +1951,24 @@ function makeUnit(owner, def, x, y) {
   // 出土后为普通地面单位，过桥/寻敌走正常逻辑。跨河部署属 CR 机制——出土即在该侧。
   const sx = Math.max(_m, Math.min(400 - _m, x));
   const sy = Math.max(_m, Math.min(680 - _m, y));
+  // 矿工挖地轨迹：出土点 = 部署点（CR 一致）。跨河部署时从己方最近的桥头下挖、经桥底抵达部署点
+  // （用户要求"从桥底下挖过去"，而非笔直横穿河道）。挖地时长固定 digTime=1.0s，与 CR 掘进节奏一致。
+  let _digFrom = null, _digTo = null;
+  if (isMiner) {
+    _digTo = { x: sx, y: sy };
+    const crossRiver = (owner === 'player' && sy < RIVER_TOP) || (owner === 'ai' && sy > RIVER_BOT);
+    if (crossRiver) {
+      const bridgeX = Math.abs(sx - BRIDGE_L.x) <= Math.abs(sx - BRIDGE_R.x) ? BRIDGE_L.x : BRIDGE_R.x;
+      const homeBankY = owner === 'player' ? RIVER_BOT : RIVER_TOP;
+      _digFrom = { x: bridgeX, y: homeBankY };
+    } else {
+      _digFrom = { x: sx, y: sy };   // 己方半场：原地短挖（仅破土坑，无长轨迹）
+    }
+  }
   return {
     owner, card: def.name, x: sx, y: sy,
     hp: def.hp, maxHp: def.hp, dmg: def.dmg, range: def.range,
-    spd: def.spd, atkSpd: def.atkSpd, atkCD: 0.5,
+    spd: def.spd, atkSpd: def.atkSpd, atkCD: (def.firstHit != null ? def.firstHit : 0.5),
     tgtType: def.tgt, splash: def.splash || 0, selfSplash: def.selfSplash || false,
     // 视野半径：下限保证近战也能感知(130)，上限随射程自适应，避免远射程建筑(range>200)因视野被截断而锁不到射程内的目标
     sightRange: Math.min(Math.max(def.range + 60, 130), Math.max(200, def.range + 20)),
@@ -1906,10 +1983,10 @@ function makeUnit(owner, def, x, y) {
     surroundAng: Math.random() * Math.PI * 2,   // 稳定包围角：多个单位锁定同一目标时各自奔向目标圆周上该角度点，自然散成包围圈而非全堆中心
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
     target: null, dead: false, engaged: false, engageOrder: 0, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
-    digFrom: isMiner ? { x: sx, y: sy } : null, digTo: isMiner ? { x: sx, y: sy } : null,
+    digFrom: _digFrom, digTo: _digTo,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
-    isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0, isRam: def.isRam || false,
+    isBalloon: def.isBalloon || false, deathDmg: def.deathDmg || 0, deathRadius: def.deathRadius || 30, deathDelay: def.deathDelay || 0, _deathScheduled: false, spawnCard: def.spawnCard || null, spawnCount: def.spawnCount || 0, isRam: def.isRam || false,
     hookWindup: 0, rootTimer: 0, souls: 0, skill1CD: 0, reflectTimer: 0, skillUsed: { 1: false, 2: false },
     _atkT: 0, _lunge: 0, _spin: 0
   };
@@ -3445,6 +3522,9 @@ function spawnAttackFx(u, tgt) {
     case 'arrow': case 'arrow_long':
       game.effects.push({ type: 'arrow', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.18, maxLife: 0.18, color: u.color });
       break;
+    case 'piercearrow':
+      game.effects.push({ type: 'piercearrow', sx: u.x, sy: u.y, ang, life: 0.20, maxLife: 0.20, color: u.color, len: (u.projectileRange || 233.75) });
+      break;
     case 'lance':
       game.effects.push({ type: 'slash', x: u.x, y: u.y, ang, life: 0.18, maxLife: 0.18, color: u.color });
       break;
@@ -3471,6 +3551,9 @@ function spawnAttackFx(u, tgt) {
       break;
     case 'lob':
       game.effects.push({ type: 'bomb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.30, maxLife: 0.30, color: '#2b2b2b' });
+      break;
+    case 'bombdrop':
+      game.effects.push({ type: 'bomb', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.25, maxLife: 0.25, color: '#2b2b2b' });
       break;
     case 'mortar':
       game.effects.push({ type: 'mortarshell', sx: u.x, sy: u.y, tx: tgt.x, ty: tgt.y, life: 0.55, maxLife: 0.55, color: u.color });
@@ -3712,6 +3795,24 @@ function updateEffectMeshes() {
       const ax = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.2, 14), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.95}));
       ax.rotation.y = Math.atan2(e.tx - e.sx, e.ty - e.sy);
       ax.position.set(bx, 10, bz); fxGroup.add(ax);
+    } else if (e.type === 'piercearrow') {
+      // 神箭游侠穿箭：一条细长魔法箭，沿攻击方向贯穿整个抛射物射程
+      const pct = Math.max(0.2, e.life / e.maxLife);
+      const len = e.len || 233.75;
+      const ex = e.sx + Math.cos(e.ang) * len, ez = e.sy + Math.sin(e.ang) * len;
+      const cx = (e.sx + ex) / 2 - CENTER_X, cz = (e.sy + ez) / 2 - 340;
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.4, len, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(e.color || '#7E57C2'), transparent: true, opacity: 0.85 * pct }));
+      beam.position.set(cx, 10, cz);
+      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(Math.cos(e.ang), 0, Math.sin(e.ang)));
+      fxGroup.add(beam);
+    } else if (e.type === 'bombmarker') {
+      // 气球兵死亡引信：3 秒内闪烁的炸弹标记 + 范围圈，引爆瞬间由 tickPendingBombs 产生爆炸
+      const blink = 0.5 + 0.5 * Math.sin(e.life * 18);
+      const rad = 6 + Math.sin(e.life * 8) * 2;
+      const m = new THREE.Mesh(new THREE.SphereGeometry(rad, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff5722, transparent: true, opacity: 0.5 + 0.4 * blink }));
+      m.position.set(e.x - CENTER_X, 12, e.y - 340); fxGroup.add(m);
+      const ring = new THREE.Mesh(new THREE.RingGeometry((e.radius || 40) * 0.5, (e.radius || 40) * 0.5 + 2, 28), new THREE.MeshBasicMaterial({ color: 0xff5722, transparent: true, opacity: 0.4, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(e.x - CENTER_X, 2, e.y - 340); fxGroup.add(ring);
     } else if (e.type === 'orb') {
       const p = 1 - e.life / e.maxLife;
       const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
@@ -4265,6 +4366,7 @@ function gameLoop(timestamp) {
     updateLogs(dt);
     updateHealFields(dt);
     updateSpellFields(dt);
+    tickPendingBombs(dt);   // 气球兵延迟引信：到点引爆（命中范围内所有敌人与塔）
     updateAI(dt);
     checkWin();
   }
