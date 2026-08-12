@@ -211,6 +211,9 @@ const KING_Y_P = 29*TILE;           // 玩家国王塔 Y（离河中心 13 格�
 // 现按 CR 的 pocket 本意收在「公主塔原址」，修复"直接下到塔底下"的问题（国王塔 rush 在 CR 里也只到塔前沿，不会压塔身）。
 const POCKET_Y_AI = PRINCESS_Y_AI;   // ≈138.1（被摧毁的 AI 公主塔原址；玩家越河部署背边界，不越过国王塔）
 const POCKET_Y_P  = PRINCESS_Y_P;    // ≈541.9（被摧毁的玩家公主塔原址；AI 越河部署背边界）
+// 精灵(豆子)走路小跳(CR 机制)：精灵边蹦边走，到目标近旁才扑击自爆。振幅/频率仅影响视觉，不改水平移速(spd=42.5=CR VeryFast)。
+const SPIRIT_HOP_AMP = 11;    // 跳跃高度峰值 ≈11px（约 0.5 格，明显的小跳而非漂浮）
+const SPIRIT_HOP_FREQ = 12;   // 蹦跳角频率 ≈12 rad/s（每跳 ~0.26s，约 3.8 跳/秒，轻快）
 // w/h = 视觉建模尺寸；collR = 皇室战争真实「碰撞半径」，射程一律从它量起（CR 的 range 是边缘到边缘，不是塔心到塔心）
 //   CR 源码：Princess Tower collisionRadius = 1500 (1.5 格)，King Tower = 2000 (2 格)
 //   校验（这正是用户提的「靠桥那一侧才是最近端」）：
@@ -258,7 +261,7 @@ const CARD_DEFS = {
   speargoblin: { name:'哥布林投矛手', cost:2, hp:133, dmg:81, range:106, spd:31.875, atkSpd:1.7, tgt:'ground', count:3, color:'#9CCC65', icon:'矛', radius:11, deployTime:1.0, model:'speargoblin', atk:'spear' },
   goblinbarrel: { name:'哥布林飞桶', cost:3, type:'spell', radius:32, color:'#A1887F', icon:'桶', delay:1.1, spawnCard:'goblin', spawnCount:3, spellFx:'barrel' },
   // ===== 自定义/对齐卡：烈焰精灵=CR Fire Spirit(VeryFast)；治疗图腾/冰霜塔=CR无对应，自行平衡 =====
-  flamesprite: { name:'烈焰精灵', cost:2, hp:230, dmg:207, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#FF5722', icon:'焰', radius:11, splash:49, deployTime:1.0, suicide:true, leap:true, model:'flamesprite', atk:'magic' },
+  flamesprite: { name:'烈焰精灵', cost:2, hp:230, dmg:207, range:21, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#FF5722', icon:'焰', radius:11, splash:49, deployTime:1.0, suicide:true, leap:true, model:'flamesprite', atk:'magic' },
   healtotem: { name:'治疗图腾', cost:4, hp:850, dmg:0, range:0, spd:0, atkSpd:1.0, tgt:'ground', count:1, color:'#26A69A', icon:'愈', radius:17, deployTime:1.0, isBuilding:true, decay:30, healAura:54, healRadius:132, model:'totem', atk:'none' },
   frosttower: { name:'冰霜塔', cost:4, hp:912, dmg:60, range:121, spd:0, atkSpd:1.2, tgt:'any', count:1, color:'#4FC3F7', icon:'冰', radius:15, deployTime:1.0, isBuilding:true, decay:18, slow:true, model:'frosttower', atk:'ice' },
   // ===== 原版新增：破击炮(迫击炮/Mortar) + X连弩(X-Bow)（CR 锦标赛 L11 数值，机制严格还原；数值待核对）=====
@@ -308,11 +311,11 @@ const CARD_DEFS = {
   //   2 费 / 滚动法术 / 滚动距离4.5格(2022-06 由5格降为4.5，沿用至今) / 范围伤害230(对地面) / 只命中地面 / 滚到尽头投出1野蛮人(用 barbarians 单只数值191) / 对塔全额(待核对)
   battleram:  { name:'野蛮人滚筒', cost:2, type:'spell', dmg:230, color:'#8D6E63', icon:'筒', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:4.5*TILE, rollWidth:1.3*TILE, rollTime:0.5, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1 },
   // ===== CR 原版精灵三连（1 费普通，对空对地，自杀式冲撞自爆；数值取自 CR 锦标赛 L11）=====
-  icesprite:   { name:'冰雪精灵', cost:1, hp:230, dmg:110, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#4FC3F7', icon:'雪', radius:11, splash:32, deployTime:1.0, suicide:true, leap:true, stunOnHit:1.1, model:'icesprite', atk:'magic' },
+  icesprite:   { name:'冰雪精灵', cost:1, hp:230, dmg:110, range:21, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#4FC3F7', icon:'雪', radius:11, splash:32, deployTime:1.0, suicide:true, leap:true, stunOnHit:1.1, model:'icesprite', atk:'magic' },
   electrosprite:{ name:'雷电精灵', cost:1, hp:230, dmg:99, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#FFEB3B', icon:'闪', radius:11, deployTime:1.0, suicide:true, leap:true, stunOnHit:0.5, model:'electrosprite', atk:'magic', chain:{ max:8, range:85 } },
-  healsprite:  { name:'治疗精灵', cost:1, hp:230, dmg:0, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#26A69A', icon:'疗', radius:11, splash:0, deployTime:1.0, suicide:true, leap:true, model:'healsprite', atk:'magic', healFieldOnDeath:{ radius:53, duration:1.0, healRate:401 } },
+  healsprite:  { name:'治疗精灵', cost:1, hp:230, dmg:0, range:21, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#26A69A', icon:'疗', radius:11, splash:0, deployTime:1.0, suicide:true, leap:true, model:'healsprite', atk:'magic', healFieldOnDeath:{ radius:53, duration:1.0, healRate:401 } },
   // ===== 自创卡：储毒精灵（用户自创，迷惑/主控机制：自爆后被命中敌方单位被控制 2s，变我方打敌方，2s 后仍存活则归还原主）=====
-  poisonsprite: { name:'储毒精灵', cost:3, hp:230, dmg:207, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#8BC34A', icon:'毒', radius:11, splash:49, deployTime:1.0, suicide:true, leap:true, confuseOnHit:2.0, model:'poisonsprite', atk:'magic' }
+  poisonsprite: { name:'储毒精灵', cost:3, hp:230, dmg:207, range:21, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#8BC34A', icon:'毒', radius:11, splash:49, deployTime:1.0, suicide:true, leap:true, confuseOnHit:2.0, model:'poisonsprite', atk:'magic' }
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
@@ -850,13 +853,14 @@ function updateUnit(unit, dt) {
     }
     return;
   }
-  // 濒死跃迁：精灵被削血到 60% 以下、尚未起跳 → 朝最近敌人猛扑自爆（让"低血即跃迁"可见；CR 精灵贴脸自爆）
-  if (unit.leap && !unit.leapT && !unit._exploded && !unit.chain && !unit._deathLeap && unit.hp > 0 && unit.hp < unit.maxHp * 0.6) {
-    const foe = unit.owner === 'player' ? 'ai' : 'player';
-    let best = null, bd = Infinity;
-    for (const o of game.units) { if (o.owner !== foe || o.dead || o.hp <= 0 || o.underground) continue; const d = dist(unit, o); if (d < bd) { bd = d; best = o; } }
-    for (const t of game.towers) { if (t.owner === unit.owner || t.hp <= 0) continue; if (t.type === 'king' && t.active === false) continue; const d = dist(unit, t); if (d < bd) { bd = d; best = t; } }
-    if (best) { startSpiritLeap(unit, best); return; }
+  // 精灵蹦跳移动（CR 豆子机制：边蹦边走，到目标近旁才扑击自爆；不再有"低血从远处猛扑"的非 CR 行为）
+  if (unit.leap && unit.leapT <= 0 && !unit.dead) {
+    const moved = Math.hypot((unit.x - (unit._hx ?? unit.x)), (unit.y - (unit._hy ?? unit.y)));
+    if (moved > 0.05) unit._hopPhase = (unit._hopPhase || 0) + dt * SPIRIT_HOP_FREQ;
+    unit.hopH = moved > 0.05 ? Math.abs(Math.sin(unit._hopPhase)) * SPIRIT_HOP_AMP : 0;
+    unit._hx = unit.x; unit._hy = unit.y;
+  } else if (!unit.dead) {
+    unit.hopH = 0;
   }
   if (unit.hp <= 0) {
     if (unit.leapT > 0) return;   // 跃迁动画进行中：交给顶部跃迁块结算，勿提前爆炸
@@ -869,13 +873,14 @@ function updateUnit(unit, dt) {
       return;
     }
     else if ((unit.deathDmg > 0 || (unit.suicide && !unit.suicideNoDeath)) && !unit._exploded && !unit.chain) {
-      // 精灵：尚未起跳则先朝最近敌人猛扑（跃迁）再自爆，使"低血即跃迁自爆"可见（CR 精灵贴脸自爆）
+      // 精灵：仅在已锁定「射程内」目标时才扑向目标自爆（CR 豆子贴脸自爆）；被远处击杀(未接触)直接死亡、不爆炸(与 CR 一致，杜绝从桥头瞬移到塔)
       if (unit.leap && !unit._deathLeap) {
         const foe = unit.owner === 'player' ? 'ai' : 'player';
         let best = null, bd = Infinity;
         for (const o of game.units) { if (o.owner !== foe || o.dead || o.hp <= 0 || o.underground) continue; const d = dist(unit, o); if (d < bd) { bd = d; best = o; } }
         for (const t of game.towers) { if (t.owner === unit.owner || t.hp <= 0) continue; if (t.type === 'king' && t.active === false) continue; const d = dist(unit, t); if (d < bd) { bd = d; best = t; } }
-        if (best) { startSpiritLeap(unit, best); return; }   // 起跳中：交回控制权给顶部跃迁块，落地再炸
+        if (best && bd <= effectiveRangeOf(unit, best)) { startSpiritLeap(unit, best); return; }   // 仅射程内才扑(短扑，不瞬移)；起跳中交回顶部跃迁块，落地再炸
+        unit.dead = true; return;   // 不在射程内：直接死亡，不爆炸(CR 精灵被远处击杀无价值)
       }
       spiritExplode(unit);
     }
@@ -2045,7 +2050,7 @@ function makeUnit(owner, def, x, y) {
     canJumpRiver: def.canJumpRiver || false,
     flying: def.flying || false, isBuilding: def.isBuilding || false, decay: def.decay || 0,
     healAura: def.healAura || 0, healRadius: def.healRadius || 0,
-    slow: def.slow || false, suicide: def.suicide || false, leap: def.leap || false, leapT: 0, leapTgt: null, leapHop: 0, _leapAng: 0, chain: def.chain || null,
+    slow: def.slow || false, suicide: def.suicide || false, leap: def.leap || false, leapT: 0, leapTgt: null, leapHop: 0, _leapAng: 0, chain: def.chain || null, hopH: 0, _hopPhase: 0, _hx: 0, _hy: 0,
     color: def.color, icon: def.icon, radius: def.radius,
     mass: def.tgt === 'building' ? 3.5 : 1,   // 质量：只锁定建筑的大单位(巨人/皇家巨人)质量高，碰撞时把小单位挤开而自身几乎不动
     bridgeLane: (Math.random() * 2 - 1) * (BRIDGE_HALF || 21.25) * 0.6,   // 稳定过桥车道偏移(桥宽内)，分散过桥避免卡桥头
@@ -3463,14 +3468,16 @@ function updateUnitMesh(m, u) {
   if (ud.heroCrown) { ud.heroCrown.rotation.z = t * 1.6; ud.heroCrown.position.y = (u.model === 'kan' ? u.radius * 2.1 : u.radius * 1.95) + Math.sin(t * 3) * 2; }
   // 坎背旗（sashimono）随风轻摆，增加武士高级感
   if (ud.sashimono) { const fl = ud.sashimono.children[1]; if (fl) fl.rotation.y = Math.sin((game.gameTime || 0) * 4) * 0.14; }
-  const hov = u.flying ? 40 : (u.model && u.model.endsWith('sprite') ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
-  m.position.set(u.x - CENTER_X, hov + (u.leapHop || 0), u.y - 340);
-  // 跃迁中：地面投影阴影（随高度缩小变淡）+ 身体轻微放大，强调"跳起"、避免与平面单位穿模
-  if ((u.leapHop||0) > 1) {
-    const k = Math.max(0.2, 1 - u.leapHop/44);
+  const hov = u.flying ? 40 : 0;   // 精灵不再常驻漂浮：静止贴地，移动时由 hopH 蹦跳
+  const hopY = (u.leapHop || 0) + (u.hopH || 0);
+  m.position.set(u.x - CENTER_X, hov + hopY, u.y - 340);
+  // 跃迁/蹦跳中：地面投影阴影（随高度缩小变淡）+ 身体轻微放大，强调"跳起"、避免与平面单位穿模
+  if (hopY > 1) {
+    const k = Math.max(0.2, 1 - hopY / 44);
     const sh = new THREE.Mesh(new THREE.CircleGeometry((u.radius||10)*(0.6+0.5*k), 16), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.12+0.22*(1-k), side:THREE.DoubleSide, depthWrite:false}));
     sh.rotation.x = -Math.PI/2; sh.position.set(u.x - CENTER_X, 1.4, u.y - 340); fxGroup.add(sh);
-    const s2 = 1 + Math.sin((1 - (u.leapT||0)/(u.leapDur||0.3)) * Math.PI) * 0.28;
+    // 跃迁用完整抛物线缩放；走路小跳用轻量拉伸，落回地面即恢复
+    const s2 = (u.leapHop > 1) ? (1 + Math.sin((1 - (u.leapT||0)/(u.leapDur||0.3)) * Math.PI) * 0.28) : (1 + Math.min(1, hopY / SPIRIT_HOP_AMP) * 0.12);
     m.scale.set(s2, s2, s2);
   } else if (m.scale.x !== 1) { m.scale.set(1,1,1); }
   const spd = Math.hypot(u.vx, u.vy);
