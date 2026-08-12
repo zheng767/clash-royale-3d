@@ -196,6 +196,7 @@ const PRINCESS_X_R = 14.5 * TILE;  // 308.125，右路公主塔/右桥 X（14500
 // 河中心 = 第 16 格 = y 340；公主塔 y=6.5/25.5格(离河 9.5 格)；国王塔 y=3/29格(离河 13 格)
 // 双桥/公主塔 x = 3.5/14.5 格（CR 源码实测，更靠两侧）；国王塔 x = 9 格（正中）
 const RIVER_TOP = 16*TILE - TILE, RIVER_BOT = 16*TILE + TILE;   // 河流 2 瓦片宽(≈42px)，中心 y=340
+const RIVER_JUMP_H = 34;   // 跳河单位(野猪骑士/郝思涵)过河抛物线峰值高度(px)，纯视觉
 const BRIDGE_L = { x: PRINCESS_X_L, y: 16*TILE };   // 左桥：与左路公主塔同列
 const BRIDGE_R = { x: PRINCESS_X_R, y: 16*TILE };   // 右桥：与右路公主塔同列
 const BRIDGE_TOL = TILE * 2.0;   // 桥面判定缓冲(略宽于桥道半宽)：碰撞推挤时把轻微出界吸回桥面边缘，不会掉下河
@@ -214,6 +215,11 @@ const POCKET_Y_P  = PRINCESS_Y_P;    // ≈541.9（被摧毁的玩家公主塔�
 // 精灵(豆子)走路小跳(CR 机制)：精灵边蹦边走，到目标近旁才扑击自爆。振幅/频率仅影响视觉，不改水平移速(spd=42.5=CR VeryFast)。
 const SPIRIT_HOP_AMP = 11;    // 跳跃高度峰值 ≈11px（约 0.5 格，明显的小跳而非漂浮）
 const SPIRIT_HOP_FREQ = 12;   // 蹦跳角频率 ≈12 rad/s（每跳 ~0.26s，约 3.8 跳/秒，轻快）
+// 精灵起跳余量：塔/建筑有效射程(≈53px)远小于塔射程(≈190px)，精灵若严格贴到 53px 内才起跳，会在途中被塔射杀、永远炸不到塔。
+// 故精灵在「有效射程 + 余量」即起跳跃迁；起跳后由顶部跃迁块托管，即使途中被击杀也保证落地自爆(杜绝单挑塔白跑)。
+// 对塔/建筑余量大(45px≈2格)，对单位余量小(18px≈0.85格，避免对单位起跳过远像瞬移)。均远小于用户反感的"桥头瞬移到塔"(≥150px)。
+const SPIRIT_LEAP_GRACE_BLD = 90;
+const SPIRIT_LEAP_GRACE_UNIT = 18;
 // w/h = 视觉建模尺寸；collR = 皇室战争真实「碰撞半径」，射程一律从它量起（CR 的 range 是边缘到边缘，不是塔心到塔心）
 //   CR 源码：Princess Tower collisionRadius = 1500 (1.5 格)，King Tower = 2000 (2 格)
 //   校验（这正是用户提的「靠桥那一侧才是最近端」）：
@@ -284,7 +290,7 @@ const CARD_DEFS = {
   stormsentinel: { name:'雷霆守卫', cost:3, hp:216, dmg:166, range:21, spd:41, atkSpd:1.2, tgt:'ground', count:2, color:'#ECEFF1', icon:'盾骷', radius:9, deployTime:1.0, shield:119, paralyze:true, model:'skguard', atk:'stab' },
   flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
   hero_tian:  { name:'天', cost:5, hp:1888, dmg:312, range:24, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#FFD54F', icon:'天', radius:16, deployTime:1.0, isHero:true, model:'wukong', atk:'staff', skill1Cost:2, skill2Cost:3 },
-  haosihan:   { name:'郝思涵', cost:5, hp:376, dmg:106, range:26, spd:31.875, atkSpd:1.6, tgt:'building', count:4, color:'#FF9E40', icon:'free', radius:14, deployTime:1.0, canJumpRiver:true, model:'royalhog', atk:'stab' },
+  haosihan:   { name:'郝思涵', cost:5, hp:376, dmg:106, range:26, spd:42.5, atkSpd:1.6, tgt:'building', count:4, color:'#FF9E40', icon:'free', radius:14, deployTime:1.0, canJumpRiver:true, model:'royalhog', atk:'stab' },
   quake:      { name:'震荡术', cost:3, type:'spell', dmg:252, radius:74, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake', quakeDuration:3.0, quakeTickInterval:1.0, quakeTicks:3, towerDmgMult:159/252, buildingDmg:861, slowFactor:0.5, slowDur:1.5 },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
   miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:31.875, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:48/194 },
@@ -828,6 +834,8 @@ function updateUnit(unit, dt) {
     if (unit.confuseT <= 0) { unit.owner = unit._trueOwner || unit.owner; unit._trueOwner = null; }
   }
   unit.anchored = false;   // 每帧重置；仅在"已锁定目标且处于攻击范围内"时置 true（前排锚定守位、后排绕行）
+  // 通用判定：目标是否为「塔/建筑」（精灵起跳余量对塔/建筑更大，避免被塔射程压制）
+  const _isBld = (t) => t && (t.isBuilding || t.type === 'king' || t.type === 'princess');
   // ===== 跃迁（自爆精灵：烈焰/冰/雷/治疗/储毒精灵）：最优先结算，跳过死亡/麻痹判定，确保起跳动画完整播放 =====
   if (unit.leapT > 0) {
     unit.leapT -= dt;
@@ -879,8 +887,10 @@ function updateUnit(unit, dt) {
         let best = null, bd = Infinity;
         for (const o of game.units) { if (o.owner !== foe || o.dead || o.hp <= 0 || o.underground) continue; const d = dist(unit, o); if (d < bd) { bd = d; best = o; } }
         for (const t of game.towers) { if (t.owner === unit.owner || t.hp <= 0) continue; if (t.type === 'king' && t.active === false) continue; const d = dist(unit, t); if (d < bd) { bd = d; best = t; } }
-        if (best && bd <= effectiveRangeOf(unit, best)) { startSpiritLeap(unit, best); return; }   // 仅射程内才扑(短扑，不瞬移)；起跳中交回顶部跃迁块，落地再炸
-        unit.dead = true; return;   // 不在射程内：直接死亡，不爆炸(CR 精灵被远处击杀无价值)
+        const _erB = best ? effectiveRangeOf(unit, best) : 0;
+        const _graceB = _isBld(best) ? SPIRIT_LEAP_GRACE_BLD : SPIRIT_LEAP_GRACE_UNIT;
+        if (best && bd <= _erB + _graceB) { startSpiritLeap(unit, best); return; }   // 射程内(含精灵起跳余量)才扑(短扑，不瞬移)；起跳中交回顶部跃迁块，落地再炸
+        unit.dead = true; return;   // 不在余量内：直接死亡，不爆炸(CR 精灵被远处击杀无价值)
       }
       spiritExplode(unit);
     }
@@ -966,7 +976,11 @@ function updateUnit(unit, dt) {
   // 索敌：未在攻击的单位每帧在「全部敌方实体」中实时比对，挑距离最近的锁定；
   //      正在攻击（已在射程内）的单位保持当前目标，不抢切。
   const bestTarget = findTarget(unit);
-  const inAttack = unit.target && !unit.target.dead && unit.target.hp > 0 && dist(unit, unit.target) <= effectiveRangeOf(unit, unit.target);
+  // 精灵(自爆豆子)起跳余量：对塔/建筑在有效射程外再多 45px 即视为「已进入攻击」并起跳跃迁，避免被塔射程(≈190)压制、永远贴不到自爆射程(≈53)而白跑
+  const _tgt0 = unit.target;
+  const _er0 = _tgt0 ? effectiveRangeOf(unit, _tgt0) : 0;
+  const _atkReach0 = unit.leap ? _er0 + (_isBld(_tgt0) ? SPIRIT_LEAP_GRACE_BLD : SPIRIT_LEAP_GRACE_UNIT) : _er0;
+  const inAttack = _tgt0 && !_tgt0.dead && _tgt0.hp > 0 && dist(unit, _tgt0) <= _atkReach0;
   if (inAttack) {
     unit.anchored = true;   // 前排正在攻击的单位锚定守位：碰撞中只被更重单位推挤，轻单位从它身边绕开(解决"互相挡住")
     // 首次进入攻击：领取「开火顺序」序号。先开火的单位在后续碰撞中守位，后到者让位(CR：先到的占住位置)
@@ -986,9 +1000,11 @@ function updateUnit(unit, dt) {
   const md = computeSurroundDest(unit, moveDest);
   const d = dist(unit, moveDest);
   const effectiveRange = effectiveRangeOf(unit, moveDest);   // 与 inAttack 判定同一口径(塔用 CR collR)
+  const _isBldMD = moveDest && (moveDest.isBuilding || moveDest.type === 'king' || moveDest.type === 'princess');
+  const atkReachMD = unit.leap ? effectiveRange + (_isBldMD ? SPIRIT_LEAP_GRACE_BLD : SPIRIT_LEAP_GRACE_UNIT) : effectiveRange;
   // 骷髅气球：飞到建筑/塔射程内即“坠毁”，死亡伤害 + 投出骷髅兵（CR 机制）
   if (unit.isBalloon && unit.target && d <= effectiveRange) { balloonDeath(unit); return; }
-  if ((unit.dmg > 0 || unit.leap) && unit.target && d <= effectiveRange) {
+  if ((unit.dmg > 0 || unit.leap) && unit.target && d <= atkReachMD) {
     // ===== 有锁定目标、在攻击范围内、且已到达对岸：停下攻击 =====
     unit.atkCD -= dt;
     if (unit.atkCD <= 0) {
@@ -1390,13 +1406,35 @@ function dealDamage(attacker, target, dmg, isReflect) {
   // 国王塔受到任何来源的伤害即激活（CR 规则：公主塔被毁 或 国王塔受击 → 苏醒）
   if (target.type === 'king') target.active = true;
   if (target.hp <= 0 && !target.dead) {
-    target.dead = true;
-    if (target.type === 'king' || target.type === 'princess') {
-      game.effects.push({ type:'explosion', x:target.x, y:target.y, life:0.6, maxLife:0.6, radius:40 });
-    } else if (target.isBuilding) {
-      game.effects.push({ type:'explosion', x:target.x, y:target.y, life:0.5, maxLife:0.5, radius:35 });
-    } else {
-      game.effects.push({ type:'death', x:target.x, y:target.y, life:0.3, maxLife:0.3, radius:target.radius||10 });
+    // 自爆精灵(豆子)被击杀：在死亡瞬间尝试触发死亡跃迁，交回 updateUnit 顶部跃迁块落地自爆(可见的跃迁自爆)。
+    //   否则(射程内无敌人)直接死亡、不爆炸(与 CR 一致)。这一处理集中在此处，是因为精灵常在 updateTower/updateUnit 之后才被击杀，
+    //   若等 updateUnit 的死亡块处理会被 gameLoop 的 dead 过滤提前移除、永远来不及自爆。
+    let killed = true;
+    if (target.leap && !target._exploded) {
+      if (target.leapT > 0) {
+        killed = false;   // 跃迁进行中(含雷电连锁)：不标记死亡，让 updateUnit 顶部跃迁块完成落地自爆/连锁
+      } else if (!target.chain) {
+        // 非连锁精灵(烈焰/冰/治疗/储毒)：死亡跃迁判定——射程内(含余量)有敌则扑向自爆，否则直接死(CR 一致)
+        const foe = target.owner === 'player' ? 'ai' : 'player';
+        let best = null, bd = Infinity;
+        for (const o of game.units) { if (o.owner !== foe || o.dead || o.hp <= 0 || o.underground) continue; const d = dist(target, o); if (d < bd) { bd = d; best = o; } }
+        for (const t of game.towers) { if (t.owner === target.owner || t.hp <= 0) continue; if (t.type === 'king' && t.active === false) continue; const d = dist(target, t); if (d < bd) { bd = d; best = t; } }
+        const erB = best ? effectiveRangeOf(target, best) : 0;
+        const isBld = best && (best.isBuilding || best.type === 'king' || best.type === 'princess');
+        const graceB = isBld ? SPIRIT_LEAP_GRACE_BLD : SPIRIT_LEAP_GRACE_UNIT;
+        if (best && bd <= erB + graceB) { startSpiritLeap(target, best); killed = false; }  // 死亡跃迁：重置 dead=false，动画由跃迁块接管
+      }
+      // 雷电精灵(chain)：未起跳就被击杀 → 不触发连锁(CR 一致：白跑)；起跳中由上面 leapT>0 分支保命
+    }
+    if (killed) {
+      target.dead = true;
+      if (target.type === 'king' || target.type === 'princess') {
+        game.effects.push({ type:'explosion', x:target.x, y:target.y, life:0.6, maxLife:0.6, radius:40 });
+      } else if (target.isBuilding) {
+        game.effects.push({ type:'explosion', x:target.x, y:target.y, life:0.5, maxLife:0.5, radius:35 });
+      } else {
+        game.effects.push({ type:'death', x:target.x, y:target.y, life:0.3, maxLife:0.3, radius:target.radius||10 });
+      }
     }
   }
 }
@@ -2051,6 +2089,7 @@ function makeUnit(owner, def, x, y) {
     flying: def.flying || false, isBuilding: def.isBuilding || false, decay: def.decay || 0,
     healAura: def.healAura || 0, healRadius: def.healRadius || 0,
     slow: def.slow || false, suicide: def.suicide || false, leap: def.leap || false, leapT: 0, leapTgt: null, leapHop: 0, _leapAng: 0, chain: def.chain || null, hopH: 0, _hopPhase: 0, _hx: 0, _hy: 0,
+    riverHop: 0, _riverIn: false, _riverP: 0,   // 跳河动画：过河抛物线抬升 + 入/出河状态跟踪(纯视觉)
     color: def.color, icon: def.icon, radius: def.radius,
     mass: def.tgt === 'building' ? 3.5 : 1,   // 质量：只锁定建筑的大单位(巨人/皇家巨人)质量高，碰撞时把小单位挤开而自身几乎不动
     bridgeLane: (Math.random() * 2 - 1) * (BRIDGE_HALF || 21.25) * 0.6,   // 稳定过桥车道偏移(桥宽内)，分散过桥避免卡桥头
@@ -2172,6 +2211,7 @@ function electroChain(u) {
 // 启动精灵跃迁：朝 target 猛扑一小段并高高跃起，落地由跃迁块结算自爆（CR 豆子式攻击；跳跃距离≈攻击射程）
 function startSpiritLeap(unit, target) {
   if (!target) return;
+  unit.dead = false;   // 起跳后交回 updateUnit 顶部跃迁块托管：确保跃迁动画能完整播放、落地再炸(避免被 gameLoop 的 dead 过滤提前移除)
   unit.leapT = 0.30; unit.leapDur = 0.30;
   unit._leapAng = Math.atan2(target.y - unit.y, target.x - unit.x);
   unit._leapFrom = { x: unit.x, y: unit.y };
@@ -3468,18 +3508,44 @@ function updateUnitMesh(m, u) {
   if (ud.heroCrown) { ud.heroCrown.rotation.z = t * 1.6; ud.heroCrown.position.y = (u.model === 'kan' ? u.radius * 2.1 : u.radius * 1.95) + Math.sin(t * 3) * 2; }
   // 坎背旗（sashimono）随风轻摆，增加武士高级感
   if (ud.sashimono) { const fl = ud.sashimono.children[1]; if (fl) fl.rotation.y = Math.sin((game.gameTime || 0) * 4) * 0.14; }
+  // 跳河单位(canJumpRiver：野猪骑士/郝思涵)过河抛物线跳跃（高级感，纯视觉）：
+  // 在河面带内给一个对称抛物线抬升，入/出河溅起水花、随高度缩小的地面投影、河心轻微拉伸+俯冲倾斜
+  let riverJumpHop = 0;
+  if (u.canJumpRiver) {
+    const _inRiver = u.y > RIVER_TOP && u.y < RIVER_BOT;
+    if (_inRiver) {
+      const _p = (u.y - RIVER_TOP) / (RIVER_BOT - RIVER_TOP);   // 0=刚入河, 1=将出河
+      riverJumpHop = Math.sin(_p * Math.PI) * RIVER_JUMP_H;     // 河心最高
+      u._riverP = _p;
+      u.riverHop = riverJumpHop;
+      if (!u._riverIn) game.effects.push({ type:'splash', x:u.x, y:u.y, life:0.28, maxLife:0.28, color:'#81D4FA', radius:(u.radius||14)*1.7 });
+      game.effects.push({ type:'riverarc', x:u.x, y:u.y, life:0.18, maxLife:0.18, color:u.color, radius:(u.radius||14)*0.7, h:riverJumpHop });
+    } else {
+      u._riverP = 0; u.riverHop = 0;
+      if (u._riverIn) game.effects.push({ type:'splash', x:u.x, y:u.y, life:0.28, maxLife:0.28, color:'#81D4FA', radius:(u.radius||14)*1.7 });
+    }
+    u._riverIn = _inRiver;
+  }
   const hov = u.flying ? 40 : 0;   // 精灵不再常驻漂浮：静止贴地，移动时由 hopH 蹦跳
-  const hopY = (u.leapHop || 0) + (u.hopH || 0);
+  const hopY = (u.leapHop || 0) + (u.hopH || 0) + riverJumpHop;
   m.position.set(u.x - CENTER_X, hov + hopY, u.y - 340);
-  // 跃迁/蹦跳中：地面投影阴影（随高度缩小变淡）+ 身体轻微放大，强调"跳起"、避免与平面单位穿模
+  // 跃迁/蹦跳/跳河 中：地面投影阴影（随高度缩小变淡）+ 身体放大/倾斜，强调"跳起"、避免与平面单位穿模
   if (hopY > 1) {
     const k = Math.max(0.2, 1 - hopY / 44);
     const sh = new THREE.Mesh(new THREE.CircleGeometry((u.radius||10)*(0.6+0.5*k), 16), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.12+0.22*(1-k), side:THREE.DoubleSide, depthWrite:false}));
     sh.rotation.x = -Math.PI/2; sh.position.set(u.x - CENTER_X, 1.4, u.y - 340); fxGroup.add(sh);
-    // 跃迁用完整抛物线缩放；走路小跳用轻量拉伸，落回地面即恢复
-    const s2 = (u.leapHop > 1) ? (1 + Math.sin((1 - (u.leapT||0)/(u.leapDur||0.3)) * Math.PI) * 0.28) : (1 + Math.min(1, hopY / SPIRIT_HOP_AMP) * 0.12);
+    // 跃迁用完整抛物线缩放；跳河用河心峰值拉伸；走路小跳用轻量拉伸，落回地面即恢复
+    let s2;
+    if (u.leapHop > 1) s2 = 1 + Math.sin((1 - (u.leapT||0)/(u.leapDur||0.3)) * Math.PI) * 0.28;
+    else if (riverJumpHop > 1) s2 = 1 + Math.sin((u._riverP || 0) * Math.PI) * 0.20;   // 河心最高拉伸
+    else s2 = 1 + Math.min(1, hopY / SPIRIT_HOP_AMP) * 0.12;
     m.scale.set(s2, s2, s2);
-  } else if (m.scale.x !== 1) { m.scale.set(1,1,1); }
+    // 跳河俯冲倾斜（仅视觉，不影响索敌/攻击）
+    m.rotation.x = riverJumpHop > 1 ? -Math.sin((u._riverP || 0) * Math.PI) * 0.16 : 0;
+  } else {
+    if (m.scale.x !== 1) m.scale.set(1,1,1);
+    if (m.rotation.x !== 0) m.rotation.x = 0;
+  }
   const spd = Math.hypot(u.vx, u.vy);
   const moving = spd > 1.5;
   const freq = 7 + spd * 0.32;          // 腿摆/扇翅频率随真实移速缩放（巨人慢、野猪快）
@@ -3917,6 +3983,10 @@ function updateEffectMeshes() {
       const p = e.life / e.maxLife;
       const s = new THREE.Mesh(new THREE.SphereGeometry((e.radius||10)*0.7*(0.5+p*0.5), 8, 6), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:p*0.6, depthWrite:false}));
       s.position.set(x, 16 + (1-p)*10, z); fxGroup.add(s);
+    } else if (e.type === 'riverarc') {
+      const p = e.life / e.maxLife;
+      const s = new THREE.Mesh(new THREE.SphereGeometry((e.radius||10)*(0.4+p*0.6), 8, 6), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:p*0.45, depthWrite:false}));
+      s.position.set(x, 6 + (e.h||0)*0.7, z); fxGroup.add(s);   // 跟随跳河弧线高度
     } else if (e.type === 'spiritburst') {
       const p = 1 - pct, p2 = pct;
       const rad = (e.radius||40) * (1.4 - p2*0.4);
