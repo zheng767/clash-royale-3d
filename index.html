@@ -619,6 +619,26 @@ function canDeploy(owner, x, y, cardKey) {
   }
 }
 
+// 把部署坐标夹回「部署者半场」边界，与 canDeploy 规则一致：
+//   - 玩家：y 不低于己方河岸 RIVER_BOT（若该路公主塔被摧毁，可越河直到敌方公主塔位置 PRINCESS_Y_AI）
+//   - AI：y 不高于敌方河岸 RIVER_TOP（若该路公主塔被摧毁，可越河直到玩家公主塔位置 PRINCESS_Y_P）
+// 这样多单位卡在河岸散开时，推向河对面的单位会被夹回己方半场，绝不会"卡过河"停在敌方半场。
+function clampDeployToSide(owner, x, y) {
+  const lane = x < CENTER_X ? 'L' : 'R';
+  if (owner === 'player') {
+    const pt = lane === 'L' ? game.towers.find(t => t.id === 'aLP') : game.towers.find(t => t.id === 'aRP');
+    const minY = (pt && pt.hp <= 0) ? PRINCESS_Y_AI : RIVER_BOT;
+    y = Math.max(minY, y);
+    y = Math.min(y, CH - 5);
+  } else {
+    const pt = lane === 'R' ? game.towers.find(t => t.id === 'pRP') : game.towers.find(t => t.id === 'pLP');
+    const maxY = (pt && pt.hp <= 0) ? PRINCESS_Y_P : RIVER_TOP;
+    y = Math.min(maxY, y);
+    y = Math.max(y, 5);
+  }
+  return { x, y };
+}
+
 // ==================== 目标选择 ====================
 // 统一规则：把「敌方单位 / 敌方防御建筑 / 公主塔 / 国王塔」都作为候选，
 // 取物理距离最近的那个锁定。过桥后哪近打哪（建筑近打建筑，塔近打塔）。
@@ -1881,11 +1901,9 @@ function playCard(owner, cardKey, x, y) {
   const def = CARD_DEFS[cardKey];
   if (!def || side.elixir < def.cost) return false;
   if (!canDeploy(owner, x, y, cardKey)) return false;
-  // ★★★ 双重保险：绝对不允许非矿工/非法术单位生在河道内（即使 canDeploy 被绕过或坐标偏移）
+  // ★★★ 双重保险：非矿工/非法术单位必须夹在部署者半场（杜绝散开偏移把单位推过河）
   if (def && def.type !== 'spell' && !def.deployAnywhere) {
-    if (y > RIVER_TOP && y < RIVER_BOT) {
-      y = (y < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;   // 夹到最近河岸
-    }
+    const c = clampDeployToSide(owner, x, y); x = c.x; y = c.y;
   }
   side.elixir -= def.cost;
   const handIdx = side.hand.indexOf(cardKey);
@@ -1907,9 +1925,8 @@ function playCard(owner, cardKey, x, y) {
         for (let i = 0; i < n; i++) {
           const ox = -totalW / 2 + gap * i;
           let ux = x + ox, uy = y;
-          if (!def.deployAnywhere && uy > RIVER_TOP && uy < RIVER_BOT) {
-            uy = (uy < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;
-          }
+          // 横向一字排开也不允许越河：夹回部署者半场边界
+          if (!def.deployAnywhere) { const c = clampDeployToSide(owner, ux, uy); ux = c.x; uy = c.y; }
           const u = makeUnit(owner, def, ux, uy);
           game.units.push(u);
         }
@@ -1920,10 +1937,8 @@ function playCard(owner, cardKey, x, y) {
           const ox = Math.cos(ang) * spread + (Math.random()-0.5)*6;
           const oy = Math.sin(ang) * spread + (Math.random()-0.5)*6;
           let ux = x + ox, uy = y + oy;
-          // 多单位展开也不允许掉进河道
-          if (!def.deployAnywhere && uy > RIVER_TOP && uy < RIVER_BOT) {
-            uy = (uy < (RIVER_TOP + RIVER_BOT) / 2) ? RIVER_TOP : RIVER_BOT;
-          }
+          // 多单位圆形展开：推向河对面的单位夹回部署者半场边界，绝不"卡过河"停在敌方半场
+          if (!def.deployAnywhere) { const c = clampDeployToSide(owner, ux, uy); ux = c.x; uy = c.y; }
           const u = makeUnit(owner, def, ux, uy);
           game.units.push(u);
         }
