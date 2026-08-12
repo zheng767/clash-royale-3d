@@ -2250,9 +2250,9 @@ function triggerHeroSkill(side, which) {   // 通用分发：玩家 / AI 共用
 function heroSkill1() { triggerHeroSkill('player', 1); }
 function heroSkill2() { triggerHeroSkill('player', 2); }
 // ===== 天 技能 =====
-function heroSkill_tian_1() {           // 1 技能（2 费）：定身最近敌方单位 1.5s + 劈棍（增伤 100%）
-  const h = game.player.hero;
-  const foe = 'ai';
+function heroSkill_tian_1(h) {           // 1 技能（2 费）：定身最近敌方单位 1.5s + 劈棍（增伤 100%）
+  if (!h || h.dead || h.hp <= 0) return;
+  const foe = (h.owner === 'player') ? 'ai' : 'player';
   let best = null, minD = Infinity;
   for (const u of game.units) {
     if (u.owner !== foe || u.dead || u.hp <= 0) continue;
@@ -2265,8 +2265,8 @@ function heroSkill_tian_1() {           // 1 技能（2 费）：定身最近敌
   game.effects.push({ type:'staffstrike', x:best.x, y:best.y, life:0.5, maxLife:0.5, color:'#FFD54F', radius:best.radius*2.2 });
   game.effects.push({ type:'ring', x:best.x, y:best.y, life:0.5, maxLife:0.5, color:'#FFD54F', radius:best.radius*2.4 });
 }
-function heroSkill_tian_2() {           // 2 技能（3 费）：召唤 3 个分身（同血、伤害-20%、4s 后消散、不能释放技能）
-  const h = game.player.hero;
+function heroSkill_tian_2(h) {           // 2 技能（3 费）：召唤 3 个分身（同血、伤害-20%、4s 后消散、不能释放技能）
+  if (!h || h.dead || h.hp <= 0) return;
   for (let k = 0; k < 3; k++) {
     const ang = (k / 3) * Math.PI * 2;
     const ox = Math.cos(ang) * (h.radius + 14);
