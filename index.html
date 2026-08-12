@@ -622,7 +622,7 @@ function canDeploy(owner, x, y, cardKey) {
     if (y >= RIVER_BOT && y <= CH - 5) return true;
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
-    // 摧毁公主塔后跨河延伸到"口袋"，背边界= POCKET_Y_AI（国王塔前沿，贴塔，CR 原版）
+    // 摧毁公主塔后跨河延伸到"口袋"，背边界= POCKET_Y_AI（被摧毁公主塔原址，绝不越过到国王塔脚下；v63 回退 v61补正贴塔过近）
     if (x < CENTER_X && aLP && aLP.hp <= 0 && y >= POCKET_Y_AI && y <= RIVER_TOP) return true;
     if (x >= CENTER_X && aRP && aRP.hp <= 0 && y >= POCKET_Y_AI && y <= RIVER_TOP) return true;
     return false;
