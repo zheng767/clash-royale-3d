@@ -204,9 +204,12 @@ const PRINCESS_Y_AI = 6.5*TILE;     // AI 公主塔 Y（离河中心 9.5 格）
 const PRINCESS_Y_P = 25.5*TILE;     // 玩家公主塔 Y（离河中心 9.5 格）
 const KING_Y_AI = 3*TILE;           // AI 国王塔 Y（离河中心 13 格）
 const KING_Y_P = 29*TILE;           // 玩家国王塔 Y（离河中心 13 格）
-// 国王塔"领"禁部署区前缘（CR：破塔后口袋延伸到此，约为塔身+1格缓冲）。玩家越河部署不可越过 KING_KEEP_Y_AI；AI 越河部署不可越过 KING_KEEP_Y_P。
-const KING_KEEP_Y_AI = KING_Y_AI + 2.5*TILE;   // ≈116.875（国王塔前方约1格）
-const KING_KEEP_Y_P  = KING_Y_P - 2.5*TILE;     // ≈563.625
+// 破塔后跨河"口袋"的背边界：玩家越河部署不可越过 KING_KEEP_Y_AI；AI 越河部署不可越过 KING_KEEP_Y_P。
+// 已核对 CR（clasher.us / metagamenation / izo.tw）：公主塔被摧毁后部署区(CR 称 pocket)确实跨河延伸到敌方国王塔前——
+// 这是 CR 真实机制（著名的"国王塔 rush"），并非虚构。按用户要求严格对齐 CR：背边界=国王塔前沿（塔身半高 32px），
+// 可贴塔部署；"压在塔上"由 canDeploy 的塔重叠守卫(pointRectDist)拦截，不会真下到塔身上。
+const KING_KEEP_Y_AI = KING_Y_AI + 32;   // ≈95.75（国王塔前沿，贴塔，CR 原版）
+const KING_KEEP_Y_P  = KING_Y_P - 32;     // ≈585.25
 // w/h = 视觉建模尺寸；collR = 皇室战争真实「碰撞半径」，射程一律从它量起（CR 的 range 是边缘到边缘，不是塔心到塔心）
 //   CR 源码：Princess Tower collisionRadius = 1500 (1.5 格)，King Tower = 2000 (2 格)
 //   校验（这正是用户提的「靠桥那一侧才是最近端」）：
@@ -618,7 +621,7 @@ function canDeploy(owner, x, y, cardKey) {
     if (y >= RIVER_BOT && y <= CH - 5) return true;
     const aLP = game.towers.find(t => t.id === 'aLP');
     const aRP = game.towers.find(t => t.id === 'aRP');
-    // 摧毁公主塔后跨河延伸到"口袋"，边界=敌方国王塔"领"前缘（CR≈塔身+1格），不可越过国王塔
+    // 摧毁公主塔后跨河延伸到"口袋"，背边界= KING_KEEP_Y_AI（国王塔前沿，贴塔，CR 原版）
     if (x < CENTER_X && aLP && aLP.hp <= 0 && y >= KING_KEEP_Y_AI && y <= RIVER_TOP) return true;
     if (x >= CENTER_X && aRP && aRP.hp <= 0 && y >= KING_KEEP_Y_AI && y <= RIVER_TOP) return true;
     return false;
@@ -3746,7 +3749,7 @@ function updateDeployZone() {
         deployZoneMesh.position.set(0, 1.5, (zA + zB)/2);
         deployZoneMesh.visible = true;
       }
-      // 口袋高亮（敌方半场，仅被摧毁那一路；公主塔破后跨河扩展部署区，边界=国王塔"领"前缘 CR≈塔身+1格）
+      // 口袋高亮（敌方半场，仅被摧毁那一路；公主塔破后跨河扩展部署区，背边界= KING_KEEP_Y_AI）
       {
         const aLP = game.towers.find(t => t.id === 'aLP');
         const aRP = game.towers.find(t => t.id === 'aRP');
