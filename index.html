@@ -824,7 +824,41 @@ function updateUnit(unit, dt) {
     if (unit.confuseT <= 0) { unit.owner = unit._trueOwner || unit.owner; unit._trueOwner = null; }
   }
   unit.anchored = false;   // 每帧重置；仅在"已锁定目标且处于攻击范围内"时置 true（前排锚定守位、后排绕行）
+  // ===== 跃迁（自爆精灵：烈焰/冰/雷/治疗/储毒精灵）：最优先结算，跳过死亡/麻痹判定，确保起跳动画完整播放 =====
+  if (unit.leapT > 0) {
+    unit.leapT -= dt;
+    const ang = unit._leapAng || 0;
+    const dur = unit.leapDur || 0.30;
+    const prog = 1 - Math.max(0, unit.leapT) / dur;   // 0→1：起跳→落地
+    // 位置从起跳点(_leapFrom)插值到落点(_leapTo，紧贴目标外缘)，形成清晰抛物线轨迹（远距=跃迁、近距=小跳）
+    const fx0 = (unit._leapFrom && unit._leapFrom.x) || unit.x;
+    const fy0 = (unit._leapFrom && unit._leapFrom.y) || unit.y;
+    const to = unit._leapTo || unit._leapFrom || { x: unit.x, y: unit.y };
+    const nx = fx0 + (to.x - fx0) * prog;
+    const ny = fy0 + (to.y - fy0) * prog;
+    const c = clampToArena(unit, nx, ny);
+    unit.x = c.x; unit.y = c.y;
+    unit.vx = Math.cos(ang) * (unit.spd * 3.4); unit.vy = Math.sin(ang) * (unit.spd * 3.4);
+    unit.leapHop = Math.sin(prog * Math.PI) * 40;   // 峰值约 40px，明显跃过其它单位、避免穿模
+    // 跳跃轨迹拖尾：每帧在身体位置留下淡出光点，把抛物线轨迹画出来
+    game.effects.push({ type:'leaptrail', x:unit.x, y:unit.y, life:0.22, maxLife:0.22, color:unit.color, radius:unit.radius||10 });
+    if (unit.leapT <= 0) {
+      if (unit.chain) electroChain(unit); else spiritExplode(unit);   // 雷电精灵=连锁闪电；其余自爆精灵=范围爆炸
+      unit.leapHop = 0; unit.hp = 0; unit.dead = true;
+      return;
+    }
+    return;
+  }
+  // 濒死跃迁：精灵被削血到 60% 以下、尚未起跳 → 朝最近敌人猛扑自爆（让"低血即跃迁"可见；CR 精灵贴脸自爆）
+  if (unit.leap && !unit.leapT && !unit._exploded && !unit.chain && !unit._deathLeap && unit.hp > 0 && unit.hp < unit.maxHp * 0.6) {
+    const foe = unit.owner === 'player' ? 'ai' : 'player';
+    let best = null, bd = Infinity;
+    for (const o of game.units) { if (o.owner !== foe || o.dead || o.hp <= 0 || o.underground) continue; const d = dist(unit, o); if (d < bd) { bd = d; best = o; } }
+    for (const t of game.towers) { if (t.owner === unit.owner || t.hp <= 0) continue; if (t.type === 'king' && t.active === false) continue; const d = dist(unit, t); if (d < bd) { bd = d; best = t; } }
+    if (best) { startSpiritLeap(unit, best); return; }
+  }
   if (unit.hp <= 0) {
+    if (unit.leapT > 0) return;   // 跃迁动画进行中：交给顶部跃迁块结算，勿提前爆炸
     if (unit.isBalloon) balloonDeath(unit);
     else if (unit.deathDelay > 0 && unit.deathDmg > 0 && !unit._deathScheduled) {
       // 气球兵：死亡不立即爆炸，而是埋下延迟引信(默认3秒)，引爆时命中范围内所有敌人与塔
@@ -833,7 +867,17 @@ function updateUnit(unit, dt) {
       game.effects.push({ type:'bombmarker', x: unit.x, y: unit.y, life: unit.deathDelay, maxLife: unit.deathDelay, radius: unit.deathRadius || 40 });
       return;
     }
-    else if ((unit.deathDmg > 0 || (unit.suicide && !unit.suicideNoDeath)) && !unit._exploded && !unit.chain) spiritExplode(unit);  // 自爆精灵(非连锁型)被击杀也爆炸；墙裂兵(suicideNoDeath)被击杀不爆炸，仅接触建筑时炸；连锁型(雷电精灵)提前阵亡不触发
+    else if ((unit.deathDmg > 0 || (unit.suicide && !unit.suicideNoDeath)) && !unit._exploded && !unit.chain) {
+      // 精灵：尚未起跳则先朝最近敌人猛扑（跃迁）再自爆，使"低血即跃迁自爆"可见（CR 精灵贴脸自爆）
+      if (unit.leap && !unit._deathLeap) {
+        const foe = unit.owner === 'player' ? 'ai' : 'player';
+        let best = null, bd = Infinity;
+        for (const o of game.units) { if (o.owner !== foe || o.dead || o.hp <= 0 || o.underground) continue; const d = dist(unit, o); if (d < bd) { bd = d; best = o; } }
+        for (const t of game.towers) { if (t.owner === unit.owner || t.hp <= 0) continue; if (t.type === 'king' && t.active === false) continue; const d = dist(unit, t); if (d < bd) { bd = d; best = t; } }
+        if (best) { startSpiritLeap(unit, best); return; }   // 起跳中：交回控制权给顶部跃迁块，落地再炸
+      }
+      spiritExplode(unit);
+    }
     unit.dead = true; return;
   }
   if (unit.reflectTimer > 0) unit.reflectTimer -= dt;   // 坎·镜反结界倒计时（任何状态下都持续）
@@ -890,25 +934,7 @@ function updateUnit(unit, dt) {
   if (unit.paralyzeTimer > 0) unit.paralyzeTimer -= dt;
   // 藤蔓定身：无法移动，但可在射程内攻击
   if (unit.rootTimer > 0) unit.rootTimer -= dt;
-  // 跳窜（烈焰精灵等自爆精灵）：向锁定目标猛冲一小段并起跳，落点自爆（CR 豆子式攻击）
-  if (unit.leapT > 0) {
-    unit.leapT -= dt;
-    const ang = unit._leapAng || 0;
-    const leapSpd = unit.spd * 4.5;
-    const nx = unit.x + Math.cos(ang) * leapSpd * dt;
-    const ny = unit.y + Math.sin(ang) * leapSpd * dt;
-    const c = clampToArena(unit, nx, ny);
-    unit.x = c.x; unit.y = c.y;
-    unit.vx = Math.cos(ang) * leapSpd; unit.vy = Math.sin(ang) * leapSpd;
-    const prog = 1 - Math.max(0, unit.leapT) / 0.22;
-    unit.leapHop = Math.sin(prog * Math.PI) * 16;
-    if (unit.leapT <= 0) {
-      if (unit.chain) electroChain(unit); else spiritExplode(unit);   // 雷电精灵=连锁闪电；其余自爆精灵=范围爆炸
-      unit.leapHop = 0; unit.hp = 0; unit.dead = true;
-      return;
-    }
-    return;
-  }
+  // （跃迁块已上移至函数顶部，确保起跳动画优先于死亡/麻痹判定结算）
   // 实时速度（px/秒），供 AI 法术预判落点使用；每帧默认清零，移动时再写入
   unit.vx = 0; unit.vy = 0;
   // 治疗图腾：每帧治疗半径内的友军（不含自己），不超过其最大血量
@@ -963,9 +989,8 @@ function updateUnit(unit, dt) {
       unit.atkCD = unit.atkSpd + (unit.paralyzeTimer > 0 ? 0.4 : 0) + (unit.slowTimer > 0 ? unit.atkSpd * (1 - (unit.slowFactor || 0.7)) : 0);
       // 跳窜（自爆精灵）：起跳冲向目标，落地自爆由 updateUnit 顶部的跳窜结算接管
       if (unit.leap && unit.leapT <= 0 && unit.target) {
-        unit.leapT = 0.22;
-        unit._leapAng = Math.atan2(unit.target.y - unit.y, unit.target.x - unit.x);
-        unit.leapTgt = unit.target;
+        startSpiritLeap(unit, unit.target);
+        unit._deathLeap = false;   // 普通攻击起跳（非濒死），落地正常自爆
         unit._atkT = 0.30; spawnAttackFx(unit, unit.target);
         return;
       }
@@ -2092,7 +2117,8 @@ function spiritExplode(u) {
   if (u.healFieldOnDeath) {   // 治疗精灵：遗留治疗领域，治疗范围内友军
     game.healFields.push({ x:u.x, y:u.y, owner:u.owner, radius:u.healFieldOnDeath.radius, life:u.healFieldOnDeath.duration, maxLife:u.healFieldOnDeath.duration, healRate:u.healFieldOnDeath.healRate });
   }
-  game.effects.push({ type:'splash', x:u.x, y:u.y, life:0.35, maxLife:0.35, color:u.color, radius:r });
+  const fxKind = (u.model && u.model.replace('sprite', '')) || 'fire';
+  game.effects.push({ type:'spiritburst', x:u.x, y:u.y, life:0.45, maxLife:0.45, radius:r, color:u.color, fx: fxKind, owner:u.owner });
 }
 // 雷电精灵连锁闪电（CR 原版机制）：发射自身撞向主目标后，闪电在最多 8 个敌方目标(彼此 ≤4 格)间连锁，
 // 每个目标受全额伤害 + 0.5s 眩晕，随后精灵自毁。注意：雷电精灵不做范围溅射（这是它与烈焰/冰精灵的本质区别）。
@@ -2136,6 +2162,18 @@ function electroChain(u) {
   }
   // 连锁闪电特效：连接 精灵→主目标→各连锁目标 的锯齿状黄色闪电
   game.effects.push({ type: 'zapchain', pts, life: 0.32, maxLife: 0.32, color: '#FFF59D' });
+}
+// 启动精灵跃迁：朝 target 猛扑一小段并高高跃起，落地由跃迁块结算自爆（CR 豆子式攻击；跳跃距离≈攻击射程）
+function startSpiritLeap(unit, target) {
+  if (!target) return;
+  unit.leapT = 0.30; unit.leapDur = 0.30;
+  unit._leapAng = Math.atan2(target.y - unit.y, target.x - unit.x);
+  unit._leapFrom = { x: unit.x, y: unit.y };
+  // 落点：紧贴目标外缘（半径+4），确保落地自爆能命中；远距时即表现为"跃迁"到敌人身边
+  const tr = (target.radius || 10) + 4;
+  unit._leapTo = { x: target.x - Math.cos(unit._leapAng) * tr, y: target.y - Math.sin(unit._leapAng) * tr };
+  unit.leapTgt = target;
+  unit._deathLeap = true;
 }
 // 治疗光环（治疗精灵遗留）：每帧治疗范围内友军，计时结束后移除网格
 function updateHealFields(dt) {
@@ -2318,14 +2356,15 @@ function updatePendingSpells(dt) {
       // 爆炸：按法术类型渲染差异落点特效
       let fxType = 'fireball', fxColor = s.color;
       if (s.kind === 'arrows') { fxType = 'rain'; fxColor = '#cfe8ff'; }
-      else if (s.kind === 'lightning') { fxType = 'chain'; fxColor = '#fff27a'; }
+      else if (s.kind === 'lightning') { fxType = s.topTargets ? 'lightningstrike' : 'chain'; fxColor = '#fff27a'; }
       else if (s.kind === 'barrel') { fxType = 'barrel'; }
       else if (s.kind === 'rocket') { fxType = 'fireball'; fxColor = '#ff3b30'; }
       else if (s.kind === 'freeze') { fxType = 'freeze'; fxColor = '#81D4FA'; }
       else if (s.kind === 'quake') { fxType = 'quakeimpact'; fxColor = '#8d6e63'; }
       else if (s.kind === 'vines') { fxType = 'vines'; fxColor = '#2E7D32'; }
       else if (s.kind === 'log') { fxType = 'log'; fxColor = '#8d6e63'; }
-      game.effects.push({ type: fxType, x: s.x, y: s.y, life: 0.6, maxLife: 0.6, radius: s.radius, color: fxColor, owner: s.owner });
+      const impact = { type: fxType, x: s.x, y: s.y, life: 0.6, maxLife: 0.6, radius: s.radius, color: fxColor, owner: s.owner, seed: s.seed };
+      game.effects.push(impact);
       // 震荡术：落地后不做一次性伤害，而是生成持续 2.4s 的震荡区，每 0.8s 震一次（共 3 跳，总伤 = dmg）
       if (s.quakeTicks > 0) {
         game.spellFields.push({
@@ -2359,7 +2398,9 @@ function updatePendingSpells(dt) {
             if (dist(s, t) < s.radius + 20) cands.push(t);
           }
           cands.sort((a, b) => b.hp - a.hp);
-          for (const tgt of cands.slice(0, s.topTargets)) {
+          const hitList = cands.slice(0, s.topTargets);
+          impact._hitPts = hitList.map(t => ({ x: t.x, y: t.y, tower: (t.type === 'king' || t.type === 'princess') }));
+          for (const tgt of hitList) {
             const mult = (tgt.type === 'king' || tgt.type === 'princess') ? (s.towerDmgMult || 0.30) : 1;
             dealDamage({owner:s.owner}, tgt, s.dmg * mult);
             if (s.stun > 0) tgt.stunTimer = s.stun;
@@ -3423,6 +3464,14 @@ function updateUnitMesh(m, u) {
   if (ud.sashimono) { const fl = ud.sashimono.children[1]; if (fl) fl.rotation.y = Math.sin((game.gameTime || 0) * 4) * 0.14; }
   const hov = u.flying ? 40 : (u.model && u.model.endsWith('sprite') ? (8 + Math.sin((game.gameTime||0)*6)*2) : 0);
   m.position.set(u.x - CENTER_X, hov + (u.leapHop || 0), u.y - 340);
+  // 跃迁中：地面投影阴影（随高度缩小变淡）+ 身体轻微放大，强调"跳起"、避免与平面单位穿模
+  if ((u.leapHop||0) > 1) {
+    const k = Math.max(0.2, 1 - u.leapHop/44);
+    const sh = new THREE.Mesh(new THREE.CircleGeometry((u.radius||10)*(0.6+0.5*k), 16), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.12+0.22*(1-k), side:THREE.DoubleSide, depthWrite:false}));
+    sh.rotation.x = -Math.PI/2; sh.position.set(u.x - CENTER_X, 1.4, u.y - 340); fxGroup.add(sh);
+    const s2 = 1 + Math.sin((1 - (u.leapT||0)/(u.leapDur||0.3)) * Math.PI) * 0.28;
+    m.scale.set(s2, s2, s2);
+  } else if (m.scale.x !== 1) { m.scale.set(1,1,1); }
   const spd = Math.hypot(u.vx, u.vy);
   const moving = spd > 1.5;
   const freq = 7 + spd * 0.32;          // 腿摆/扇翅频率随真实移速缩放（巨人慢、野猪快）
@@ -3856,6 +3905,37 @@ function updateEffectMeshes() {
       const col = e.type === 'deploy' ? (e.color || '#ffffff') : (e.color || '#FF6F00');
       mesh = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(col), transparent:true, opacity:pct*0.8, side:THREE.DoubleSide}));
       mesh.rotation.x = -Math.PI/2; mesh.position.set(x, 2, z);
+    } else if (e.type === 'leaptrail') {
+      const p = e.life / e.maxLife;
+      const s = new THREE.Mesh(new THREE.SphereGeometry((e.radius||10)*0.7*(0.5+p*0.5), 8, 6), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:p*0.6, depthWrite:false}));
+      s.position.set(x, 16 + (1-p)*10, z); fxGroup.add(s);
+    } else if (e.type === 'spiritburst') {
+      const p = 1 - pct, p2 = pct;
+      const rad = (e.radius||40) * (1.4 - p2*0.4);
+      const fx = e.fx || 'fire';
+      if (fx === 'ice') {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.6, rad, 26), new THREE.MeshBasicMaterial({color:0x81D4FA, transparent:true, opacity:p2*0.9, side:THREE.DoubleSide, depthWrite:false}));
+        ring.rotation.x=-Math.PI/2; ring.position.set(x,2,z); fxGroup.add(ring);
+        const core = new THREE.Mesh(new THREE.SphereGeometry(rad*0.5,12,10), new THREE.MeshBasicMaterial({color:0xE1F5FE, transparent:true, opacity:p2*0.8})); core.position.set(x,12,z); fxGroup.add(core);
+        for (let k=0;k<6;k++){ const a=k/6*Math.PI*2; const sh=new THREE.Mesh(new THREE.ConeGeometry(2.5,12,6), new THREE.MeshBasicMaterial({color:0x4FC3F7, transparent:true, opacity:p2})); sh.position.set(x+Math.cos(a)*rad*0.7, 10, z+Math.sin(a)*rad*0.7); sh.rotation.z=Math.cos(a)*0.5; sh.rotation.x=Math.sin(a)*0.5; fxGroup.add(sh); }
+      } else if (fx === 'elec') {
+        const star = new THREE.Mesh(new THREE.SphereGeometry(rad*0.55,12,10), new THREE.MeshBasicMaterial({color:0xFFF59D, transparent:true, opacity:p2*0.9})); star.position.set(x,13,z); fxGroup.add(star);
+        const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.6, rad, 24), new THREE.MeshBasicMaterial({color:0xFFF176, transparent:true, opacity:p2*0.85, side:THREE.DoubleSide, depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(x,3,z); fxGroup.add(ring);
+        for (let k=0;k<5;k++){ const a=k/5*Math.PI*2 + e.life*8; const bx=Math.cos(a)*rad*0.6, bz=Math.sin(a)*rad*0.6; const bolt=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4, rad*0.6,6), new THREE.MeshBasicMaterial({color:0xFFF176, transparent:true, opacity:p2*0.8})); bolt.position.set(x+bx,13,z+bz); bolt.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(Math.cos(a),0,Math.sin(a))); fxGroup.add(bolt); }
+      } else if (fx === 'heal') {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.55, rad, 26), new THREE.MeshBasicMaterial({color:0x69F0AE, transparent:true, opacity:p2*0.85, side:THREE.DoubleSide, depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(x,2,z); fxGroup.add(ring);
+        const pulse = new THREE.Mesh(new THREE.SphereGeometry(rad*0.5,12,10), new THREE.MeshBasicMaterial({color:0xB9F6CA, transparent:true, opacity:p2*0.6})); pulse.position.set(x,12,z); fxGroup.add(pulse);
+        const v = new THREE.Mesh(new THREE.BoxGeometry(4,16,3), new THREE.MeshBasicMaterial({color:0x00E676, transparent:true, opacity:p2})); v.position.set(x,16,z); fxGroup.add(v);
+        const h = new THREE.Mesh(new THREE.BoxGeometry(16,4,3), new THREE.MeshBasicMaterial({color:0x00E676, transparent:true, opacity:p2})); h.position.set(x,16,z); fxGroup.add(h);
+      } else if (fx === 'poison') {
+        const cloud = new THREE.Mesh(new THREE.SphereGeometry(rad*0.7,14,12), new THREE.MeshBasicMaterial({color:0x7B1FA2, transparent:true, opacity:p2*0.6, depthWrite:false})); cloud.position.set(x,14,z); fxGroup.add(cloud);
+        const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.6, rad, 24), new THREE.MeshBasicMaterial({color:0x9C27B0, transparent:true, opacity:p2*0.7, side:THREE.DoubleSide, depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(x,2,z); fxGroup.add(ring);
+        for (let k=0;k<6;k++){ const a=k/6*Math.PI*2 + e.life*5; const b=new THREE.Mesh(new THREE.SphereGeometry(3,8,6), new THREE.MeshBasicMaterial({color:0xB9F6CA, transparent:true, opacity:p2*0.7})); b.position.set(x+Math.cos(a)*rad*0.6, 8+Math.sin(a*2)*4, z+Math.sin(a)*rad*0.6); fxGroup.add(b); }
+      } else { // fire (flamesprite) + 默认
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(rad*0.6,14,12), new THREE.MeshBasicMaterial({color:0xFF6D00, transparent:true, opacity:p2*0.8, depthWrite:false})); ball.position.set(x,13,z); fxGroup.add(ball);
+        const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.55, rad, 24), new THREE.MeshBasicMaterial({color:0xFFD54F, transparent:true, opacity:p2*0.85, side:THREE.DoubleSide, depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(x,3,z); fxGroup.add(ring);
+        for (let k=0;k<7;k++){ const a=k/7*Math.PI*2; const em=new THREE.Mesh(new THREE.BoxGeometry(2.5,2.5,2.5), new THREE.MeshBasicMaterial({color:0xFFAB40, transparent:true, opacity:p2*0.8})); em.position.set(x+Math.cos(a)*rad*0.7, 6+Math.random()*10, z+Math.sin(a)*rad*0.7); fxGroup.add(em); }
+      }
     } else if (e.type === 'bolt') {
       const p = 1 - e.life / e.maxLife;
       const bx = (e.sx + (e.tx - e.sx) * p) - CENTER_X;
@@ -4011,15 +4091,21 @@ function updateEffectMeshes() {
       trail.rotation.y = ang; trail.position.set(bx - Math.sin(ang) * 11, 15, bz - Math.cos(ang) * 11); fxGroup.add(trail);
     } else if (e.type === 'rain') {
       const rad = e.radius || 60;
-      for (let k = 0; k < 10; k++) {
-        const ang = k / 10 * Math.PI * 2;
-        const off = rad * (0.2 + 0.8 * ((k * 0.37) % 1));
+      const N = 16;
+      const sd = e.seed || 1;
+      for (let k = 0; k < N; k++) {
+        const ang = spellRnd(sd, k) * Math.PI * 2;
+        const off = Math.sqrt((k + 0.5) / N) * rad * 0.92;
         const px = x + Math.cos(ang) * off;
         const pz = z + Math.sin(ang) * off;
-        const yy = 8 + (1 - pct) * 40;
-        const a = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 12), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color), transparent:true, opacity:0.8}));
-        a.position.set(px, yy, pz); fxGroup.add(a);
+        const g = new THREE.Group(); g.position.set(px, 4, pz);
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,16,6), new THREE.MeshBasicMaterial({color:0x8d6e63})); shaft.rotation.x=Math.PI/2; shaft.position.y=4; g.add(shaft);
+        const headA = new THREE.Mesh(new THREE.ConeGeometry(1.6,4,6), new THREE.MeshBasicMaterial({color:0xeceff1})); headA.rotation.x=Math.PI/2; headA.position.y=12; g.add(headA);
+        for (let f=0; f<2; f++){ const fin=new THREE.Mesh(new THREE.PlaneGeometry(3,4), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.9, side:THREE.DoubleSide})); fin.rotation.x=Math.PI/2; fin.position.y=-3; fin.rotation.y=f*Math.PI/2; g.add(fin); }
+        fxGroup.add(g);
+        if (k % 3 === 0) { const dust = new THREE.Mesh(new THREE.SphereGeometry(3,8,6), new THREE.MeshBasicMaterial({color:0xcfd8dc, transparent:true, opacity:pct*0.5})); dust.position.set(px,3,pz); fxGroup.add(dust); }
       }
+      const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.8, rad, 28), new THREE.MeshBasicMaterial({color:new THREE.Color(e.color||0x42a5f5), transparent:true, opacity:pct*0.5, side:THREE.DoubleSide, depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(x,2,z); fxGroup.add(ring);
     } else if (e.type === 'chain') {
       const rad = e.radius || 60;
       for (let k = 0; k < 3; k++) {
@@ -4032,6 +4118,37 @@ function updateEffectMeshes() {
       }
       const ring = new THREE.Mesh(new THREE.RingGeometry(rad*0.7, rad, 24), new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff27a), transparent:true, opacity:pct*0.7, side:THREE.DoubleSide}));
       ring.rotation.x = -Math.PI/2; ring.position.set(x, 3, z); fxGroup.add(ring);
+    } else if (e.type === 'lightningstrike') {
+      const pts = e._hitPts || null;
+      const top = 0xFFF27A, wht = 0xFFFFFF;
+      if (pts && pts.length) {
+        for (const pt of pts) {
+          const tx = pt.x - CENTER_X, tz = pt.y - 340;
+          // 天降锯齿闪电柱（顶视下表现为落点处的明亮光柱 + 地面折闪电）
+          let prevX = tx, prevY = 64;
+          for (let s=1; s<=5; s++) {
+            const t = s/5;
+            const cy = 64 - t*60;
+            const cx = tx + (Math.random()-0.5)*8*(s<5?1:0.3);
+            const segLen = Math.hypot(cx-prevX, cy-prevY);
+            const cyl = new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.2,segLen,6), new THREE.MeshBasicMaterial({color:top, transparent:true, opacity:0.8}));
+            cyl.position.set((prevX+cx)/2, (prevY+cy)/2, tz);
+            cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(cx-prevX, cy-prevY, 0).normalize());
+            fxGroup.add(cyl);
+            const inner = new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,segLen,6), new THREE.MeshBasicMaterial({color:wht, transparent:true, opacity:0.95}));
+            inner.position.copy(cyl.position); inner.quaternion.copy(cyl.quaternion); fxGroup.add(inner);
+            prevX = cx; prevY = cy;
+          }
+          // 落点星芒 + 扩散冲击环 + 眩晕标记
+          const flash = new THREE.Mesh(new THREE.SphereGeometry(7,12,10), new THREE.MeshBasicMaterial({color:wht, transparent:true, opacity:0.95})); flash.position.set(tx,14,tz); fxGroup.add(flash);
+          const ring = new THREE.Mesh(new THREE.RingGeometry(6, 18*(1+(1-pct)*0.5), 24), new THREE.MeshBasicMaterial({color:top, transparent:true, opacity:pct*0.85, side:THREE.DoubleSide, depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(tx,3,tz); fxGroup.add(ring);
+          const star = new THREE.Mesh(new THREE.TorusGeometry(8,2.0,6,6), new THREE.MeshBasicMaterial({color:wht, transparent:true, opacity:pct})); star.position.set(tx,15,tz); star.rotation.x=Math.PI/2; fxGroup.add(star);
+        }
+      } else {
+        const tx = x, tz = z;
+        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(3,4.5,290,8), new THREE.MeshBasicMaterial({color:top, transparent:true, opacity:0.7})); cyl.position.set(tx,150,tz); fxGroup.add(cyl);
+        const ring = new THREE.Mesh(new THREE.RingGeometry((e.radius||60)*0.7, e.radius||60, 24), new THREE.MeshBasicMaterial({color:top, transparent:true, opacity:pct*0.7, side:THREE.DoubleSide, depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.set(tx,3,tz); fxGroup.add(ring);
+      }
     } else if (e.type === 'zapchain') {
       // 雷电精灵连锁闪电：连接 精灵→主目标→各连锁目标 的锯齿状黄色闪电
       const pts = e.pts || [];
@@ -4465,8 +4582,9 @@ function gameLoop(timestamp) {
     resolveCollisions();
     separateFromTowers();   // 地面单位贴边绕过塔模型，避免卡进塔里
     // 兜底清扫：血量耗尽的单位立即标记死亡，杜绝任何边界残留（双保险）
+    // 注意：跃迁中的精灵(leapT>0)交由 updateUnit 顶部跃迁块结算自爆，此处跳过以免跃迁动画被掐断/漏爆
     for (const u of game.units) {
-      if (u.hp <= 0) {
+      if (u.hp <= 0 && !(u.leapT > 0)) {
         if (u.isBalloon && !u._balloonDone) balloonDeath(u);
         if (!u._souled) {
           u._souled = true;
