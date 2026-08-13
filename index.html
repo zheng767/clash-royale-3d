@@ -956,6 +956,8 @@ function updateUnit(unit, dt) {
   }
   // 骷髅帝王技能1冷却倒计时（每帧递减）
   if (unit.heroType === 'skeletonking' && unit.skill1CD > 0) unit.skill1CD = Math.max(0, unit.skill1CD - dt);
+  // 冰雪覆盖时长（被冰系命中）：与冻结/减速同步递减；须在 stun early-return 之前扣减，否则冻结期不流逝
+  if (unit.frostTimer > 0) unit.frostTimer = Math.max(0, unit.frostTimer - dt);
   // 麻痹：被雷电命中后短暂眩晕，不能移动和攻击
   if (unit.stunTimer > 0) {
     unit.stunTimer -= dt;
@@ -2118,7 +2120,7 @@ function makeUnit(owner, def, x, y) {
     bridgeLane: (Math.random() * 2 - 1) * (BRIDGE_HALF || 21.25) * 0.6,   // 稳定过桥车道偏移(桥宽内)，分散过桥避免卡桥头
     surroundAng: Math.random() * Math.PI * 2,   // 稳定包围角：多个单位锁定同一目标时各自奔向目标圆周上该角度点，自然散成包围圈而非全堆中心
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
-    target: null, dead: false, engaged: false, engageOrder: 0, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0,
+    target: null, dead: false, engaged: false, engageOrder: 0, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0, frostTimer: 0, frostMax: 1.1,
     digFrom: _digFrom, digTo: _digTo,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
@@ -2170,6 +2172,7 @@ function spiritExplode(u) {
     if (dist(u, o) < r) {
       dealDamage({ owner: u.owner }, o, dmg);   // 不跳过飞行：对空也有效
       if (u.stunOnHit && !o.isBuilding) o.stunTimer = Math.max(o.stunTimer || 0, u.stunOnHit);   // 冰/雷精灵：命中施加冻结/眩晕
+      if (u.model === 'icesprite' && !o.isBuilding) { o.frostTimer = Math.max(o.frostTimer || 0, u.stunOnHit); o.frostMax = u.stunOnHit; }   // 冰雪精灵：被击中者覆盖冰雪，持续=冻结时长
       if (u.confuseOnHit && !o.isBuilding && !o._trueOwner) {   // 储毒精灵：主控 2s（临时归施法者所有）
         o._trueOwner = o.owner; o.owner = u.owner; o.confuseT = u.confuseOnHit;
       }
@@ -3499,6 +3502,27 @@ function addUnitCommon(g, u, r) {
   // 天恩护盾减伤光环（默认隐藏，teamDR 生效时显示，表现友方单位被护盾保护）
   const drAura = new THREE.Mesh(new THREE.RingGeometry(r * 1.15, r * 1.45, 20), new THREE.MeshBasicMaterial({ color: 0xFFE082, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
   drAura.rotation.x = -Math.PI / 2; drAura.position.y = 1.5; drAura.visible = false; g.add(drAura); g.userData.drAura = drAura;
+  // 被冰雪覆盖效果（默认隐藏；冰雪精灵命中 frostTimer>0 时显示）：冰罩+晶体壳+旋转冰晶碎片+地面霜环，高级美观
+  const frostGroup = new THREE.Group();
+  const fr = r * 1.2;
+  const frostGlow = new THREE.Mesh(new THREE.SphereGeometry(fr, 14, 12), new THREE.MeshBasicMaterial({ color: 0x81D4FA, transparent: true, opacity: 0.20, blending: THREE.AdditiveBlending, depthWrite: false }));
+  frostGlow.position.y = r * 0.7;
+  const frostShell = new THREE.Mesh(new THREE.IcosahedronGeometry(fr * 1.04, 1), new THREE.MeshBasicMaterial({ color: 0xB3E5FC, transparent: true, opacity: 0.28, wireframe: true, depthWrite: false }));
+  frostShell.position.y = r * 0.7;
+  const frostShards = new THREE.Group(); frostShards.position.y = r * 0.7;
+  for (let s = 0; s < 6; s++) {
+    const sh = new THREE.Mesh(new THREE.OctahedronGeometry(r * 0.30, 0), new THREE.MeshBasicMaterial({ color: 0xE1F5FE, transparent: true, opacity: 0.9, depthWrite: false }));
+    const ang = s / 6 * Math.PI * 2;
+    sh.position.set(Math.cos(ang) * fr * 0.85, (s % 2 ? 1 : -1) * r * 0.22, Math.sin(ang) * fr * 0.85);
+    sh.userData.ang = ang; sh.userData.baseY = sh.position.y;
+    frostShards.add(sh);
+  }
+  const frostRing = new THREE.Mesh(new THREE.RingGeometry(fr * 0.85, fr * 1.2, 28), new THREE.MeshBasicMaterial({ color: 0x81D4FA, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
+  frostRing.rotation.x = -Math.PI / 2; frostRing.position.y = 1.6;
+  frostGroup.add(frostGlow, frostShell, frostShards, frostRing);
+  frostGroup.visible = false;
+  g.add(frostGroup);
+  g.userData.frostGroup = frostGroup; g.userData.frostGlow = frostGlow; g.userData.frostShell = frostShell; g.userData.frostShards = frostShards; g.userData.frostRing = frostRing;
   if (u.healAura && u.healRadius) {
     const healFill = new THREE.Mesh(new THREE.CircleGeometry(u.healRadius, 48), new THREE.MeshBasicMaterial({color:0x33e0c0, transparent:true, opacity:0.10, side:THREE.DoubleSide, depthWrite:false}));
     healFill.rotation.x = -Math.PI/2; healFill.position.y = 1.4; g.add(healFill);
@@ -3521,6 +3545,22 @@ function updateUnitMesh(m, u) {
   const ud = m.userData;
   const t = game.gameTime || 0;   // 提前声明，供英雄光环/皇冠/背旗动画使用（修复 TDZ）
   if (ud.vineWrap) ud.vineWrap.visible = (u.rootTimer > 0);   // 被藤蔓定身时显示缠绕
+  // 被冰雪覆盖：frostTimer>0 时显示冰罩组并播放呼吸/旋转动画（持续=冻结时长，首尾随剩余比例淡入淡出）
+  if (ud.frostGroup) {
+    const frosted = u.frostTimer > 0;
+    ud.frostGroup.visible = frosted;
+    if (frosted) {
+      const fp = u.frostMax > 0 ? Math.min(1, u.frostTimer / u.frostMax) : 1;   // 剩余比例→首末淡入淡出
+      const breath = 0.78 + 0.22 * Math.sin(t * 5);
+      ud.frostGlow.material.opacity = 0.14 + 0.16 * fp * breath;
+      ud.frostShell.material.opacity = 0.20 + 0.18 * fp;
+      ud.frostShell.rotation.y = t * 0.9;
+      ud.frostShell.rotation.x = t * 0.45;
+      ud.frostShards.rotation.y = t * 1.5;
+      for (const sh of ud.frostShards.children) { sh.rotation.x = t * 2.2; sh.rotation.z = t * 1.6; sh.position.y = sh.userData.baseY + Math.sin(t * 3 + sh.userData.ang) * ud.r * 0.14; }
+      ud.frostRing.material.opacity = 0.30 + 0.25 * fp * breath;
+    }
+  }
   if (ud.drAura) ud.drAura.visible = !!(game[u.owner] && game[u.owner].teamDR && game[u.owner].teamDR.timer > 0);   // 天恩护盾生效时光环显示
   // 英雄能量环脉冲；坎·镜反结界激活时变为洋红并放大
   if (ud.heroAura) {
@@ -3629,8 +3669,8 @@ function updateUnitMesh(m, u) {
     else { body.material.transparent = false; body.material.opacity = 1; }
     const charging = u.charged && u.canCharge;
     body.position.z = ud._bodyZ0 + (charging ? (ud.r * 0.5) : 0);   // 冲锋时身体前倾（明显可见的蓄力→冲刺过程）
-    body.material.emissive = new THREE.Color(u.confuseT > 0 ? 0xAA00FF : (u.stunTimer > 0 ? 0xFFEB3B : (u.paralyzeTimer > 0 ? 0x4488FF : (charging ? 0xFFD54F : 0x000000))));
-    body.material.emissiveIntensity = (u.confuseT > 0 || u.stunTimer > 0 || u.paralyzeTimer > 0) ? 0.6 : (charging ? 0.5 : 0);
+    body.material.emissive = new THREE.Color(u.confuseT > 0 ? 0xAA00FF : (u.frostTimer > 0 ? 0x81D4FA : (u.stunTimer > 0 ? 0xFFEB3B : (u.paralyzeTimer > 0 ? 0x4488FF : (charging ? 0xFFD54F : 0x000000)))));
+    body.material.emissiveIntensity = (u.confuseT > 0 || u.frostTimer > 0 || u.stunTimer > 0 || u.paralyzeTimer > 0) ? 0.6 : (charging ? 0.5 : 0);
   }
   const ratio = Math.max(0, u.hp / u.maxHp);
   const fg = ud.fg, barW = ud.barW;
