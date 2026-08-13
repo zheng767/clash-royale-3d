@@ -771,15 +771,19 @@ function getMoveTarget(unit, dest) {
   // 需要过河：皇室战争采用「先沿本侧河岸走到最近桥的桥口、再直行过桥」的两段寻路。
   // 不锁定桥道走廊——单位按各自落点自然分布在桥面，靠碰撞互相挤开(而非排队)。
   const lane = unit.bridgeLane || 0;   // 每单位稳定的过桥"车道"偏移：分散在桥宽内，避免全挤在同一个精确桥口点→卡桥头
+  // 目标是否斜对角(不在本桥道横向范围内)：是→过桥时走桥道中心线避免斜穿抖动；否→正对桥道本就不抖，保持原直行
+  const diagTarget = Math.abs(dest.x - bridge.x) > BRIDGE_HALF;
   // 关键修复：此前 aligned 仅判 X 接近桥心就直奔目标，导致单位远在己方半场(大 Y)时也被判"对准"，
   // 于是斜穿整片场地、漂移出桥道后被夹回河岸、再横滑到另一座桥——表现为"过桥走斜线"。
   // 现改为：必须真正走到本侧桥口(河岸+桥道X走廊内)或已在桥面上，才提交过桥、直奔目标。
   const nearBankY = unit.y < 340 ? RIVER_TOP : RIVER_BOT;
   const atMouth = Math.abs(unit.x - bridge.x) <= BRIDGE_HALF &&
     (Math.abs(unit.y - nearBankY) <= BRIDGE_HALF || (unit.y > RIVER_TOP - BRIDGE_HALF && unit.y < RIVER_BOT + BRIDGE_HALF));
-  if (atMouth) { unit.bridgeCommitted = true; return { x: dest.x, y: dest.y }; }
-  // 已提交过桥：保持直奔目标（clampToRiverBank 把越界 X 拉回桥面，自然沿桥过河）
-  if (unit.bridgeCommitted) return { x: dest.x, y: dest.y };
+  if (atMouth) { unit.bridgeCommitted = true; return diagTarget ? { x: bridge.x + lane, y: dest.y } : { x: dest.x, y: dest.y }; }
+  // 已提交过桥：目标斜对角(|dest.x-桥心|>桥半宽)时沿桥道中心线(带车道偏移)直行过桥，Y 朝目标、X 锁定桥心，
+  // 不再斜穿被 clampToRiverBank 每帧拉回桥边→修复「单位在桥上索敌想走直线、一卡一卡卡过来」的抖动；
+  // 目标基本正对桥道时保持原直行行为(本就不抖，且避免改变直穿时序引发回归)
+  if (unit.bridgeCommitted) return diagTarget ? { x: bridge.x + lane, y: dest.y } : { x: dest.x, y: dest.y };
   // 未到桥口：沿本侧河岸走到桥口（X 收向桥心+车道偏移，Y 到河岸）——不会在己方半场斜穿
   return { x: bridge.x + lane, y: nearBankY };
 }
