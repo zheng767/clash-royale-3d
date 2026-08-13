@@ -329,16 +329,20 @@ const CARD_DEFS = {
   poisonsprite: { name:'储毒精灵', cost:3, hp:230, dmg:207, range:21, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#8BC34A', icon:'毒', radius:11, splash:49, deployTime:1.0, suicide:true, leap:true, confuseOnHit:2.0, model:'poisonsprite', atk:'magic' },
   // CR 原版卡牌：皇家卫队 Royal Recruits（CR 锦标赛 L11 普通卡，数值与机制严格还原）
   //   7 费 / 普通 / 对地 / 近战1.6格(≈34px) / 中等移速 / 六只 / 每只带 240 护盾(先于HP承伤，不回复) / 伤害133(攻速1.3→DPS102) / 首击0.5s
-  royalrecruits: { name:'皇家卫队', cost:7, hp:547, dmg:133, range:34, spd:21.25, atkSpd:1.3, tgt:'ground', count:6, color:'#42A5F5', icon:'卫队', radius:14, deployTime:1.0, shield:240, model:'royalrecruits', atk:'stab', firstHit:0.5 },
+  royalrecruits: { name:'皇家卫队', cost:7, hp:547, dmg:133, range:34, spd:21.25, atkSpd:1.3, tgt:'ground', count:6, color:'#42A5F5', icon:'卫队', radius:14, deployTime:1.0, shield:240, model:'royalrecruits', atk:'stab', firstHit:0.5, rowDeploy:true },
   // CR 原版卡牌：皇家速递 Royal Delivery（CR 锦标赛 L11 普通法术，数值与机制严格还原）
   //   3 费 / 普通法术 / 落地前 3 秒延迟(木箱空投) / 半径3格(63.75px，对空对地) / 范围伤害437(对塔×0.35) / 落点生成 1 个皇家卫队(带盾)
   royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'barrel', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1 },
+  // ===== CR 原版卡牌：骷髅巨人 Giant Skeleton（CR 锦标赛 L11 史诗，2026-5 平衡后数值）=====
+  //   HP3361 / 伤害276 / 攻速1.3 / 首击0.3 / Medium(21.25) / 近战0.8格(18px) / 只打建筑 / 6费
+  //   死亡:3秒延迟爆炸, 死亡伤害688, 半径3格(63.75px), 对皇家塔亦688(2026-5起不再对塔×2)
+  skeletongiant: { name:'骷髅巨人', cost:6, hp:3361, dmg:276, range:18, spd:21.25, atkSpd:1.3, tgt:'building', count:1, color:'#ECEFF1', icon:'骷巨', radius:18, deployTime:1.0, model:'skeletongiant', atk:'punch', firstHit:0.3, deathDmg:688, deathRadius:63.75, deathDelay:3.0 },
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
   // 普通 Common
   knight:'common', archer:'common', goblin:'common', giant:'common', bomber:'common', skeletons:'common',
-  fireball:'common', musketeer:'common', minions:'common', speargoblin:'common', goblinbarrel:'common', royalrecruits:'common', royaldelivery:'common',
+  fireball:'common', musketeer:'common', minions:'common', speargoblin:'common', goblinbarrel:'common', royalrecruits:'common', royaldelivery:'common', skeletongiant:'epic',
   minionhorde:'common', babydragon:'common', barbarians:'common', cannon:'common', tesla:'common',
   flamesprite:'common', royalgiant:'common', hogrider:'common', haosihan:'common', healtotem:'common',
   frosttower:'common', zap:'common', arrows:'common', vines:'common', skarmy:'common',
@@ -355,7 +359,7 @@ const QUALITY = {
 const QUALITY_COLORS = { common:'#cfd8dc', rare:'#FF9800', epic:'#9C27B0', legendary:'#FFD700', champion:'#FF4081' };
 const QUALITY_LABELS = { common:'普通', rare:'稀有', epic:'史诗', legendary:'传奇', champion:'英雄' };
 for (const k in CARD_DEFS) { if (CARD_DEFS[k]) CARD_DEFS[k].quality = QUALITY[k] || 'common'; }
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite','royalrecruits','royaldelivery','mortar','xbow','magicarcher','bombtower','balloon','wallbreakers'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite','royalrecruits','royaldelivery','skeletongiant','mortar','xbow','magicarcher','bombtower','balloon','wallbreakers'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -2052,6 +2056,15 @@ function playCard(owner, cardKey, x, y) {
           const u = makeUnit(owner, def, ux, uy);
           game.units.push(u);
         }
+      } else if (def.rowDeploy) {
+        // 皇家卫队：CR 式横向一排部署，沿竞技场全宽均匀铺开（y 为玩家放置点，已被夹到半场）
+        const m = 18;
+        for (let i = 0; i < n; i++) {
+          const ux = m + (CW - 2 * m) * (n > 1 ? i / (n - 1) : 0.5);
+          const uy = y;
+          const u = makeUnit(owner, def, ux, uy);
+          game.units.push(u);
+        }
       } else {
         const spread = Math.min(62, 18 + n * 3.2);
         for (let i = 0; i < n; i++) {
@@ -3294,6 +3307,28 @@ function buildGround(g, u, ud, r, col, baseMat, skin, dark, metal) {
     const boss = new THREE.Mesh(new THREE.SphereGeometry(r * 0.18, 10, 8), _mat(0xFFEB3B, { metalness: 0.6, roughness: 0.3 })); boss.position.set(r * 0.7, legH + bodyH * 0.7, r * 0.58); pivot.add(boss);
     const spear = _box(r * 0.12, r * 1.5, r * 0.12, _mat(0x8d6e63)); spear.position.set(-r * 0.62, legH + bodyH * 0.95, r * 0.2); pivot.add(spear); ud.armR = spear;
     const tip = new THREE.Mesh(new THREE.ConeGeometry(r * 0.16, r * 0.4, 8), _mat(0xcfd8dc, { metalness: 0.7, roughness: 0.3 })); tip.position.set(-r * 0.62, legH + bodyH * 1.7, r * 0.2); pivot.add(tip);
+    return;
+  }
+  if (u.model === 'skeletongiant') {
+    // 骷髅巨人 Giant Skeleton（CR 锦标赛 L11 史诗）：骨白巨型骨架 + 队伍色毛帽(ushanka) + 背后大炸弹(红)
+    const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
+    const legH = r * 1.05, bodyH = r * 1.45, headR = r * 0.6;
+    const bone = _mat(0xECEFF1, { roughness: 0.55 });
+    const body = _box(r * 1.5, bodyH, r * 1.05, bone); body.position.y = legH + bodyH / 2; pivot.add(body); ud.body = body;
+    const rib = _box(r * 1.56, r * 0.12, r * 1.12, _mat(0xcfd8dc)); rib.position.y = legH + bodyH * 0.5; pivot.add(rib);
+    const head = _sph(headR, bone); head.position.y = legH + bodyH + headR * 0.7; pivot.add(head); ud.head = head;
+    for (const sx of [-1, 1]) { const eye = _sph(headR * 0.18, _mat(0x141414)); eye.position.set(sx * headR * 0.32, legH + bodyH + headR * 0.85, headR * 0.82); pivot.add(eye); }
+    const cap = _box(r * 1.05, headR * 0.55, headR * 1.05, _mat(u.color)); cap.position.y = legH + bodyH + headR * 1.1; pivot.add(cap);
+    const ear = _box(r * 0.32, headR * 0.3, headR * 1.25, _mat(u.color)); ear.position.y = legH + bodyH + headR * 0.7; pivot.add(ear);
+    const legGeo = new THREE.BoxGeometry(r * 0.42, legH, r * 0.42);
+    const legL = new THREE.Mesh(legGeo, bone); legL.position.set(-r * 0.42, legH / 2, 0); pivot.add(legL); ud.legL = legL;
+    const legR = new THREE.Mesh(legGeo, bone); legR.position.set(r * 0.42, legH / 2, 0); pivot.add(legR); ud.legR = legR;
+    const armGeo = new THREE.CapsuleGeometry(r * 0.2, legH * 0.55, 4, 8);
+    const armL = new THREE.Mesh(armGeo, bone); armL.position.set(-r * 0.82, legH + bodyH * 0.55, 0); pivot.add(armL);
+    const armR = new THREE.Mesh(armGeo, bone); armR.position.set(r * 0.82, legH + bodyH * 0.55, 0); pivot.add(armR);
+    const bomb = new THREE.Mesh(new THREE.SphereGeometry(r * 0.9, 14, 12), _mat(0xD32F2F, { roughness: 0.4 })); bomb.position.set(0, legH + bodyH * 0.5, -r * 0.8); pivot.add(bomb); ud.bomb = bomb;
+    const band = new THREE.Mesh(new THREE.TorusGeometry(r * 0.93, r * 0.12, 8, 18), _mat(u.color, { metalness: 0.4, roughness: 0.4 })); band.rotation.x = Math.PI / 2; band.position.set(0, legH + bodyH * 0.5, -r * 0.8); pivot.add(band);
+    const fuse = _box(r * 0.1, r * 0.5, r * 0.1, _mat(0x555555)); fuse.position.set(r * 0.18, legH + bodyH * 0.5, -r * 1.6); pivot.add(fuse);
     return;
   }
   const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
