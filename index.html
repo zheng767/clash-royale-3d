@@ -1555,12 +1555,13 @@ function leadTarget(u, delay) {
   const vx = u.vx || 0, vy = u.vy || 0;
   return { x: u.x + vx * delay, y: u.y + vy * delay };
 }
-// AI 防御建筑落点：河流↔两座公主塔构成的“中央口袋”（护双路+国王塔），
-// x 居中、按威胁路轻微偏置；y 落在河与公主塔之间（≈214），让单座建筑覆盖两座桥
+// AI 防御建筑落点：横向居中于两座公主塔(x=CENTER_X)、纵向压到桥头内侧(RIVER_TOP 上方约 22px)，
+// 即“两座公主塔 + 桥”三者构成的中央拉扯位。这样敌坦克/野猪刚过桥即被建筑纳入 130px 感知、
+// 且建筑比同侧公主塔更近 → 被引向竞技场中央，同时暴露在左右两塔火力下（经典中央拉扯布防）。
+// 注意：纯几何中心(y≈213)距桥头≈165px、超出坦克 sightRange(130)，无法触发拉扯，故必须前压。
 function aiBuildingSpot(threatSide) {
-  const bias = threatSide === 'left' ? -20 : threatSide === 'right' ? 20 : 0;
-  const x = CENTER_X + bias;
-  const y = PRINCESS_Y_AI + (RIVER_TOP - PRINCESS_Y_AI) * 0.42; // ≈214，河与塔之间
+  const x = CENTER_X;                       // 严格居中（两公主塔正中），单座建筑即可拉两侧
+  const y = RIVER_TOP - 22;                 // ≈298，紧贴桥头内侧，确保过桥单位在感知内被锁定
   return { x, y };
 }
 function updateAI(dt) {
