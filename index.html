@@ -295,7 +295,7 @@ const CARD_DEFS = {
   stormsentinel: { name:'雷霆守卫', cost:3, hp:216, dmg:166, range:21, spd:31.875, atkSpd:1.2, tgt:'ground', count:2, color:'#ECEFF1', icon:'盾骷', radius:9, deployTime:1.0, shield:119, paralyze:true, model:'skguard', atk:'stab' },
   flamemage:  { name:'烈焰法师', cost:4, hp:680, dmg:220, range:106, spd:21.25, atkSpd:1.4, tgt:'any', count:1, color:'#FF7043', icon:'焰法', radius:13, splash:28, deployTime:1.0, model:'wizard', atk:'fireball', applyBurn:true, burnDmg:20, burnDur:2.0 },
   hero_tian:  { name:'天', cost:5, hp:1888, dmg:312, range:24, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#FFD54F', icon:'天', radius:16, deployTime:1.0, isHero:true, model:'wukong', atk:'staff', skill1Cost:2, skill2Cost:3 },
-  haosihan:   { name:'皇家野猪', cost:5, hp:366, dmg:150, range:18, spd:42.5, atkSpd:1.4, tgt:'building', count:4, color:'#FF9E40', icon:'猪', radius:14, deployTime:1.0, canJumpRiver:true, model:'royalhog', atk:'stab' },
+  haosihan:   { name:'皇家野猪', cost:4, hp:366, dmg:150, range:18, spd:42.5, atkSpd:1.4, tgt:'building', count:4, color:'#FF9E40', icon:'猪', radius:14, deployTime:1.0, canJumpRiver:true, model:'royalhog', atk:'stab' },
   quake:      { name:'震荡术', cost:3, type:'spell', dmg:252, radius:74.4, groundOnly:true, color:'#8D6E63', icon:'震', delay:0.8, spellFx:'quake', quakeDuration:3.0, quakeTickInterval:1.0, quakeTicks:3, towerDmgMult:159/252, buildingDmg:861, slowFactor:0.65, slowDur:1.5 },
   // ===== 原版新增：矿工（CR 锦标赛 L11）=====
   miner:      { name:'矿工', cost:3, hp:1210, dmg:194, range:25, spd:31.875, atkSpd:1.3, tgt:'ground', count:1, color:'#546E7A', icon:'矿', radius:13, deployTime:0, digTime:1.0, deployAnywhere:true, model:'miner', atk:'punch', towerDmgMult:48/194 },
@@ -327,15 +327,18 @@ const CARD_DEFS = {
   healsprite:  { name:'治疗精灵', cost:1, hp:230, dmg:110, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#26A69A', icon:'疗', radius:11, splash:0, deathRadius:32, deployTime:1.0, suicide:true, leap:true, model:'healsprite', atk:'magic', healFieldOnDeath:{ radius:53, duration:1.0, healRate:401 } },
   // ===== 自创卡：储毒精灵（用户自创，迷惑/主控机制：自爆后被命中敌方单位被控制 2s，变我方打敌方，2s 后仍存活则归还原主）=====
   poisonsprite: { name:'储毒精灵', cost:3, hp:230, dmg:207, range:21, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#8BC34A', icon:'毒', radius:11, splash:49, deployTime:1.0, suicide:true, leap:true, confuseOnHit:2.0, model:'poisonsprite', atk:'magic' },
-  // ===== CR 原版卡牌：卫队 Guards（CR 锦标赛 L11 普通卡，数值与机制严格还原）=====
-  //   3 费 / 普通 / 对地 / 近战0.8格(≈18px) / 中等移速 / 三只 / 每只带 145 护盾(先于HP承伤，不回复，与黑暗王子同机制) / 伤害66(攻速1.1→DPS60)
-  guards:      { name:'卫队', cost:3, hp:118, dmg:66, range:18, spd:21.25, atkSpd:1.1, tgt:'ground', count:3, color:'#ECEFF1', icon:'卫', radius:9, deployTime:1.0, shield:145, model:'guard', atk:'stab' }
+  // CR 原版卡牌：皇家卫队 Royal Recruits（CR 锦标赛 L11 普通卡，数值与机制严格还原）
+  //   7 费 / 普通 / 对地 / 近战1.6格(≈34px) / 中等移速 / 六只 / 每只带 240 护盾(先于HP承伤，不回复) / 伤害133(攻速1.3→DPS102) / 首击0.5s
+  royalrecruits: { name:'皇家卫队', cost:7, hp:547, dmg:133, range:34, spd:21.25, atkSpd:1.3, tgt:'ground', count:6, color:'#42A5F5', icon:'卫队', radius:14, deployTime:1.0, shield:240, model:'royalrecruits', atk:'stab', firstHit:0.5 },
+  // CR 原版卡牌：皇家速递 Royal Delivery（CR 锦标赛 L11 普通法术，数值与机制严格还原）
+  //   3 费 / 普通法术 / 落地前 3 秒延迟(木箱空投) / 半径3格(63.75px，对空对地) / 范围伤害437(对塔×0.35) / 落点生成 1 个皇家卫队(带盾)
+  royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'barrel', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1 },
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
   // 普通 Common
   knight:'common', archer:'common', goblin:'common', giant:'common', bomber:'common', skeletons:'common',
-  fireball:'common', musketeer:'common', minions:'common', speargoblin:'common', goblinbarrel:'common',
+  fireball:'common', musketeer:'common', minions:'common', speargoblin:'common', goblinbarrel:'common', royalrecruits:'common', royaldelivery:'common',
   minionhorde:'common', babydragon:'common', barbarians:'common', cannon:'common', tesla:'common',
   flamesprite:'common', royalgiant:'common', hogrider:'common', haosihan:'common', healtotem:'common',
   frosttower:'common', zap:'common', arrows:'common', vines:'common', skarmy:'common',
@@ -352,7 +355,7 @@ const QUALITY = {
 const QUALITY_COLORS = { common:'#cfd8dc', rare:'#FF9800', epic:'#9C27B0', legendary:'#FFD700', champion:'#FF4081' };
 const QUALITY_LABELS = { common:'普通', rare:'稀有', epic:'史诗', legendary:'传奇', champion:'英雄' };
 for (const k in CARD_DEFS) { if (CARD_DEFS[k]) CARD_DEFS[k].quality = QUALITY[k] || 'common'; }
-const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite','guards','mortar','xbow','magicarcher','bombtower','balloon','wallbreakers'];
+const ALL_CARDS = ['knight','archer','goblin','giant','bomber','minipekka','skeletons','fireball','musketeer','valkyrie','barbarians','hogrider','wizard','arrows','pekka','skarmy','rocket','royalgiant','lightning','darkprince','princess','cannon','tesla','minions','babydragon','speargoblin','goblinbarrel','flamesprite','healtotem','frosttower','hurricane','zap','freeze','minionhorde','skeletonballoon','stormsentinel','flamemage','quake','miner','fisherman','prince','icewizard','vines','hero_tian','haosihan','log','dartgoblin','skeletonking','tianci','kan','battleram','icesprite','electrosprite','healsprite','poisonsprite','royalrecruits','royaldelivery','mortar','xbow','magicarcher','bombtower','balloon','wallbreakers'];
 
 // ==================== 游戏状态 ====================
 const canvas = document.getElementById('game-canvas');
@@ -3274,21 +3277,23 @@ function buildGround(g, u, ud, r, col, baseMat, skin, dark, metal) {
     const collar = new THREE.Mesh(new THREE.TorusGeometry(hr * 0.78, hr * 0.1, 8, 16), _mat(u.color, { roughness: 0.5 })); collar.rotation.x = Math.PI / 2; collar.position.set(0, hr * 1.0, hr * 0.8); pivot.add(collar);
     return;
   }
-  if (u.model === 'guard') {
-    // 卫队 Guards（CR 原版 L11）：三持盾卫兵——蓝灰制服 + 圆盾 + 短剑；盾破有破碎特效
+  if (u.model === 'royalrecruits') {
+    // 皇家卫队 Royal Recruits（CR 原版 L11）：蓝制服皇家卫兵——头盔 + 圆盾 + 长矛；体型比普通兵大一圈
     const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
-    const legH = r * 0.9, bodyH = r * 1.0, headR = r * 0.5;
-    const uni = _mat(u.color, { roughness: 0.7 });
-    const body = _box(r * 1.05, bodyH, r * 0.7, uni); body.position.y = legH + bodyH / 2; pivot.add(body); ud.body = body;
+    const legH = r * 0.95, bodyH = r * 1.15, headR = r * 0.55;
+    const blue = _mat(u.color, { roughness: 0.7 });
+    const body = _box(r * 1.15, bodyH, r * 0.78, blue); body.position.y = legH + bodyH / 2; pivot.add(body); ud.body = body;
     const head = _sph(headR, _mat(0xffe0bd)); head.position.y = legH + bodyH + headR * 0.7; pivot.add(head); ud.head = head;
-    const mo = _box(r * 0.5, r * 0.12, r * 0.12, _mat(0x4e4e4e)); mo.position.set(0, legH + bodyH + headR * 0.35, headR * 0.92); pivot.add(mo);  // 卫队招牌小胡子
-    const legGeo = new THREE.BoxGeometry(r * 0.32, legH, r * 0.32);
-    const legL = new THREE.Mesh(legGeo, uni); legL.position.set(-r * 0.28, legH / 2, 0); pivot.add(legL); ud.legL = legL;
-    const legR = new THREE.Mesh(legGeo, uni); legR.position.set(r * 0.28, legH / 2, 0); pivot.add(legR); ud.legR = legR;
-    const shield = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.78, r * 0.78, r * 0.22, 16), _mat(0x90A4AE, { metalness: 0.5, roughness: 0.4 }));
-    shield.rotation.x = Math.PI / 2; shield.position.set(r * 0.62, legH + bodyH * 0.7, r * 0.34); pivot.add(shield); ud.shieldMesh = shield;
-    const boss = new THREE.Mesh(new THREE.SphereGeometry(r * 0.16, 10, 8), _mat(0xFFE082, { metalness: 0.6, roughness: 0.3 })); boss.position.set(r * 0.62, legH + bodyH * 0.7, r * 0.5); pivot.add(boss);
-    const sword = _box(r * 0.14, r * 0.85, r * 0.14, metal); sword.position.set(-r * 0.55, legH + bodyH * 0.7, r * 0.18); pivot.add(sword); ud.armR = sword;
+    const helm = _box(r * 0.9, headR * 0.7, headR * 0.9, _mat(0x1565C0)); helm.position.y = legH + bodyH + headR * 1.05; pivot.add(helm);
+    const plume = _box(r * 0.18, headR * 0.9, r * 0.18, _mat(0xFFEB3B)); plume.position.y = legH + bodyH + headR * 1.6; pivot.add(plume);  // 顶羽
+    const legGeo = new THREE.BoxGeometry(r * 0.34, legH, r * 0.34);
+    const legL = new THREE.Mesh(legGeo, blue); legL.position.set(-r * 0.3, legH / 2, 0); pivot.add(legL); ud.legL = legL;
+    const legR = new THREE.Mesh(legGeo, blue); legR.position.set(r * 0.3, legH / 2, 0); pivot.add(legR); ud.legR = legR;
+    const shield = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.85, r * 0.85, r * 0.24, 16), _mat(0xb0bec5, { metalness: 0.5, roughness: 0.4 }));
+    shield.rotation.x = Math.PI / 2; shield.position.set(r * 0.7, legH + bodyH * 0.7, r * 0.4); pivot.add(shield); ud.shieldMesh = shield;
+    const boss = new THREE.Mesh(new THREE.SphereGeometry(r * 0.18, 10, 8), _mat(0xFFEB3B, { metalness: 0.6, roughness: 0.3 })); boss.position.set(r * 0.7, legH + bodyH * 0.7, r * 0.58); pivot.add(boss);
+    const spear = _box(r * 0.12, r * 1.5, r * 0.12, _mat(0x8d6e63)); spear.position.set(-r * 0.62, legH + bodyH * 0.95, r * 0.2); pivot.add(spear); ud.armR = spear;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(r * 0.16, r * 0.4, 8), _mat(0xcfd8dc, { metalness: 0.7, roughness: 0.3 })); tip.position.set(-r * 0.62, legH + bodyH * 1.7, r * 0.2); pivot.add(tip);
     return;
   }
   const pivot = new THREE.Group(); g.add(pivot); ud.pivot = pivot;
