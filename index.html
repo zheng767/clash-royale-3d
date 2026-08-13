@@ -1570,14 +1570,53 @@ function leadTarget(u, delay) {
   const vx = u.vx || 0, vy = u.vy || 0;
   return { x: u.x + vx * delay, y: u.y + vy * delay };
 }
-// AI 防御建筑落点：横向居中于两座公主塔(x=CENTER_X)、纵向压到桥头内侧(RIVER_TOP 上方约 22px)，
-// 即“两座公主塔 + 桥”三者构成的中央拉扯位。这样敌坦克/野猪刚过桥即被建筑纳入 130px 感知、
-// 且建筑比同侧公主塔更近 → 被引向竞技场中央，同时暴露在左右两塔火力下（经典中央拉扯布防）。
-// 注意：纯几何中心(y≈213)距桥头≈165px、超出坦克 sightRange(130)，无法触发拉扯，故必须前压。
-function aiBuildingSpot(threatSide) {
-  const x = CENTER_X;                       // 严格居中（两公主塔正中），单座建筑即可拉两侧
-  const y = RIVER_TOP - 22;                 // ≈298，紧贴桥头内侧，确保过桥单位在感知内被锁定
-  return { x, y };
+// ==================== AI 建筑落点（按皇室战争打法重训）====================
+// CR 里建筑分三类，落点原则完全不同。旧实现把三类混用同一个"居中桥头点"(191.25, 296.75)，是位置怪异的根因：
+//   1) 防御建筑(加农炮/炸弹塔/电磁塔/冰霜塔)——CR 铁律是【必须落在自家公主塔射程(159px)内】，
+//      敌人来拆建筑时会同时吃塔的集火；同时要落进【过桥坦克的感知半径(130px)】，
+//      才能把只打建筑的野猪/巨人/气球从塔边"拉"去中央口袋绕远路(CR 核心拉扯技巧)。
+//      ✗ 旧点距同侧公主塔 197px > 159 —— 完全在自家塔火力之外，建筑等于白送。
+//      ✓ 新点=威胁侧公主塔与中轴的中点、距河 3 格(≈132.8, 255)：距同侧塔 131(受保护)、
+//        距桥头 103(拉得动坦克)、加农炮射程 117 正好覆盖桥头 —— 三个条件同时满足。
+//   2) 攻城建筑(迫击炮/X连弩)——硬约束是【射程够打到玩家公主塔】。
+//      ✗ 旧的居中点到玩家公主塔 271px，而有效射程 244+塔碰撞半径 —— 卡在边界打不稳，4~6 圣水近乎白扔。
+//      ✓ 新点按射程上限反解 y：对准目标塔那一列、尽量后撤到"仍打得到"的最远处(≈y294)，且仍在自家塔保护内(156≤159)。
+//   3) 光环建筑(治疗图腾)——无攻击力，CR 里是跟着自己的进攻部队走的，落在己方桥头后覆盖过河部队。
+function aiBuildingSpot(cardKey, threatSide, opts) {
+  const def = CARD_DEFS[cardKey] || {};
+  const o = opts || {};
+  const jx = () => (Math.random() - 0.5) * 9;              // ±4.5px 抖动：不每局落在同一像素点，避免机械感
+  const sideX = threatSide === 'right' ? PRINCESS_X_R : PRINCESS_X_L;
+  const clampX = (v) => Math.max(24, Math.min(CW - 24, v));
+
+  // —— 攻城建筑：以"打得到玩家公主塔"为硬约束反解落点 ——
+  if (def.range >= 200) {
+    const alive = game.towers.filter(t => t.owner === 'player' && t.hp > 0 && t.type === 'princess');
+    const tgt = alive.length ? alive.reduce((a, b) => (a.hp <= b.hp ? a : b)) : null;   // CR 战术：集中破血量更低那座塔
+    const tx = tgt ? tgt.x : sideX, ty = tgt ? tgt.y : PRINCESS_Y_P;
+    const dx = tx < CENTER_X ? 12 : -12;                  // 对准目标塔那一列，向中轴微偏 12px 避免贴边界
+    const reach = (def.range + TOWER_DEFS.princess.collR) * 0.90;   // CR 边到边口径含塔碰撞半径，留 10% 余量
+    const yMin = ty - Math.sqrt(Math.max(1, reach * reach - dx * dx));   // 仍打得到塔的最靠后位置(越靠后越安全)
+    return { x: clampX(tx + dx + jx()), y: Math.max(25, Math.min(RIVER_TOP - 12, yMin)) };
+  }
+
+  // —— 光环建筑(治疗图腾)：跟随己方推进部队，落在己方桥头后用光环覆盖过河单位 ——
+  if (def.healAura || !(def.range > 40)) {
+    const push = game.units.filter(u => u.owner === 'ai' && u.hp > 0 && !u.isBuilding && u.y > RIVER_TOP - 4 * TILE);
+    if (push.length) {
+      const px = push.reduce((s, u) => s + u.x, 0) / push.length;
+      return { x: clampX(px + jx()), y: RIVER_TOP - 1.6 * TILE };     // ≈285，治疗光环(132px)覆盖桥面与过河部队
+    }
+    return { x: clampX(sideX + (sideX < CENTER_X ? 30 : -30) + jx()), y: PRINCESS_Y_AI + 2 * TILE };  // 塔前，给防守单位续航
+  }
+
+  // —— 对空布防：飞行单位走直线奔塔、不走桥，落点更居中(单座护两路)、更深(避开桥头法术覆盖)——
+  if (o.air) {
+    return { x: clampX(CENTER_X + (sideX - CENTER_X) * 0.35 + jx()), y: RIVER_TOP - 4 * TILE + jx() };  // ≈234，距同侧塔 122≤159
+  }
+
+  // —— 默认：CR 中央口袋拉扯位（"受自家塔保护" + "拉得动过桥坦克" + "射程覆盖桥头" 三者兼顾）——
+  return { x: clampX((sideX + CENTER_X) / 2 + jx()), y: RIVER_TOP - 3 * TILE + jx() };   // ≈255
 }
 function updateAI(dt) {
   const ai = game.ai;
@@ -1803,27 +1842,66 @@ function updateAI(dt) {
 
   // ===== 2. 防守决策 =====
   const enemyUnits = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < 360);
-  // ===== 2.0 引诱/拉扯 + 对空 + 预判布防：用加农炮/电磁塔放在“河流↔两公主塔”中央口袋 =====
-  //   · 敌方坦克(巨人/野猪/皇家巨人/皮卡)过河 → 立刻拉扯，把坦克从公主塔引向中央口袋
-  //   · 敌方飞行单位过河 → 电磁塔(对空)中央布防，单塔护双路
-  //   · 预判对手将进攻(玩家高圣水+我方半场已有敌方单位) → 提前布防，避免被动
-  const enemyTanks = enemyUnits.filter(u => ['giant','hogrider','royalgiant','pekka'].includes(u.card));
-  const enemyAirThreat = enemyUnits.filter(u => u.flying);
+  // ===== 2.0 建筑战术【时机】（落点见 aiBuildingSpot；按 CR 打法重训）=====
+  //   · 提前布防：坦克还在对面靠河区(尚未过桥)就落建筑——建筑有 1s 部署时间，等它压到脸上已经晚了。
+  //     ✗ 旧实现要等敌人 y<360(已进我方半场)才反应，永远慢半拍。
+  //   · 对症下药：只打建筑的坦克→拉扯位(加农炮/炸弹塔)；飞行→必须对空(电磁塔/冰霜塔)；否则不乱下建筑。
+  //   · 圣水纪律：CR 里下建筑必须留后手，故要求 elixir ≥ 费用+2，不把家底全压在一座建筑上。
+  //   · 不堆重复建筑：只在"没有能应对当前威胁的健康建筑(>35%血)"时才下。
+  //     ✗ 旧实现是"场上有任何建筑就不下"，于是只剩一座残血治疗图腾时也拒绝下加农炮——这是时机怪异的另一半。
+  //   · 攻城建筑(迫击炮/X连弩)在 CR 里是【进攻】手段，不该由"被进攻"触发：只在己方半场干净+圣水充裕时主动落。
   const aiHasBuilding = game.units.some(u => u.owner === 'ai' && u.hp > 0 && u.isBuilding);
-  const cannonCard = ai.hand.find(c => (c === 'cannon' || c === 'mortar') && ai.elixir >= CARD_DEFS[c].cost);
-  const teslaCard  = ai.hand.find(c => c === 'tesla'  && ai.elixir >= CARD_DEFS[c].cost);
-  const xbowCard   = ai.hand.find(c => c === 'xbow'   && ai.elixir >= CARD_DEFS[c].cost);
-  if (!aiHasBuilding) {
-    const threatSide = enemyUnits.length
-      ? (enemyUnits.reduce((s,u) => s+u.x,0)/enemyUnits.length < CENTER_X ? 'left' : 'right')
+  // 提前预警区：把"对面半场靠河 4.5 格内"也算成即将过桥的威胁（≈2s 后到桥，正好抵掉 1s 部署时间）
+  const incoming = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < RIVER_BOT + 4.5 * TILE);
+  const incPullable = incoming.filter(u => u.tgtType === 'building');   // 只打建筑：野猪/巨人/皇家巨人/气球/墙裂兵——可被建筑拉扯
+  const incAir = incoming.filter(u => u.flying);
+  const incGround = incoming.filter(u => !u.flying);
+  // 己方现有建筑按"能应对什么"分类；血量≤35% 视作即将阵亡、不计入（该补新的了）
+  const myBld = game.units.filter(u => u.owner === 'ai' && u.hp > 0 && u.isBuilding && u.hp > u.maxHp * 0.35);
+  const hasAAdef  = myBld.some(u => u.tgtType === 'any' && u.range > 40 && u.range < 200);
+  const hasGndDef = myBld.some(u => u.range > 40 && u.range < 200);
+  const hasSiege  = myBld.some(u => u.range >= 200);
+  // 手牌里的建筑：同类取最省圣水的一张（CR：3 费加农炮能解决就不动 4 费炸弹塔）
+  const bldInHand = (pred) => ai.hand
+    .filter(c => { const d = CARD_DEFS[c]; return d && d.isBuilding && pred(d) && ai.elixir >= d.cost + 2; })
+    .sort((a, b) => CARD_DEFS[a].cost - CARD_DEFS[b].cost)[0] || null;
+  const aaBld    = bldInHand(d => d.tgt === 'any' && d.range > 40 && d.range < 200);   // 电磁塔/冰霜塔（可对空）
+  const defBld   = bldInHand(d => d.range > 40 && d.range < 200);                      // 加农炮/炸弹塔/电磁塔/冰霜塔
+  const siegeBld = bldInHand(d => d.range >= 200);                                     // 迫击炮/X连弩
+  const auraBld  = bldInHand(d => !!d.healAura);                                       // 治疗图腾
+  if ((ai.bldCD || 0) <= 0) {
+    const bSide = incoming.length
+      ? (incoming.reduce((s, u) => s + u.x, 0) / incoming.length < CENTER_X ? 'left' : 'right')
       : (ai.attackLane || 'left');
-    let trigger = false, card = null;
-    if (enemyTanks.length > 0) { trigger = true; card = cannonCard || teslaCard; }            // 地面坦克：加农炮/迫击炮优先(便宜)
-    else if (enemyAirThreat.length > 0) { trigger = true; card = teslaCard; }                 // 对空只需电磁塔(X连弩打不到空)
-    else if (game.player.elixir >= 9 && enemyUnits.length >= 1) { trigger = true; card = cannonCard || teslaCard || xbowCard; } // 预判：提前布防/攻城
-    if (trigger && card) {
-      const spot = aiBuildingSpot(threatSide);
-      if (playCard('ai', card, spot.x, spot.y)) return;
+    let bldCard = null, bldOpts = null;
+    // (a) 只打建筑的地面坦克来袭 → 拉扯位（CR 核心：把野猪/巨人从塔边引进中央口袋吃双塔集火）
+    if (incPullable.some(u => !u.flying) && !hasGndDef) { bldCard = defBld; bldOpts = {}; }
+    // (b) 气球/骷髅气球(只打建筑且飞) → 必须用可对空的建筑，且要放拉扯位才拉得动
+    else if (incPullable.some(u => u.flying) && !hasAAdef) { bldCard = aaBld; bldOpts = {}; }
+    // (c) 其它飞行威胁(亡灵/飞龙等) → 对空建筑，居中偏威胁路以覆盖两条飞行线
+    if (!bldCard && incAir.length > 0 && !hasAAdef) { bldCard = aaBld; bldOpts = { air: true }; }
+    // (d) 成规模的地面进攻(含中/重型单位，非纯集群) → 用建筑当防守锚点，比同费单位更持久
+    if (!bldCard && !hasGndDef && incGround.length >= 2 &&
+        incGround.reduce((s, u) => s + u.hp, 0) >= 700 && incGround.some(u => u.hp >= 500)) {
+      bldCard = defBld; bldOpts = {};
+    }
+    // (e) 攻城建筑：CR 里是主动进攻手段——己方半场干净 + 圣水留 3 保护它 + 对面还有公主塔可打
+    if (!bldCard && siegeBld && !hasSiege) {
+      const halfSafe = !game.units.some(u => u.owner === 'player' && u.hp > 0 && u.y < RIVER_TOP + TILE);
+      const tgtAlive = game.towers.some(t => t.owner === 'player' && t.type === 'princess' && t.hp > 0);
+      if (halfSafe && tgtAlive && ai.elixir >= CARD_DEFS[siegeBld].cost + 3) { bldCard = siegeBld; bldOpts = {}; }
+    }
+    // (f) 治疗图腾：己方推进成型时才补光环（CR：光环建筑跟进攻走，不当防守塔用）
+    if (!bldCard && auraBld) {
+      const pushV = game.units.filter(u => u.owner === 'ai' && u.hp > 0 && !u.isBuilding && u.y > RIVER_TOP - 4 * TILE)
+        .reduce((s, u) => s + u.hp, 0);
+      if (pushV > 800) { bldCard = auraBld; bldOpts = {}; }
+    }
+    // (g) 圣水将溢出且建筑挡手 → 按 CR 习惯提前落在口袋位过牌，而不是塞进进攻队伍当兵用
+    if (!bldCard && ai.elixir >= 9 && !hasGndDef) { bldCard = defBld; bldOpts = {}; }
+    if (bldCard) {
+      const spot = aiBuildingSpot(bldCard, bSide, bldOpts);
+      if (playCard('ai', bldCard, spot.x, spot.y)) { ai.bldCD = 6; return; }   // 冷却 6s：同一波不连丢两座
     }
   }
   // ===== 2.05 桥头拦截：野猪/王子/巨人等快攻单位已压到桥头、我方又无防御建筑时，
