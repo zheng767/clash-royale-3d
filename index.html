@@ -1213,6 +1213,9 @@ function resolveCollisions() {
     for (let i = 0; i < arr.length; i++) {
       for (let j = i + 1; j < arr.length; j++) {
         const a = arr[i], b = arr[j];
+        // 皇室战争：友军单位互相穿过、不阻挡彼此（仅敌方单位 / 建筑 / 塔产生 body block）。
+        // 旧逻辑把友军当实体互推，导致己方后排推进单位被前方「正在进攻」的己方单位卡死（贴着河岸进退不得）。
+        if (a.owner === b.owner && !a.isBuilding && !b.isBuilding) continue;   // 仅“同主非建筑单位互相”穿透；建筑(无论敌我)仍与所有单位正常碰撞分离
         const aR = a.isBuilding ? a.radius + 4 : a.radius;   // 建筑按真实占地(基座比半径略大)，避免单位陷进建筑
         const bR = b.isBuilding ? b.radius + 4 : b.radius;
         const minD = aR + bR;
@@ -1343,7 +1346,9 @@ function computeAvoidance(unit, dirX, dirY) {
   for (const o of game.units) {
     if (o === unit || o.dead || o.hp <= 0) continue;
     if (o.flying) continue;
-    // 皇室战争：被任何单位（含友军）挡住前进路线时，侧向绕开而非硬推（解决"互推卡死"）
+    // 皇室战争：友军单位互相穿过、不避让（仅敌方单位才绕行）；友军建筑仍避让(避免穿模，且建筑对所有单位均为实体)
+    if (o.owner === unit.owner && !o.isBuilding) continue;
+    // 皇室战争：被敌方单位（含友军已在上行跳过）挡住前进路线时，侧向绕开而非硬推（解决"互推卡死"）
     if (unit.target && o === unit.target) continue;   // 自己的攻击目标不避让，直接上去打
     const ox = o.x - unit.x, oy = o.y - unit.y;
     const d = Math.hypot(ox, oy);
