@@ -336,7 +336,7 @@ const CARD_DEFS = {
   // ===== CR 原版卡牌：骷髅巨人 Giant Skeleton（CR 锦标赛 L11 史诗，2026-5 平衡后数值）=====
   //   HP3361 / 伤害276 / 攻速1.3 / 首击0.3 / Medium(21.25) / 近战0.8格(18px) / 只打建筑 / 6费
   //   死亡:3秒延迟爆炸, 死亡伤害688, 半径3格(63.75px), 对皇家塔亦688(2026-5起不再对塔×2)
-  skeletongiant: { name:'骷髅巨人', cost:6, hp:3361, dmg:276, range:18, spd:21.25, atkSpd:1.3, tgt:'building', count:1, color:'#ECEFF1', icon:'骷巨', radius:18, deployTime:1.0, model:'skeletongiant', atk:'punch', firstHit:0.3, deathDmg:688, deathRadius:63.75, deathDelay:3.0 },
+  skeletongiant: { name:'骷髅巨人', cost:6, hp:3361, dmg:276, range:18, spd:21.25, atkSpd:1.3, tgt:'ground', count:1, color:'#ECEFF1', icon:'骷巨', radius:18, deployTime:1.0, model:'skeletongiant', atk:'punch', firstHit:0.3, deathDmg:688, deathRadius:63.75, deathDelay:3.0 },
 };
 // 品质（稀有度）映射 —— 用于选牌界面颜色区分（普通/稀有/史诗/传奇/英雄）。值对齐 CR 卡牌稀有度。
 const QUALITY = {
