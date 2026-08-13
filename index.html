@@ -610,8 +610,15 @@ function pointRectDist(px, py, cx, cy, hw, hh) {
 }
 
 function canDeploy(owner, x, y, cardKey) {
-  // 法术卡全场可放
   const def = CARD_DEFS[cardKey];
+  // 滚动类法术（复仇滚木/野蛮人滚筒）：释放点向前最多到己方桥头（RIVER_BOT/RIVER_TOP），不可越河或敌方半场
+  if (def && def.type === 'spell' && def.rolling) {
+    if (x < 5 || x > CW - 5) return false;
+    if (y > RIVER_TOP && y < RIVER_BOT) return false;   // 河面不可放
+    if (owner === 'player') return y >= RIVER_BOT && y <= CH - 5;   // 己方半场、最多桥头
+    return y >= 5 && y <= RIVER_TOP;                     // AI 同理
+  }
+  // 其它法术卡全场可放
   if (def && def.type === 'spell') return true;
   if (x < 5 || x > CW - 5) return false;
   if (y > RIVER_TOP && y < RIVER_BOT) return false;
@@ -1995,9 +2002,16 @@ function playCard(owner, cardKey, x, y) {
   const def = CARD_DEFS[cardKey];
   if (!def || side.elixir < def.cost) return false;
   if (!canDeploy(owner, x, y, cardKey)) return false;
-  // ★★★ 双重保险：非矿工/非法术单位必须夹在部署者半场（杜绝散开偏移把单位推过河）
-  if (def && def.type !== 'spell' && !def.deployAnywhere) {
-    const c = clampDeployToSide(owner, x, y); x = c.x; y = c.y;
+  // ★★★ 双重保险：非矿工/非法术单位必须夹在部署者半场；滚动法术额外向前最多夹到己方桥头
+  if (def && !def.deployAnywhere && (def.type !== 'spell' || def.rolling)) {
+    if (def.rolling) {
+      // 滚动法术：释放点向前最多到己方桥头（RIVER_BOT），不可越河/敌方半场（不做破塔口袋扩展）
+      if (owner === 'player') y = Math.max(RIVER_BOT, Math.min(CH - 5, y));
+      else y = Math.min(RIVER_TOP, Math.max(5, y));
+      x = Math.max(5, Math.min(CW - 5, x));
+    } else {
+      const c = clampDeployToSide(owner, x, y); x = c.x; y = c.y;
+    }
   }
   side.elixir -= def.cost;
   const handIdx = side.hand.indexOf(cardKey);
@@ -3800,7 +3814,7 @@ function updateDeployZone() {
       const t = performance.now() / 1000;
       const inField = pos.x >= 0 && pos.x <= CW && pos.y >= 0 && pos.y <= CH;
       if (def.rolling) {
-        // 滚动法术（复仇滚木）：预览 = 从落点向敌方延伸 rollDist、宽 rollWidth 的细矩形，即“滚木能滚到的范围”
+        // 滚动法术（复仇滚木/野蛮人滚筒）：预览 = 从落点向敌方延伸 rollDist、宽 rollWidth 的细矩形（滚动覆盖区）
         const dir = -1;   // 玩家部署：滚木朝敌方(上)滚动
         const len = def.rollDist, wid = def.rollWidth;
         const c = inField ? new THREE.Color(def.color || '#8d6e63') : new THREE.Color('#ff3b30');
@@ -3810,6 +3824,11 @@ function updateDeployZone() {
         spellLaneBorder.material.color.copy(c); spellLaneFill.material.color.copy(c);
         spellLaneBorder.material.opacity = 0.5 + 0.25 * Math.sin(t * 6);
         spellLaneFill.material.opacity = inField ? 0.16 + 0.05 * Math.sin(t * 6) : 0.28;
+        // 部署区高亮：己方半场、向前最多到桥头（RIVER_BOT），提示滚动法术不可越河/敌方半场释放
+        const zA = RIVER_BOT - 340, zB = CH - 340;
+        deployZoneMesh.scale.set(1, (zB - zA) / 320, 1);
+        deployZoneMesh.position.set(0, 1.5, (zA + zB) / 2);
+        deployZoneMesh.visible = true;
       } else if (showRange) {
         // 圆形范围法术（火球/万箭/火箭/闪电/冰冻/震荡/藤蔓等）
         spellRangeMesh.visible = true;
