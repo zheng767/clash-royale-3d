@@ -1752,7 +1752,7 @@ function updateAI(dt) {
   if (playerPending && ai.elixir >= 2) {
     const arrowsC = ai.hand.find(c => c === 'arrows');
     if (arrowsC) { playCard('ai', 'arrows', playerPending.x, playerPending.y); return; }
-    const cheapDef = ai.hand.find(c => { const d = CARD_DEFS[c]; return d && d.type !== 'spell' && ai.elixir >= d.cost && (d.hp >= 100 || d.count > 1); });
+    const cheapDef = ai.hand.find(c => { const d = CARD_DEFS[c]; return d && d.type !== 'spell' && !d.isBuilding && ai.elixir >= d.cost && (d.hp >= 100 || d.count > 1); });
     if (cheapDef) { playCard('ai', cheapDef, playerPending.x, playerPending.y); return; }
   }
 
@@ -1793,7 +1793,7 @@ function updateAI(dt) {
   if (enemyAir.length > 0) {
     const antiAir = ai.hand.find(c => {
       const d = CARD_DEFS[c];
-      return d && d.type !== 'spell' && ai.elixir >= d.cost && d.tgt === 'any';
+      return d && d.type !== 'spell' && !d.isBuilding && ai.elixir >= d.cost && d.tgt === 'any';
     });
     if (antiAir) {
       const ax = enemyAir.reduce((s,u) => s+u.x,0)/enemyAir.length;
@@ -1818,10 +1818,10 @@ function updateAI(dt) {
   const aiKing = game.towers.find(t => t.id === 'aKing' && t.hp > 0);
   if (aiKing) {
     const kingAttackers = game.units.filter(u => u.owner === 'player' && u.hp > 0 && u.y < PRINCESS_Y_AI);
-    if (kingAttackers.length > 0) {
+      if (kingAttackers.length > 0) {
       const playable = ai.hand.filter(c => {
         const def = CARD_DEFS[c];
-        return def && def.type !== 'spell' && ai.elixir >= def.cost;
+        return def && def.type !== 'spell' && !def.isBuilding && ai.elixir >= def.cost;
       });
       if (playable.length > 0) {
         // 优先高伤害/肉盾单位拦截
@@ -1914,7 +1914,7 @@ function updateAI(dt) {
     const laneX2 = wc.x < CENTER_X ? PRINCESS_X_L : PRINCESS_X_R;
     const blocker = ai.hand.find(c => {
       const d = CARD_DEFS[c];
-      return d && d.type !== 'spell' && ai.elixir >= d.cost &&
+      return d && d.type !== 'spell' && !d.isBuilding && ai.elixir >= d.cost &&
         (d.hp >= 600 || d.count >= 2 || ['knight','valkyrie','barbarians','minipekka','pekka','goblin','skeletons','stormsentinel','icewizard'].includes(c));
     });
     if (blocker) {
@@ -1966,7 +1966,7 @@ function updateAI(dt) {
       if (!defendCard) {
         defendCard = ai.hand.find(c => {
           const def = CARD_DEFS[c];
-          if (!def || def.type === 'spell') return false;
+          if (!def || def.type === 'spell' || def.isBuilding) return false;
           if (ai.elixir < def.cost) return false;
           return def.hp >= 100 || def.count > 1;
         });
@@ -1988,7 +1988,7 @@ function updateAI(dt) {
   const aiBoard = game.units.filter(u => u.owner === 'ai' && u.hp > 0 && u.y > RIVER_BOT - 20 && u.y < PRINCESS_Y_P + 40);
   const aiPushPower = aiBoard.reduce((s,u) => s + u.hp, 0);
   if (aiPushPower > 250) {
-    const cp = ai.hand.filter(c => { const d = CARD_DEFS[c]; return d && d.type !== 'spell' && ai.elixir >= d.cost; });
+    const cp = ai.hand.filter(c => { const d = CARD_DEFS[c]; return d && d.type !== 'spell' && !d.isBuilding && ai.elixir >= d.cost; });
     if (cp.length > 0) {
       const pushLane = aiBoard.reduce((s,u) => s + u.x, 0) / aiBoard.length < CENTER_X ? 'left' : 'right';
       const px = pushLane === 'left' ? PRINCESS_X_L : PRINCESS_X_R;
@@ -2030,7 +2030,7 @@ function updateAI(dt) {
   if (ai.elixir >= atkThreshold) {
     const playable = ai.hand.filter(c => {
       const def = CARD_DEFS[c];
-      return def && def.type !== 'spell' && ai.elixir >= def.cost;
+      return def && def.type !== 'spell' && !def.isBuilding && ai.elixir >= def.cost;
     });
     if (playable.length === 0) return;
 
@@ -2225,7 +2225,7 @@ function makeUnit(owner, def, x, y) {
     bridgeLane: (Math.random() * 2 - 1) * (BRIDGE_HALF || 21.25) * 0.6,   // 稳定过桥车道偏移(桥宽内)，分散过桥避免卡桥头
     surroundAng: Math.random() * Math.PI * 2,   // 稳定包围角：多个单位锁定同一目标时各自奔向目标圆周上该角度点，自然散成包围圈而非全堆中心
     name: def.name, model: def.model || 'soldier', atk: def.atk || 'sword',
-    target: null, dead: false, engaged: false, engageOrder: 0, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0, frostTimer: 0, frostMax: 1.1,
+    target: null, dead: false, engaged: false, engageOrder: 0, stunTimer: 0, slowTimer: 0, slowFactor: 1, shield: def.shield || 0, maxShield: def.shield || 0, paralyzeTimer: 0, vx: 0, vy: 0, confuseT: 0, _trueOwner: null, stunOnHit: def.stunOnHit || 0, confuseOnHit: def.confuseOnHit || 0, healFieldOnDeath: def.healFieldOnDeath || null, burns: [], underground: isMiner, digTimer: def.digTime || 0, digTotal: def.digTime || 0, frostTimer: 0, frostMax: 1.1,
     digFrom: _digFrom, digTo: _digTo,
     curSpd: def.spd, canCharge: def.canCharge || false, chargeMaxSpd: def.chargeMaxSpd || 0, chargeAccel: def.chargeAccel || 0, chargeBonus: def.chargeBonus || 1, charged: false, chargeTimer: 0, chargeWindup: def.chargeWindup || 0,
     isHero: def.isHero || false, isClone: false, cloneTimer: 0, skill1Cost: def.skill1Cost || 0, skill2Cost: def.skill2Cost || 0, heroType: def.heroType || null,
@@ -3629,12 +3629,28 @@ function addUnitCommon(g, u, r) {
     const eT = 1.2;                   // 厚度(屏幕竖直方向) = 血条填充(1.8)的 2/3
     const GAPZ = 13;                  // 沿世界 -Z(屏幕上方)偏移：相机近俯视，屏幕上下由 Z 决定、Y 几乎无效，故必须用 Z 偏移才能肉眼分开两片条
     const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 4, eT + 0.6, 8), new THREE.MeshBasicMaterial({ color: 0x37474F }));
-    const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0x2196F3 }));
+    const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0x263238 }));   // 暗色轨道槽：不再用白底，免得“白条一直白”
+    const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));   // 颜色由 updateBar 按亡魂数 lerp(白→蓝)
     const eY = barY;                  // 与血条同高度，靠 Z 偏移制造屏幕上下的分离
     eFrame.position.set(0, eY, -GAPZ); eBg.position.set(0, eY, -GAPZ); eFg.position.set(0, eY, -GAPZ);
     g.add(eFrame); g.add(eBg); g.add(eFg);
     g.userData.energyFg = eFg; g.userData.energyW = eW; g.userData.energyMax = 15;  // 技能最多召唤 15 只骷髅
+    g.userData.energyFrame = eFrame; g.userData.energyBg = eBg;
+  }
+  // 护盾条（黑暗王子/雷霆守卫/皇家卫队等带盾单位）：长度=血条(barW)，厚度=血条填充(1.8)的 2/3(=1.2)，
+  // 位于血条正上方(屏幕方向用 -Z 偏移分离)，蓝色填充随 shield/maxShield 缩短，盾破(=0)时整条隐藏
+  if (u.maxShield > 0) {
+    const sW = barW;                 // 水平长度 = 血条
+    const sT = 1.2;                  // 厚度 = 血条填充(1.8)的 2/3
+    const sZ = -13;                  // 沿世界 -Z(屏幕上方)偏移：与亡魂条同法，制造屏幕上下的分离
+    const sFrame = new THREE.Mesh(new THREE.BoxGeometry(sW + 4, sT + 0.6, 8), new THREE.MeshBasicMaterial({ color: 0x263238 }));
+    const sBg = new THREE.Mesh(new THREE.BoxGeometry(sW, sT, 6), new THREE.MeshBasicMaterial({ color: 0x90A4AE }));
+    const sFg = new THREE.Mesh(new THREE.BoxGeometry(sW, sT, 6), new THREE.MeshBasicMaterial({ color: 0x29B6F6 }));
+    const sY = barY;
+    sFrame.position.set(0, sY, sZ); sBg.position.set(0, sY, sZ); sFg.position.set(0, sY, sZ);
+    g.add(sFrame); g.add(sBg); g.add(sFg);
+    g.userData.shieldFg = sFg; g.userData.shieldW = sW; g.userData.shieldMax = u.maxShield;
+    g.userData.shieldFrame = sFrame; g.userData.shieldBg = sBg;
   }
   const label = makeLabel(u.icon || u.name.charAt(0), u.owner === 'player' ? '#b8ffd0' : '#ffc2c2');
   label.position.set(0, -14, 0); g.add(label);
@@ -3823,10 +3839,26 @@ function updateUnitMesh(m, u) {
   if (fg) { fg.scale.x = ratio; fg.position.x = -barW/2 + (barW*ratio)/2; }
   // 骷髅帝王·亡魂能量条：蓝条按 亡魂/15 比例从左侧填满（与血条等长对齐），空时仅显示白色轨道
   if (ud.energyFg) {
+    // 亡魂能量条：满宽，颜色随亡魂数从 白(0) 渐变到 蓝(15)，开技能(souls=0)整条隐藏
     const efrac = Math.max(0, Math.min(1, (u.souls || 0) / ud.energyMax));
-    ud.energyFg.scale.x = Math.max(0.0001, efrac);
-    ud.energyFg.position.x = -ud.energyW/2 + (ud.energyW * efrac) / 2;
-    ud.energyFg.visible = efrac > 0.002;
+    const show = efrac > 0.002;
+    ud.energyFg.visible = show;
+    ud.energyFg.scale.x = 1;            // 满宽：用颜色而非长度表达充能
+    ud.energyFg.position.x = 0;
+    const cr = 1 + (0.13 - 1) * efrac, cg = 1 + (0.59 - 1) * efrac, cb = 1 + (0.95 - 1) * efrac;  // 白(1,1,1) → 蓝(0x2196F3≈0.13,0.59,0.95)
+    ud.energyFg.material.color.setRGB(cr, cg, cb);
+    if (ud.energyFrame) ud.energyFrame.visible = show;
+    if (ud.energyBg) ud.energyBg.visible = show;
+  }
+  // 护盾条：蓝条按 shield/maxShield 缩短（左锚定，右侧收缩）；盾破(=0)时整条隐藏
+  if (ud.shieldFg) {
+    const sfrac = Math.max(0, Math.min(1, (u.shield || 0) / (ud.shieldMax || 1)));
+    const show = sfrac > 0.002;
+    ud.shieldFg.visible = show;
+    ud.shieldFg.scale.x = Math.max(0.0001, sfrac);
+    ud.shieldFg.position.x = -ud.shieldW/2 + (ud.shieldW * sfrac) / 2;
+    if (ud.shieldFrame) ud.shieldFrame.visible = show;
+    if (ud.shieldBg) ud.shieldBg.visible = show;
   }
 }
 // 按 atk 分类型的攻击姿态（p: 0→1 攻击进程）
