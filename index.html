@@ -1422,11 +1422,12 @@ function dealDamage(attacker, target, dmg, isReflect) {
       && target.type !== 'princess' && target.type !== 'king') {
     dmg *= (1 - game[target.owner].teamDR.mult);
   }
-  // 盾牌吸收：带盾单位先扣盾，盾破后才掉血（皇室战争·骷髅守卫机制）
+  // 盾牌吸收（自定义规则·用户 2026-08-14 指令）：带盾单位先扣盾；若单次伤害【大于】当前盾值，则只消耗盾、剩余伤害不溢出到血量（破盾免伤）；
+  //   若单次伤害≤盾值，则正常扣盾、不伤血（保留剩余盾）。注：此规则与 CR 原版不同（CR 破盾后剩余伤害会打到血量），按用户指令实现。
   if (target.shield > 0 && dmg > 0) {
     const before = target.shield;
-    if (dmg >= target.shield) { dmg -= target.shield; target.shield = 0; }
-    else { target.shield -= dmg; dmg = 0; }
+    if (dmg > target.shield) { target.shield = 0; dmg = 0; }   // 单次伤害超过盾：破盾但本次不伤血
+    else { target.shield -= dmg; dmg = 0; }                     // 单次伤害未超过盾：扣盾、不伤血
     if (before > 0 && target.shield === 0) game.effects.push({ type:'splash', x:target.x, y:target.y, life:0.2, maxLife:0.2, color:'#cfd8dc', radius:(target.radius||10)*1.5 });
   }
   target.hp -= dmg;
