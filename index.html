@@ -3629,7 +3629,7 @@ function addUnitCommon(g, u, r) {
     const eT = 1.2;                   // 厚度(屏幕竖直方向) = 血条填充(1.8)的 2/3
     const GAPZ = 13;                  // 沿世界 -Z(屏幕上方)偏移：相机近俯视，屏幕上下由 Z 决定、Y 几乎无效，故必须用 Z 偏移才能肉眼分开两片条
     const eFrame = new THREE.Mesh(new THREE.BoxGeometry(eW + 4, eT + 0.6, 8), new THREE.MeshBasicMaterial({ color: 0x37474F }));
-    const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0x263238 }));   // 暗色轨道槽：不再用白底，免得“白条一直白”
+    const eBg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));   // 白底轨道：空态即“白条”，亡魂增长时蓝填充从左覆盖
     const eFg = new THREE.Mesh(new THREE.BoxGeometry(eW, eT, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));   // 颜色由 updateBar 按亡魂数 lerp(白→蓝)
     const eY = barY;                  // 与血条同高度，靠 Z 偏移制造屏幕上下的分离
     eFrame.position.set(0, eY, -GAPZ); eBg.position.set(0, eY, -GAPZ); eFg.position.set(0, eY, -GAPZ);
@@ -3837,18 +3837,16 @@ function updateUnitMesh(m, u) {
   const ratio = Math.max(0, u.hp / u.maxHp);
   const fg = ud.fg, barW = ud.barW;
   if (fg) { fg.scale.x = ratio; fg.position.x = -barW/2 + (barW*ratio)/2; }
-  // 骷髅帝王·亡魂能量条：蓝条按 亡魂/15 比例从左侧填满（与血条等长对齐），空时仅显示白色轨道
+  // 骷髅帝王·亡魂能量条：始终可见——白底轨道(空态即"白条")常显，蓝填充随亡魂从左增长、颜色白→蓝；开技能(souls=0)后蓝填充退回空、白条仍在(CR 原版 meter 常驻、用完回空)
   if (ud.energyFg) {
-    // 亡魂能量条：满宽，颜色随亡魂数从 白(0) 渐变到 蓝(15)，开技能(souls=0)整条隐藏
     const efrac = Math.max(0, Math.min(1, (u.souls || 0) / ud.energyMax));
-    const show = efrac > 0.002;
-    ud.energyFg.visible = show;
-    ud.energyFg.scale.x = 1;            // 满宽：用颜色而非长度表达充能
-    ud.energyFg.position.x = 0;
+    if (ud.energyFrame) ud.energyFrame.visible = true;  // 外框常显
+    if (ud.energyBg) ud.energyBg.visible = true;        // 白底轨道常显(空态即"白条")
+    ud.energyFg.visible = true;                         // 填充常显(空态宽度≈0，故只见白条)
+    ud.energyFg.scale.x = Math.max(0.0001, efrac);      // 蓝填充从左增长(长度=进度)
+    ud.energyFg.position.x = -ud.energyW/2 + (ud.energyW * efrac) / 2;
     const cr = 1 + (0.13 - 1) * efrac, cg = 1 + (0.59 - 1) * efrac, cb = 1 + (0.95 - 1) * efrac;  // 白(1,1,1) → 蓝(0x2196F3≈0.13,0.59,0.95)
     ud.energyFg.material.color.setRGB(cr, cg, cb);
-    if (ud.energyFrame) ud.energyFrame.visible = show;
-    if (ud.energyBg) ud.energyBg.visible = show;
   }
   // 护盾条：蓝条按 shield/maxShield 缩短（左锚定，右侧收缩）；盾破(=0)时整条隐藏
   if (ud.shieldFg) {
