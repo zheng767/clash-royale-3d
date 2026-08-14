@@ -311,7 +311,7 @@ const CARD_DEFS = {
   // ===== 原版新增：复仇滚木 / 吹箭哥布林 / 骷髅帝王（CR 锦标赛 L11 数值，效果严格还原）=====
   //   复仇滚木 / The Log（CR 锦标赛 L11 严格还原）：2 费 / 范围伤害266 / 对塔40(=15%) / 只打地面 / 击退1格
   //   机制：滚动法术——从落点向敌方滚出 rollDist(10.1格, 2020-08-04 官方 11.1→10.1)，宽度 rollWidth(3.9格)，滚动时长 rollTime(1.0s ≈ CR 10格/秒)，沿途碾过并击退地面单位（含建筑/塔，塔吃15%减伤）
-  log:        { name:'复仇滚木', cost:2, type:'spell', dmg:266, color:'#8D6E63', icon:'滚', spellFx:'log', groundOnly:true, rolling:true, rollDist:10.1*TILE, rollWidth:3.9*TILE, rollTime:1.0, radius:13, knockback:1*TILE, towerDmgMult:40/266 },
+  log:        { name:'复仇滚木', cost:2, type:'spell', dmg:266, color:'#8D6E63', icon:'滚', spellFx:'log', groundOnly:true, rolling:true, rollDist:10.1*TILE, rollWidth:3.9*TILE, rollTime:1.0, radius:13, knockback:1*TILE, towerDmgMult:40/266, unitDeployZone:true },
   dartgoblin: { name:'吹箭哥布林', cost:3, hp:261, dmg:156, range:138, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#AFB42B', icon:'镖', radius:11, deployTime:1.0, model:'dartgoblin', atk:'blow' },
   skeletonking:{ name:'骷髅帝王', cost:4, hp:2385, dmg:165, range:26, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#546E7A', icon:'骷王', radius:17, deployTime:1.0, isHero:true, heroType:'skeletonking', model:'skeletonking', atk:'sword', skill1Cost:2, skill2Cost:0 },
   tianci:     { name:'天赐', inGameName:'赐', cost:4, hp:1344, dmg:172, range:22, spd:21.25, atkSpd:1.7, tgt:'ground', count:1, color:'#FFF3B0', icon:'赐', radius:14, deployTime:1.0, isHero:true, heroType:'tianci', model:'tianci', atk:'angel', skill1Cost:4, skill2Cost:0 },
@@ -320,7 +320,7 @@ const CARD_DEFS = {
   kan:        { name:'坎', cost:5, hp:1455, dmg:348, range:15, spd:21.25, atkSpd:1.5, tgt:'ground', count:1, color:'#7E57C2', icon:'坎', radius:17, deployTime:1.0, isHero:true, heroType:'kan', model:'kan', atk:'spear', skill1Cost:3, skill2Cost:0 },
   // ===== 原版卡牌：野蛮人滚筒（Barbarian Barrel，CR 锦标赛 L11 普通卡，机制与数值严格还原）=====
   //   2 费 / 滚动法术 / 滚动距离4.5格(2022-06 由5格降为4.5，沿用至今) / 范围伤害230(对地面) / 只命中地面 / 滚到尽头投出1野蛮人(用 barbarians 单只数值191) / 对塔全额(待核对)
-  battleram:  { name:'野蛮人滚筒', cost:2, type:'spell', dmg:230, color:'#8D6E63', icon:'筒', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:4.5*TILE, rollWidth:2.6*TILE, rollTime:0.45, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1 },
+  battleram:  { name:'野蛮人滚筒', cost:2, type:'spell', dmg:230, color:'#8D6E63', icon:'筒', spellFx:'barrel', groundOnly:true, rolling:true, rollDist:4.5*TILE, rollWidth:2.6*TILE, rollTime:0.45, radius:14, knockback:0, towerDmgMult:1.0, spawnCard:'barbarians', spawnCount:1, unitDeployZone:true },
   // ===== CR 原版精灵三连（1 费普通，对空对地，自杀式冲撞自爆；数值取自 CR 锦标赛 L11）=====
   icesprite:   { name:'冰雪精灵', cost:1, hp:230, dmg:110, range:21, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#4FC3F7', icon:'雪', radius:11, splash:32, deployTime:1.0, suicide:true, leap:true, stunOnHit:1.1, model:'icesprite', atk:'magic' },
   electrosprite:{ name:'雷电精灵', cost:1, hp:230, dmg:99, range:53, spd:42.5, atkSpd:0.8, tgt:'any', count:1, color:'#FFEB3B', icon:'闪', radius:11, deployTime:1.0, suicide:true, leap:true, stunOnHit:0.5, model:'electrosprite', atk:'magic', chain:{ max:8, range:85 } },
@@ -332,7 +332,7 @@ const CARD_DEFS = {
   royalrecruits: { name:'皇家卫队', cost:7, hp:547, dmg:133, range:34, spd:21.25, atkSpd:1.3, tgt:'ground', count:6, color:'#42A5F5', icon:'卫队', radius:14, deployTime:1.0, shield:240, model:'royalrecruits', atk:'stab', firstHit:0.5, rowDeploy:true },
   // CR 原版卡牌：皇家速递 Royal Delivery（CR 锦标赛 L11 普通法术，数值与机制严格还原）
   //   3 费 / 普通法术 / 落地前 3 秒延迟(木箱空投) / 半径3格(63.75px，对空对地) / 范围伤害437(对塔×0.35) / 落点生成 1 个皇家卫队(带盾)
-  royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'royaldrop', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1, ownHalfOnly:true },
+  royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'royaldrop', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1, unitDeployZone:true },
   // ===== CR 原版卡牌：骷髅巨人 Giant Skeleton（CR 锦标赛 L11 史诗，2026-5 平衡后数值）=====
   //   HP3361 / 伤害276 / 攻速1.3 / 首击0.3 / Medium(21.25) / 近战0.8格(18px) / 只打建筑 / 6费
   //   死亡:3秒延迟爆炸, 死亡伤害688, 半径3格(63.75px), 对皇家塔亦688(2026-5起不再对塔×2)
@@ -619,22 +619,35 @@ function pointRectDist(px, py, cx, cy, hw, hh) {
   return Math.hypot(dx, dy);
 }
 
+// 单位卡部署区判定（含公主塔摧毁后跨河扩展至敌方半场"口袋"），滚木/滚筒/皇家速递复用同一套规则
+function canDeployUnitZone(owner, x, y) {
+  if (x < 5 || x > CW - 5) return false;
+  if (y > RIVER_TOP && y < RIVER_BOT) return false;
+  if (owner === 'player') {
+    if (y >= RIVER_BOT && y <= CH - 5) return true;
+    const aLP = game.towers.find(t => t.id === 'aLP');
+    const aRP = game.towers.find(t => t.id === 'aRP');
+    // 摧毁公主塔后跨河延伸到"口袋"（对方半场中线 CENTER_X 与公主塔水平线 POCKET_Y_AI 构成的区域），不越过国王塔
+    if (x < CENTER_X && aLP && aLP.hp <= 0 && y >= POCKET_Y_AI && y <= RIVER_TOP) return true;
+    if (x >= CENTER_X && aRP && aRP.hp <= 0 && y >= POCKET_Y_AI && y <= RIVER_TOP) return true;
+    return false;
+  } else {
+    if (y >= 5 && y <= RIVER_TOP) return true;
+    const pLP = game.towers.find(t => t.id === 'pLP');
+    const pRP = game.towers.find(t => t.id === 'pRP');
+    if (x < CENTER_X && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= POCKET_Y_P) return true;
+    if (x >= CENTER_X && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= POCKET_Y_P) return true;
+    return false;
+  }
+}
+
 function canDeploy(owner, x, y, cardKey) {
   const def = CARD_DEFS[cardKey];
-  // 滚动类法术（复仇滚木/野蛮人滚筒）：释放点向前最多到己方桥头（RIVER_BOT/RIVER_TOP），不可越河或敌方半场
-  if (def && def.type === 'spell' && def.rolling) {
-    if (x < 5 || x > CW - 5) return false;
-    if (y > RIVER_TOP && y < RIVER_BOT) return false;   // 河面不可放
-    if (owner === 'player') return y >= RIVER_BOT && y <= CH - 5;   // 己方半场、最多桥头
-    return y >= 5 && y <= RIVER_TOP;                     // AI 同理
+  // 滚木/野蛮人滚筒/皇家速递：使用与单位卡一致的部署区（默认己方半场，公主塔摧毁后扩展至敌方半场口袋）
+  if (def && def.type === 'spell' && def.unitDeployZone) {
+    return canDeployUnitZone(owner, x, y);
   }
-  // 仅限部署者半场释放的法术（皇家速递 Royal Delivery：空投箱不可越河/敌方半场投放）
-  if (def && def.type === 'spell' && def.ownHalfOnly) {
-    if (y > RIVER_TOP && y < RIVER_BOT) return false;   // 河面不可放
-    if (owner === 'player') return y >= RIVER_BOT && y <= CH - 5;   // 己方半场（桥头到国王塔前）
-    return y >= 5 && y <= RIVER_TOP;                     // AI 同理
-  }
-  // 其它法术卡全场可放
+  // 其它法术卡（火球/万箭/火箭/闪电/冰冻/震荡/藤蔓/哥布林飞桶等）全场可放
   if (def && def.type === 'spell') return true;
   if (x < 5 || x > CW - 5) return false;
   if (y > RIVER_TOP && y < RIVER_BOT) return false;
@@ -655,22 +668,7 @@ function canDeploy(owner, x, y, cardKey) {
   }
   // 矿工等可全场部署（无视半场限制，但河面/建筑/塔重叠校验已在上文完成）——遵循 CR 法则
   if (def && def.deployAnywhere) return true;
-  if (owner === 'player') {
-    if (y >= RIVER_BOT && y <= CH - 5) return true;
-    const aLP = game.towers.find(t => t.id === 'aLP');
-    const aRP = game.towers.find(t => t.id === 'aRP');
-    // 摧毁公主塔后跨河延伸到"口袋"，背边界= POCKET_Y_AI（被摧毁公主塔原址，绝不越过到国王塔脚下；v63 回退 v61补正贴塔过近）
-    if (x < CENTER_X && aLP && aLP.hp <= 0 && y >= POCKET_Y_AI && y <= RIVER_TOP) return true;
-    if (x >= CENTER_X && aRP && aRP.hp <= 0 && y >= POCKET_Y_AI && y <= RIVER_TOP) return true;
-    return false;
-  } else {
-    if (y >= 5 && y <= RIVER_TOP) return true;
-    const pLP = game.towers.find(t => t.id === 'pLP');
-    const pRP = game.towers.find(t => t.id === 'pRP');
-    if (x < CENTER_X && pLP && pLP.hp <= 0 && y >= RIVER_BOT && y <= POCKET_Y_P) return true;
-    if (x >= CENTER_X && pRP && pRP.hp <= 0 && y >= RIVER_BOT && y <= POCKET_Y_P) return true;
-    return false;
-  }
+  return canDeployUnitZone(owner, x, y);
 }
 
 // 把部署坐标夹回「部署者半场」边界，与 canDeploy 规则一致：
@@ -2107,16 +2105,9 @@ function playCard(owner, cardKey, x, y) {
   const def = CARD_DEFS[cardKey];
   if (!def || side.elixir < def.cost) return false;
   if (!canDeploy(owner, x, y, cardKey)) return false;
-  // ★★★ 双重保险：非矿工/非法术单位必须夹在部署者半场；滚动法术额外向前最多夹到己方桥头
-  if (def && !def.deployAnywhere && (def.type !== 'spell' || def.rolling)) {
-    if (def.rolling) {
-      // 滚动法术：释放点向前最多到己方桥头（RIVER_BOT），不可越河/敌方半场（不做破塔口袋扩展）
-      if (owner === 'player') y = Math.max(RIVER_BOT, Math.min(CH - 5, y));
-      else y = Math.min(RIVER_TOP, Math.max(5, y));
-      x = Math.max(5, Math.min(CW - 5, x));
-    } else {
-      const c = clampDeployToSide(owner, x, y); x = c.x; y = c.y;
-    }
+  // ★★★ 双重保险：非矿工/非法术单位必须夹在部署者半场；与单位同部署区法术（滚木/滚筒/皇家速递）亦按 unitDeployZone 夹回（公主塔破后可越河进敌方口袋）
+  if (def && !def.deployAnywhere && (def.type !== 'spell' || def.unitDeployZone)) {
+    const c = clampDeployToSide(owner, x, y); x = c.x; y = c.y;
   }
   side.elixir -= def.cost;
   const handIdx = side.hand.indexOf(cardKey);
@@ -4037,24 +4028,20 @@ function updateDeployZone() {
     if (pos && isFinite(pos.x) && isFinite(pos.y)) {
       const t = performance.now() / 1000;
       const inField = pos.x >= 0 && pos.x <= CW && pos.y >= 0 && pos.y <= CH;
-      // 仅限己方半场释放的法术（皇家速递）：有效区域 = 己方半场（河岸到国王塔前），敌方半场/河面视为无效
-      const valid = def.ownHalfOnly ? (inField && pos.y >= RIVER_BOT && pos.y <= CH - 5) : inField;
+      // 与单位同部署区法术（滚木/滚筒/皇家速递）：有效判定走 canDeploy（含公主塔摧毁后敌方半场口袋），其它法术全场可放
+      const useUnitZone = !!def.unitDeployZone;
+      const valid = useUnitZone ? canDeploy('player', pos.x, pos.y, cardKey) : inField;
       if (def.rolling) {
         // 滚动法术（复仇滚木/野蛮人滚筒）：预览 = 从落点向敌方延伸 rollDist、宽 rollWidth 的细矩形（滚动覆盖区）
         const dir = -1;   // 玩家部署：滚木朝敌方(上)滚动
         const len = def.rollDist, wid = def.rollWidth;
-        const c = inField ? new THREE.Color(def.color || '#8d6e63') : new THREE.Color('#ff3b30');
+        const c = valid ? new THREE.Color(def.color || '#8d6e63') : new THREE.Color('#ff3b30');
         spellLaneMesh.visible = true;
         spellLaneMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340 + dir * len / 2);
         spellLaneMesh.scale.set(wid, 1, len);
         spellLaneBorder.material.color.copy(c); spellLaneFill.material.color.copy(c);
         spellLaneBorder.material.opacity = 0.5 + 0.25 * Math.sin(t * 6);
-        spellLaneFill.material.opacity = inField ? 0.16 + 0.05 * Math.sin(t * 6) : 0.28;
-        // 部署区高亮：己方半场、向前最多到桥头（RIVER_BOT），提示滚动法术不可越河/敌方半场释放
-        const zA = RIVER_BOT - 340, zB = CH - 340;
-        deployZoneMesh.scale.set(1, (zB - zA) / 320, 1);
-        deployZoneMesh.position.set(0, 1.5, (zA + zB) / 2);
-        deployZoneMesh.visible = true;
+        spellLaneFill.material.opacity = valid ? 0.16 + 0.05 * Math.sin(t * 6) : 0.28;
       } else if (showRange) {
         // 圆形范围法术（火球/万箭/火箭/闪电/冰冻/震荡/藤蔓等）
         spellRangeMesh.visible = true;
@@ -4079,12 +4066,24 @@ function updateDeployZone() {
         const cs = def.quakeTicks ? (0.75 + 0.45 * beat) : 1;
         spellRangeCross.scale.set(cs, cs, cs);
       }
-      // 仅限己方半场释放的法术（皇家速递）：高亮己方半场部署区，提示不可越河/敌方半场投放
-      if (def.ownHalfOnly) {
+      // 与单位同部署区法术：高亮可释放区（己方半场全宽 + 公主塔摧毁后敌方半场口袋），落点出区时预览已转红提示
+      if (useUnitZone) {
         const zA = RIVER_BOT - 340, zB = CH - 340;
         deployZoneMesh.scale.set(1, (zB - zA) / 320, 1);
         deployZoneMesh.position.set(0, 1.5, (zA + zB) / 2);
         deployZoneMesh.visible = true;
+        const aLP = game.towers.find(t => t.id === 'aLP');
+        const aRP = game.towers.find(t => t.id === 'aRP');
+        const leftDown = aLP && aLP.hp <= 0, rightDown = aRP && aRP.hp <= 0;
+        if (leftDown || rightDown) {
+          const yA = POCKET_Y_AI, yB = RIVER_TOP;
+          const pzA = yA - 340, pzB = yB - 340;
+          deployZoneMesh2.scale.set((leftDown && rightDown) ? 2 : 1, (pzB - pzA) / 320, 1);
+          deployZoneMesh2.position.set((leftDown && rightDown) ? 0 : (leftDown ? -CENTER_X / 2 : CENTER_X / 2), 1.5, (pzA + pzB) / 2);
+          deployZoneMesh2.visible = true;
+        } else {
+          deployZoneMesh2.visible = false;
+        }
       }
     }
   } else {
