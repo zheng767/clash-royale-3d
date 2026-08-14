@@ -332,7 +332,7 @@ const CARD_DEFS = {
   royalrecruits: { name:'皇家卫队', cost:7, hp:547, dmg:133, range:34, spd:21.25, atkSpd:1.3, tgt:'ground', count:6, color:'#42A5F5', icon:'卫队', radius:14, deployTime:1.0, shield:240, model:'royalrecruits', atk:'stab', firstHit:0.5, rowDeploy:true },
   // CR 原版卡牌：皇家速递 Royal Delivery（CR 锦标赛 L11 普通法术，数值与机制严格还原）
   //   3 费 / 普通法术 / 落地前 3 秒延迟(木箱空投) / 半径3格(63.75px，对空对地) / 范围伤害437(对塔×0.35) / 落点生成 1 个皇家卫队(带盾)
-  royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'barrel', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1 },
+  royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'royaldrop', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1 },
   // ===== CR 原版卡牌：骷髅巨人 Giant Skeleton（CR 锦标赛 L11 史诗，2026-5 平衡后数值）=====
   //   HP3361 / 伤害276 / 攻速1.3 / 首击0.3 / Medium(21.25) / 近战0.8格(18px) / 只打建筑 / 6费
   //   死亡:3秒延迟爆炸, 死亡伤害688, 半径3格(63.75px), 对皇家塔亦688(2026-5起不再对塔×2)
@@ -2535,6 +2535,7 @@ function updatePendingSpells(dt) {
       if (s.kind === 'arrows') { fxType = 'rain'; fxColor = '#cfe8ff'; }
       else if (s.kind === 'lightning') { fxType = s.topTargets ? 'lightningstrike' : 'chain'; fxColor = '#fff27a'; }
       else if (s.kind === 'barrel') { fxType = 'barrel'; }
+      else if (s.kind === 'royaldrop') { fxType = 'royaldrop'; }
       else if (s.kind === 'rocket') { fxType = 'fireball'; fxColor = '#ff3b30'; }
       else if (s.kind === 'freeze') { fxType = 'freeze'; fxColor = '#81D4FA'; }
       else if (s.kind === 'quake') { fxType = 'quakeimpact'; fxColor = '#8d6e63'; }
@@ -4505,6 +4506,37 @@ function updateEffectMeshes() {
       bar.position.set(x, yy, z); bar.rotation.z = (1 - pct) * 6; fxGroup.add(bar);
       const ring = new THREE.Mesh(new THREE.RingGeometry(20, 30, 20), new THREE.MeshBasicMaterial({color:0xc8a06a, transparent:true, opacity:(1-pct)*0.8, side:THREE.DoubleSide}));
       ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
+    } else if (e.type === 'royaldrop') {
+      // 皇家速递·落地：耀眼金蓝闪光 + 双层扩散冲击波（皇家蓝内 / 金外）+ 地面迸溅火花
+      const p = pct;                              // 0→1 落地进度
+      const rad = e.radius || 64;
+      // 中心闪光
+      const flash = new THREE.Mesh(new THREE.SphereGeometry(12 + p * 72, 16, 12),
+        new THREE.MeshBasicMaterial({ color: 0xFFF8E1, transparent: true, opacity: 0.85 * (1 - p), depthWrite: false }));
+      flash.position.set(x, 15, z); fxGroup.add(flash);
+      // 内层冲击波（皇家蓝）
+      const r1 = 8 + p * rad * 1.15;
+      const w1 = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.1, r1 - 7), r1, 40),
+        new THREE.MeshBasicMaterial({ color: 0x42A5F5, transparent: true, opacity: 0.82 * (1 - p), side: THREE.DoubleSide, depthWrite: false }));
+      w1.rotation.x = -Math.PI/2; w1.position.set(x, 2.6, z); fxGroup.add(w1);
+      // 外层冲击波（金），略微延迟扩散
+      const p2 = Math.max(0, p - 0.14);
+      if (p2 > 0) {
+        const r2 = 8 + p2 * rad * 1.6;
+        const w2 = new THREE.Mesh(new THREE.RingGeometry(Math.max(0.1, r2 - 6), r2, 40),
+          new THREE.MeshBasicMaterial({ color: 0xFFD54F, transparent: true, opacity: 0.7 * (1 - p2), side: THREE.DoubleSide, depthWrite: false }));
+        w2.rotation.x = -Math.PI/2; w2.position.set(x, 2.0, z); fxGroup.add(w2);
+      }
+      // 地面迸溅火花（金色小光点向上向外飞）
+      const sp = Math.min(11, Math.floor(p * 11));
+      for (let k = 0; k < sp; k++) {
+        const ang = k / 11 * Math.PI * 2 + (e.seed || 0);
+        const rr = rad * p * 0.92;
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(2.4, 8, 6),
+          new THREE.MeshBasicMaterial({ color: 0xFFE082, transparent: true, opacity: 0.92 * (1 - p) }));
+        dot.position.set(x + Math.cos(ang) * rr, 4 + Math.sin(p * Math.PI) * 32, z + Math.sin(ang) * rr);
+        fxGroup.add(dot);
+      }
     } else if (e.type === 'hookline') {
       const dx = e.tx - e.sx, dz = e.ty - e.sy;
       const len = Math.hypot(dx, dz) || 1;
@@ -4652,6 +4684,29 @@ function updateEffectMeshes() {
         deb.position.set(x + Math.cos(ang)*d, 4 + Math.random()*6, z + Math.sin(ang)*d);
         deb.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3); fxGroup.add(deb);
       }
+    } else if (e.type === 'soul') {
+      // 亡魂：黄色光点从死亡位置飘飞向骷髅帝王头顶（带上下飘动 + 外层柔光 + 短拖尾）
+      const p = 1 - e.life / e.maxLife;                 // 0→1 飞行进度
+      const ease = p * p * (3 - 2 * p);                 // smoothstep 缓动，起飞慢、临近快
+      const sx = e.x, sy = e.y, tx = e.tx, ty = e.ty;
+      const cx = (sx + (tx - sx) * ease) - CENTER_X;
+      const cz = (sy + (ty - sy) * ease) - 340;
+      const float = Math.sin(p * Math.PI * 3) * 11;    // 飞行途中上下飘动
+      const cy = 17 + float;
+      const fade = p < 0.15 ? p / 0.15 : (p > 0.85 ? (1 - p) / 0.15 : 1); // 头尾淡入淡出
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(7.5, 12, 10), new THREE.MeshBasicMaterial({ color: 0xFFE082, transparent: true, opacity: 0.34 * fade, depthWrite: false }));
+      glow.position.set(cx, cy, cz); fxGroup.add(glow);
+      const core = new THREE.Mesh(new THREE.SphereGeometry(3.4, 12, 10), new THREE.MeshBasicMaterial({ color: 0xFFF59D, transparent: true, opacity: 0.96 * fade }));
+      core.position.set(cx, cy, cz); fxGroup.add(core);
+      // 短拖尾（朝来路）
+      if (p < 0.92) {
+        const tp = Math.max(0, p - 0.14);
+        const te = tp * tp * (3 - 2 * tp);
+        const tcx = (sx + (tx - sx) * te) - CENTER_X;
+        const tcz = (sy + (ty - sy) * te) - 340;
+        const tail = new THREE.Mesh(new THREE.SphereGeometry(2.3, 8, 6), new THREE.MeshBasicMaterial({ color: 0xFFE082, transparent: true, opacity: 0.4 * fade }));
+        tail.position.set(tcx, 17 + Math.sin(tp * Math.PI * 3) * 11, tcz); fxGroup.add(tail);
+      }
     }
     if (mesh) fxGroup.add(mesh);
   }
@@ -4669,6 +4724,7 @@ function updatePendingSpellMeshes() {
     else if (s.kind === 'freeze') { ringColor = 0x81D4FA; fillColor = 0x81D4FA; }
     else if (s.kind === 'quake') { ringColor = 0x8d6e63; fillColor = 0x8d6e63; }
     else if (s.kind === 'barrel') { ringColor = 0xc8a06a; fillColor = 0xd8b27a; }
+    else if (s.kind === 'royaldrop') { ringColor = 0x42A5F5; fillColor = 0x90CAF9; }
     const ring = new THREE.Mesh(new THREE.RingGeometry(s.radius*0.94, s.radius, 30), new THREE.MeshBasicMaterial({ color: ringColor, transparent: true, opacity: 0.55 + 0.35*Math.sin(s.timer*16), side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI/2; ring.position.set(x, 2, z); fxGroup.add(ring);
     const fill = new THREE.Mesh(new THREE.CircleGeometry(s.radius*(1-pct)+5, 26), new THREE.MeshBasicMaterial({ color: fillColor, transparent: true, opacity: 0.16, side: THREE.DoubleSide }));
@@ -4679,6 +4735,7 @@ function updatePendingSpellMeshes() {
     else if (s.kind === 'arrows')   drawArrowsTrail(s, prog);
     else if (s.kind === 'rocket')   drawRocketTrail(s, prog);
     else if (s.kind === 'barrel')   drawBarrelTrail(s, prog);
+    else if (s.kind === 'royaldrop') drawRoyalDropTrail(s, prog);
     else if (s.kind === 'lightning') {
       // 雷电/电击：CR 中是天降落雷，不走抛射轨迹
       const by = 300 - prog * 294;
@@ -4852,6 +4909,78 @@ function drawBarrelTrail(s, t) {
   heading.add(tumble); fxGroup.add(heading);
   addFlyShadow(p.x, p.z, p.y, 8);
 }
+// 皇家速递：皇家包裹自天而降——金色降落伞 + 蓝金包裹 + 柔光晕 + 天降光柱 + 落地阴影，临近地面伞脱离上飘
+function drawRoyalDropTrail(s, t) {
+  const prog = t < 0 ? 0 : (t > 1 ? 1 : t);
+  const cx = s.x - CENTER_X, cz = s.y - 340;
+  const alt = 16 + 322 * (1 - prog * prog);        // 重力加速式下落（起始高、临近地面最快）
+  const heading = new THREE.Group();
+  heading.position.set(cx, alt, cz); fxGroup.add(heading);
+
+  // 包裹主体：皇家蓝盒身 + 金色竖向封边
+  const box = new THREE.Group();
+  box.add(new THREE.Mesh(new THREE.BoxGeometry(17, 17, 17), new THREE.MeshBasicMaterial({ color: 0x1A237E })));
+  for (let b = 0; b < 4; b++) {
+    const a = b / 4 * Math.PI * 2 + Math.PI / 4;
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(1.9, 18.6, 1.9), new THREE.MeshBasicMaterial({ color: 0xFFD54F }));
+    edge.position.set(Math.cos(a) * 8.7, 0, Math.sin(a) * 8.7);
+    box.add(edge);
+  }
+  box.rotation.set(prog * 1.6, prog * 2.4, prog * 0.8);   // 缓慢翻滚
+  heading.add(box);
+
+  // 柔光晕
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(15, 16, 12),
+    new THREE.MeshBasicMaterial({ color: 0x90CAF9, transparent: true, opacity: 0.22, depthWrite: false }));
+  heading.add(halo);
+
+  if (prog < 0.82) {
+    // 降落伞：金顶 + 白蓝伞面 + 伞绳，随下落缓慢旋转
+    const canopy = new THREE.Group();
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(20, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x42A5F5, transparent: true, opacity: 0.92, side: THREE.DoubleSide }));
+    canopy.add(dome);
+    const dome2 = new THREE.Mesh(new THREE.SphereGeometry(20, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0xE3F2FD, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+    dome2.scale.set(0.7, 1, 0.7); canopy.add(dome2);
+    for (let c = 0; c < 6; c++) {
+      const a = c / 6 * Math.PI * 2;
+      const line = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 30, 4),
+        new THREE.MeshBasicMaterial({ color: 0xFFD54F, transparent: true, opacity: 0.7 }));
+      line.position.set(Math.cos(a) * 9, -15, Math.sin(a) * 9);
+      canopy.add(line);
+    }
+    canopy.position.y = 30; canopy.rotation.y = prog * 1.2;
+    heading.add(canopy);
+  } else {
+    // 伞脱离：向上飘起并淡出
+    const det = (prog - 0.82) / 0.18;
+    const canopy = new THREE.Mesh(new THREE.SphereGeometry(20, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x42A5F5, transparent: true, opacity: 0.6 * (1 - det), side: THREE.DoubleSide }));
+    canopy.position.set(cx, alt + 30 + det * 90, cz);
+    fxGroup.add(canopy);
+  }
+
+  // 天降光柱（暗示落点，随下落变淡）
+  const beamH = 400;
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(7, 11, beamH, 12, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0x90CAF9, transparent: true, opacity: 0.10 + 0.10 * (1 - prog), side: THREE.DoubleSide, depthWrite: false }));
+  beam.position.set(cx, alt + beamH / 2 - 10, cz); fxGroup.add(beam);
+
+  // 落地阴影（越接近地面越小越深）
+  addFlyShadow(cx, cz, alt, 9);
+
+  // 拖尾火花
+  for (let i = 1; i <= 3; i++) {
+    const tt = prog - i * 0.05;
+    if (tt <= 0) continue;
+    const a2 = 16 + 322 * (1 - tt * tt);
+    const sp = new THREE.Mesh(new THREE.SphereGeometry(2.0, 6, 5),
+      new THREE.MeshBasicMaterial({ color: 0xFFE082, transparent: true, opacity: 0.5 * (1 - prog) }));
+    sp.position.set(cx + (Math.random() - 0.5) * 8, a2, cz + (Math.random() - 0.5) * 8);
+    fxGroup.add(sp);
+  }
+}
 function disposeGroup(g) {
   g.traverse(o => {
     if (o.geometry) o.geometry.dispose();
@@ -4914,7 +5043,10 @@ function gameLoop(timestamp) {
           if (!u.isBuilding) {
             for (const o of game.units) {
               if (o === u || o.dead || o.hp <= 0) continue;
-              if (o.heroType === 'skeletonking') o.souls = (o.souls || 0) + 1;
+              if (o.heroType === 'skeletonking') {
+                o.souls = (o.souls || 0) + 1;
+                game.effects.push({ type:'soul', x:u.x, y:u.y, tx:o.x, ty:o.y, owner:u.owner, life:0.7, maxLife:0.7 });
+              }
             }
           }
         }
