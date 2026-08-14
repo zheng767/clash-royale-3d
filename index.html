@@ -332,7 +332,7 @@ const CARD_DEFS = {
   royalrecruits: { name:'皇家卫队', cost:7, hp:547, dmg:133, range:34, spd:21.25, atkSpd:1.3, tgt:'ground', count:6, color:'#42A5F5', icon:'卫队', radius:14, deployTime:1.0, shield:240, model:'royalrecruits', atk:'stab', firstHit:0.5, rowDeploy:true },
   // CR 原版卡牌：皇家速递 Royal Delivery（CR 锦标赛 L11 普通法术，数值与机制严格还原）
   //   3 费 / 普通法术 / 落地前 3 秒延迟(木箱空投) / 半径3格(63.75px，对空对地) / 范围伤害437(对塔×0.35) / 落点生成 1 个皇家卫队(带盾)
-  royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'royaldrop', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1 },
+  royaldelivery: { name:'皇家速递', cost:3, type:'spell', dmg:437, radius:63.75, color:'#42A5F5', icon:'速递', delay:3.0, spellFx:'royaldrop', towerDmgMult:0.35, spawnCard:'royalrecruits', spawnCount:1, ownHalfOnly:true },
   // ===== CR 原版卡牌：骷髅巨人 Giant Skeleton（CR 锦标赛 L11 史诗，2026-5 平衡后数值）=====
   //   HP3361 / 伤害276 / 攻速1.3 / 首击0.3 / Medium(21.25) / 近战0.8格(18px) / 只打建筑 / 6费
   //   死亡:3秒延迟爆炸, 死亡伤害688, 半径3格(63.75px), 对皇家塔亦688(2026-5起不再对塔×2)
@@ -626,6 +626,12 @@ function canDeploy(owner, x, y, cardKey) {
     if (x < 5 || x > CW - 5) return false;
     if (y > RIVER_TOP && y < RIVER_BOT) return false;   // 河面不可放
     if (owner === 'player') return y >= RIVER_BOT && y <= CH - 5;   // 己方半场、最多桥头
+    return y >= 5 && y <= RIVER_TOP;                     // AI 同理
+  }
+  // 仅限部署者半场释放的法术（皇家速递 Royal Delivery：空投箱不可越河/敌方半场投放）
+  if (def && def.type === 'spell' && def.ownHalfOnly) {
+    if (y > RIVER_TOP && y < RIVER_BOT) return false;   // 河面不可放
+    if (owner === 'player') return y >= RIVER_BOT && y <= CH - 5;   // 己方半场（桥头到国王塔前）
     return y >= 5 && y <= RIVER_TOP;                     // AI 同理
   }
   // 其它法术卡全场可放
@@ -4030,6 +4036,8 @@ function updateDeployZone() {
     if (pos && isFinite(pos.x) && isFinite(pos.y)) {
       const t = performance.now() / 1000;
       const inField = pos.x >= 0 && pos.x <= CW && pos.y >= 0 && pos.y <= CH;
+      // 仅限己方半场释放的法术（皇家速递）：有效区域 = 己方半场（河岸到国王塔前），敌方半场/河面视为无效
+      const valid = def.ownHalfOnly ? (inField && pos.y >= RIVER_BOT && pos.y <= CH - 5) : inField;
       if (def.rolling) {
         // 滚动法术（复仇滚木/野蛮人滚筒）：预览 = 从落点向敌方延伸 rollDist、宽 rollWidth 的细矩形（滚动覆盖区）
         const dir = -1;   // 玩家部署：滚木朝敌方(上)滚动
@@ -4051,7 +4059,7 @@ function updateDeployZone() {
         spellRangeMesh.visible = true;
         spellRangeMesh.position.set(pos.x - CENTER_X, 2, pos.y - 340);
         spellRangeMesh.scale.set(def.radius, def.radius, def.radius);
-        const sc = new THREE.Color(inField ? (def.color || '#ffffff') : '#ff3b30');
+        const sc = new THREE.Color(valid ? (def.color || '#ffffff') : '#ff3b30');
         spellRangeRing.material.color.copy(sc);
         spellRangeFill.material.color.copy(sc);
         spellRangePulse.material.color.copy(sc);
@@ -4059,7 +4067,7 @@ function updateDeployZone() {
         for (const c of spellRangeCross.children) c.material.color.copy(sc);
         // 外环呼吸 + 刻度自转 + 内环由内向外扩散，做出 CR 释放前调的“瞄准”观感
         spellRangeRing.material.opacity = 0.72 + 0.28 * Math.sin(t * 6.0);
-        spellRangeFill.material.opacity = inField ? 0.14 + 0.05 * Math.sin(t * 6.0) : 0.26;
+        spellRangeFill.material.opacity = valid ? 0.14 + 0.05 * Math.sin(t * 6.0) : 0.26;
         spellRangeTicks.rotation.y = -t * 0.9;
         const ph = (t * 0.85) % 1;
         const ps = 0.18 + ph * 0.82;
@@ -4069,6 +4077,13 @@ function updateDeployZone() {
         const beat = def.quakeTicks ? (1 - ((t % (def.quakeTickInterval || 0.8)) / (def.quakeTickInterval || 0.8))) : 1;
         const cs = def.quakeTicks ? (0.75 + 0.45 * beat) : 1;
         spellRangeCross.scale.set(cs, cs, cs);
+      }
+      // 仅限己方半场释放的法术（皇家速递）：高亮己方半场部署区，提示不可越河/敌方半场投放
+      if (def.ownHalfOnly) {
+        const zA = RIVER_BOT - 340, zB = CH - 340;
+        deployZoneMesh.scale.set(1, (zB - zA) / 320, 1);
+        deployZoneMesh.position.set(0, 1.5, (zA + zB) / 2);
+        deployZoneMesh.visible = true;
       }
     }
   } else {
